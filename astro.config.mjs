@@ -5,8 +5,8 @@ import { defineConfig } from "astro/config";
 
 // Rendered on demand by a Cloudflare Worker: the day's data is fetched and cached there.
 export default defineConfig({
-  output: "server",
-  adapter: cloudflare(),
-  integrations: [svelte()],
-  site: "https://today.duinlab.nl",
+	output: "server",
+	adapter: cloudflare(),
+	integrations: [svelte()],
+	site: "https://today.duinlab.nl",
 });
