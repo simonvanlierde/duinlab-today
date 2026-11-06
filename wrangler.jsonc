@@ -1,0 +1,7 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "duinlab-today",
+	"compatibility_date": "2026-10-20",
+	"observability": { "enabled": true },
+	"routes": [{ "pattern": "today.duinlab.nl", "custom_domain": true }]
+}
