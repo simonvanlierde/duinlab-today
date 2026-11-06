@@ -1,5 +1,5 @@
 import type { Credit, Fact, OnThisDay } from "../types";
-import { getJson, safe, stripTags } from "../util";
+import { getJson, httpsUrl, safe, stripTags } from "../util";
 
 const CREDIT: Credit = { name: "Wikipedia", url: "https://en.wikipedia.org/" };
 const GRIM =
@@ -19,7 +19,7 @@ export function parseFacts(feed: Feed, count = 2): Fact[] {
 	for (const item of feed.dyk ?? []) {
 		// The bold link is the article the hook is about; fall back to any link.
 		const url =
-			/<b[^>]*>\s*<a[^>]*href="([^"]+)"/.exec(item.html)?.[1] ??
+			/<b[^>]*>\s*<a[^>]*href="(https:[^"]+)"/.exec(item.html)?.[1] ??
 			/href="(https:[^"]+)"/.exec(item.html)?.[1];
 		const text = item.text.replace(/^\.\.\. that,?\s*/, "").trim();
 		if (url && text) out.push({ text, url, credit: CREDIT });
@@ -29,8 +29,8 @@ export function parseFacts(feed: Feed, count = 2): Fact[] {
 }
 
 export function parseOnThisDay(feed: Feed): OnThisDay | null {
-	const usable = (feed.onthisday ?? []).filter(
-		(e) => e.pages?.[0]?.content_urls?.desktop?.page,
+	const usable = (feed.onthisday ?? []).filter((e) =>
+		httpsUrl(e.pages?.[0]?.content_urls?.desktop?.page),
 	);
 	const pick = usable.find((e) => !GRIM.test(e.text)) ?? usable[0];
 	const url = pick?.pages?.[0]?.content_urls?.desktop?.page;
@@ -48,9 +48,10 @@ async function feed(date: string): Promise<Feed> {
 export async function fetchWikipedia(
 	date: string,
 ): Promise<{ didYouKnow: Fact[]; onThisDay: OnThisDay | null }> {
-	const f = await safe("wikipedia", () => feed(date));
-	return {
-		didYouKnow: f ? parseFacts(f) : [],
-		onThisDay: f ? parseOnThisDay(f) : null,
-	};
+	// parsing inside `safe`: a malformed feed drops both sections, never the page
+	const got = await safe("wikipedia", async () => {
+		const f = await feed(date);
+		return { didYouKnow: parseFacts(f), onThisDay: parseOnThisDay(f) };
+	});
+	return got ?? { didYouKnow: [], onThisDay: null };
 }

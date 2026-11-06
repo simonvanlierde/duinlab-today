@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { allFailed, buildDay } from "../../src/lib/build";
+import { rainLine } from "../../src/components/sky";
+import {
+	allFailed,
+	buildDay,
+	dayTtl,
+	missingSections,
+} from "../../src/lib/build";
 import { cached } from "../../src/lib/cache";
 import {
 	fetchPicture,
@@ -9,9 +15,18 @@ import {
 import { parseQuote } from "../../src/lib/sources/quote";
 import { parseQuiz } from "../../src/lib/sources/trivia";
 import { beaufort, compass, parseWeather } from "../../src/lib/sources/weather";
-import { parseFacts, parseOnThisDay } from "../../src/lib/sources/wikipedia";
+import {
+	fetchWikipedia,
+	parseFacts,
+	parseOnThisDay,
+} from "../../src/lib/sources/wikipedia";
 import { parseWord } from "../../src/lib/sources/wiktionary";
-import { dayOfYear, secondsUntilMidnight } from "../../src/lib/util";
+import {
+	dayOfYear,
+	getText,
+	safe,
+	secondsUntilMidnight,
+} from "../../src/lib/util";
 import apod from "./fixtures/apod.json";
 import metObject from "./fixtures/met-object.json";
 import metSearch from "./fixtures/met-search.json";
@@ -54,32 +69,59 @@ describe("parsers", () => {
 		});
 		expect(w?.url).toBe("https://en.wiktionary.org/wiki/sax");
 		expect(parseWord("<feed></feed>", "2026-11-06")).toBeNull();
+		// just after Amsterdam midnight the UTC-keyed feed has no entry for today yet
+		expect(parseWord(wiktionary, "2026-11-07")).toBeNull();
 	});
 
 	it("rejects the APOD placeholder and uses a video thumbnail", () => {
-		expect(parseApod(apod)).toBeNull();
-		const video = parseApod({
-			title: "Eclipse",
-			media_type: "video",
-			url: "https://youtu.be/x",
-			thumbnail_url: "https://img/t.jpg",
-		});
-		expect(video?.imageUrl).toBe("https://img/t.jpg");
-		expect(
-			parseApod({
+		expect(parseApod(apod, "2026-11-06")).toBeNull();
+		const video = parseApod(
+			{
+				date: "2026-11-06",
 				title: "Eclipse",
 				media_type: "video",
 				url: "https://youtu.be/x",
-			}),
+				thumbnail_url: "https://img/t.jpg",
+			},
+			"2026-11-06",
+		);
+		expect(video?.imageUrl).toBe("https://img/t.jpg");
+		expect(
+			parseApod(
+				{
+					title: "Eclipse",
+					media_type: "video",
+					url: "https://youtu.be/x",
+					date: "2026-11-06",
+				},
+				"2026-11-06",
+			),
 		).toBeNull();
 		expect(
-			parseApod({
-				title: "Moon",
-				media_type: "image",
-				url: "https://img/m.jpg",
-				copyright: "A\nB ",
-			})?.by,
+			parseApod(
+				{
+					title: "Moon",
+					media_type: "image",
+					url: "https://img/m.jpg",
+					copyright: "A\nB ",
+					date: "2026-11-06",
+				},
+				"2026-11-06",
+			)?.by,
 		).toBe("A B");
+		const moon = {
+			title: "Moon",
+			media_type: "image",
+			url: "https://img/m.jpg",
+		};
+		// yesterday's picture before APOD turns over, and pages that are not images
+		expect(parseApod({ ...moon, date: "2026-11-05" }, "2026-11-06")).toBeNull();
+		expect(
+			parseApod(
+				{ ...moon, media_type: "other", date: "2026-11-06" },
+				"2026-11-06",
+			),
+		).toBeNull();
 	});
 
 	it("takes only public-domain Met objects with an image", () => {
@@ -238,5 +280,110 @@ describe("day assembly and cache", () => {
 			30 * 60,
 		); // 23:30 CET
 		expect(secondsUntilMidnight(new Date("2026-07-01T22:00:00Z"))).toBe(86400); // 00:00 CEST, a new day
+	});
+});
+
+describe("hardening", () => {
+	it("drops both Wikipedia sections on a malformed feed instead of throwing", async () => {
+		vi.stubGlobal("fetch", async () => new Response('{"dyk":5}'));
+		expect(await fetchWikipedia("2026-11-06")).toEqual({
+			didYouKnow: [],
+			onThisDay: null,
+		});
+	});
+
+	it("keeps only https links from upstream", () => {
+		const html = (href: string) => ({
+			dyk: [{ html: `<b><a href="${href}">X</a></b>`, text: "... that X." }],
+		});
+		expect(parseFacts(html("javascript:alert(1)"))).toEqual([]);
+		expect(parseFacts(html("./Foo"))).toEqual([]);
+		const otd = (page: string) => ({
+			onthisday: [
+				{
+					year: 1,
+					text: "A",
+					pages: [{ content_urls: { desktop: { page } } }],
+				},
+			],
+		});
+		expect(parseOnThisDay(otd("javascript:x"))).toBeNull();
+		expect(parseMet({ ...metObject, objectURL: "javascript:x" })).toBeNull();
+	});
+
+	it("keeps the query string, and so the API key, out of the logged error", async () => {
+		vi.stubGlobal("fetch", async () => new Response("", { status: 429 }));
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		await safe("apod", () =>
+			getText("https://api.nasa.gov/planetary/apod?api_key=SECRET"),
+		);
+		expect(warn.mock.calls[0]?.[0]).toContain(
+			"api.nasa.gov/planetary/apod: HTTP 429",
+		);
+		expect(warn.mock.calls[0]?.[0]).not.toContain("SECRET");
+		warn.mockRestore();
+	});
+
+	it("says rain now when the current quarter hour is wet", () => {
+		const step = (time: string, mm: number) => ({ time, mm });
+		expect(rainLine([step("10:00", 0.3), step("10:15", 0)])).toBe("Rain now");
+		expect(rainLine([step("10:00", 0), step("10:15", 0.2)])).toBe(
+			"Dry until 10:15",
+		);
+	});
+
+	it("caches a stand-in picture until 07:00 only, a complete day until midnight", () => {
+		const day = {
+			date: "2026-11-06", // even: APOD preferred
+			picture: { kind: "met" },
+			onThisDay: {},
+			word: {},
+			quote: {},
+			quiz: {},
+			didYouKnow: [{}],
+		} as unknown as Parameters<typeof dayTtl>[0];
+		const early = new Date("2026-11-06T04:00:00Z"); // 05:00 Amsterdam
+		const late = new Date("2026-11-06T09:00:00Z"); // 10:00 Amsterdam
+		expect(missingSections(day)).toBe(0);
+		expect(dayTtl(day, early, true)).toBe(2 * 3600);
+		expect(dayTtl(day, early, false)).toBe(19 * 3600);
+		expect(dayTtl(day, late, true)).toBe(14 * 3600);
+		expect(dayTtl({ ...day, quote: null }, late, true)).toBe(600);
+		expect(
+			dayTtl(
+				{
+					...day,
+					picture: null,
+					onThisDay: null,
+					word: null,
+					quote: null,
+					quiz: null,
+					didYouKnow: [],
+				},
+				late,
+				true,
+			),
+		).toBe(60);
+	});
+
+	it("builds and serves the value when the cache throws", async () => {
+		const cache = {
+			match: async () => {
+				throw new Error("down");
+			},
+			put: async () => {
+				throw new Error("down");
+			},
+		} as unknown as Cache;
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		expect(
+			await cached(
+				cache,
+				"x",
+				async () => ({ n: 2 }),
+				() => 60,
+			),
+		).toEqual({ n: 2 });
+		warn.mockRestore();
 	});
 });

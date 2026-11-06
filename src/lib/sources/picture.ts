@@ -1,5 +1,5 @@
 import type { Picture } from "../types";
-import { dayOfYear, getJson, safe, seededRandom } from "../util";
+import { dayOfYear, getJson, httpsUrl, safe, seededRandom } from "../util";
 
 interface Apod {
 	title?: string;
@@ -11,8 +11,16 @@ interface Apod {
 	date?: string;
 }
 
-export function parseApod(a: Apod): Picture | null {
-	const imageUrl = a.media_type === "video" ? a.thumbnail_url : a.url;
+/** Null unless it is `date`'s picture: APOD turns over at US Eastern midnight, ~06:00 here. */
+export function parseApod(a: Apod, date: string): Picture | null {
+	if (a.date !== date) return null;
+	const imageUrl = httpsUrl(
+		a.media_type === "video"
+			? a.thumbnail_url
+			: a.media_type === "image"
+				? a.url
+				: undefined,
+	);
 	// The API has answered with NASA's site logo in place of the day's picture.
 	if (!a.title || !imageUrl || /nasa-logo/.test(imageUrl)) return null;
 	return {
@@ -29,11 +37,11 @@ export function parseApod(a: Apod): Picture | null {
 	};
 }
 
-export const fetchApod = (apiKey: string | undefined) =>
+const fetchApod = (date: string, apiKey: string | undefined) =>
 	safe("apod", async () => {
 		if (!apiKey) return null;
-		const url = `https://api.nasa.gov/planetary/apod?thumbs=true&api_key=${encodeURIComponent(apiKey)}`;
-		return parseApod(await getJson<Apod>(url));
+		const url = `https://api.nasa.gov/planetary/apod?thumbs=true&date=${date}&api_key=${encodeURIComponent(apiKey)}`;
+		return parseApod(await getJson<Apod>(url), date);
 	});
 
 interface MetObject {
@@ -47,19 +55,20 @@ interface MetObject {
 }
 
 export function parseMet(o: MetObject): Picture | null {
-	if (!o.isPublicDomain || !o.primaryImageSmall || !o.title || !o.objectURL)
-		return null;
+	const imageUrl = httpsUrl(o.primaryImageSmall);
+	const pageUrl = httpsUrl(o.objectURL);
+	if (!o.isPublicDomain || !imageUrl || !o.title || !pageUrl) return null;
 	const by = o.artistDisplayName?.trim() || null;
 	return {
 		kind: "met",
 		title: o.title,
 		by,
 		date: o.objectDate?.trim() || null,
-		imageUrl: o.primaryImageSmall,
+		imageUrl,
 		width: null,
 		height: null,
 		alt: by ? `${o.title}, by ${by}` : o.title,
-		pageUrl: o.objectURL,
+		pageUrl,
 		credit: {
 			name: "The Metropolitan Museum of Art (public domain)",
 			url: "https://www.metmuseum.org/art/collection",
@@ -71,7 +80,7 @@ const MET = "https://collectionapi.metmuseum.org/public/collection/v1";
 const MET_SEARCH = `${MET}.1/search?isHighlight=true&hasImages=true&q=*`;
 const MET_TRIES = 6;
 
-export const fetchMet = (date: string) =>
+const fetchMet = (date: string) =>
 	safe("met", async () => {
 		const { total } = await getJson<{ total: number }>(`${MET_SEARCH}&limit=1`);
 		if (!total) return null;
@@ -91,11 +100,18 @@ export const fetchMet = (date: string) =>
 		return null;
 	});
 
-/** APOD on even days of the year, The Met on odd days; each stands in for the other. */
+/** APOD on even days of the year, The Met on odd days. */
+export const preferredPicture = (date: string): Picture["kind"] =>
+	dayOfYear(date) % 2 === 0 ? "apod" : "met";
+
+/** The day's preferred source; the other stands in. */
 export async function fetchPicture(
 	date: string,
 	apiKey: string | undefined,
 ): Promise<Picture | null> {
-	const [apod, met] = await Promise.all([fetchApod(apiKey), fetchMet(date)]);
-	return dayOfYear(date) % 2 === 0 ? (apod ?? met) : (met ?? apod);
+	const [apod, met] = await Promise.all([
+		fetchApod(date, apiKey),
+		fetchMet(date),
+	]);
+	return preferredPicture(date) === "apod" ? (apod ?? met) : (met ?? apod);
 }

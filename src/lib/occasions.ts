@@ -137,7 +137,12 @@ export function occasionLine(date: string): string | null {
 	const days = Math.round(
 		(Date.parse(`${next.date}T00:00:00Z`) - t) / 86400000,
 	);
-	if (days === 0) return next.today;
+	// two occasions can share a day (Easter and summer time, 2027-03-28)
+	if (days === 0)
+		return all
+			.filter((o) => o.date === next.date)
+			.map((o) => o.today)
+			.join(". ");
 	if (days === 1) return `${next.name} tomorrow`;
 	if (days <= 10) return `${next.name} in ${days} days`;
 	return null;

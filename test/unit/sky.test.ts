@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { moonAt, phaseAt, sunTimes } from "../../src/lib/sky";
+import { phaseAt } from "../../src/components/sky";
+import { moonAt, sunTimes } from "../../src/lib/sky";
 import type { Sun } from "../../src/lib/types";
 import meteo from "./fixtures/open-meteo.json";
 
@@ -36,15 +37,16 @@ describe("phaseAt", () => {
 		dusk: "2026-11-06T17:41:00+01:00",
 	};
 	const at = (hhmm: string) =>
-		phaseAt(sun, new Date(`2026-11-06T${hhmm}:00+01:00`));
+		phaseAt(sun, Date.parse(`2026-11-06T${hhmm}:00+01:00`));
 	it("changes phase exactly on the boundaries", () => {
-		expect([at("07:09"), at("07:10"), at("07:45"), at("07:46")]).toEqual([
+		// first light to halfway between dawn and sunrise, dawn to 30 min after sunrise, dusk from 30 min before sunset
+		expect([at("07:09"), at("07:10"), at("07:27"), at("07:28")]).toEqual([
 			"night",
 			"first-light",
 			"first-light",
 			"dawn",
 		]);
-		expect([at("09:15"), at("09:16"), at("16:04"), at("16:05")]).toEqual([
+		expect([at("08:15"), at("08:16"), at("16:34"), at("16:35")]).toEqual([
 			"dawn",
 			"day",
 			"day",

@@ -18,6 +18,9 @@ describe("occasions", () => {
 		expect(occasionLine("2026-04-26")).toMatch(/King's Day/); // 27 April 2026 is a Monday
 		expect(occasionLine("2026-10-25")).toMatch(/clocks went back/);
 		expect(occasionLine("2026-08-01")).toBeNull();
+		expect(occasionLine("2027-03-28")).toBe(
+			"Easter Sunday. Summer time: the clocks went forward last night",
+		);
 	});
 });
 

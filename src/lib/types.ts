@@ -1,5 +1,7 @@
-// The day's data, as rendered by the page and served at /today.json. Every section but
-// `date`, `sun`, `moon` and `games` is null when its source failed: the page drops it.
+// The day's data, as rendered by the page and served at /today.json. When a source fails its
+// section is dropped: `didYouKnow` is [], and picture, onThisDay, word, quote, quiz and
+// weather are null. Instants are ISO strings (`generatedAt` and `fetchedAt` in UTC, `sun`
+// with the Amsterdam offset); `rainNext2h` times are bare HH:MM on the Amsterdam clock.
 
 /** Where an item came from, shown as its credit line. */
 export interface Credit {
@@ -99,8 +101,6 @@ export interface Sun {
 	/** Civil dusk. */
 	dusk: string;
 }
-
-export type Phase = "night" | "first-light" | "dawn" | "day" | "dusk";
 
 export interface Moon {
 	/** 0 new, 0.5 full, back to 1. */

@@ -14,12 +14,16 @@ const POS: Record<string, string> = {
 	prov: "proverb",
 };
 
-/** The atom feed holds a week of entries; take the one for `date`, else the last. */
+/**
+ * The atom feed holds a week of entries keyed by the UTC day; take the one for `date`. Just
+ * after Amsterdam midnight it is not out yet: null, so the day retries rather than keeping
+ * yesterday's word.
+ */
 export function parseWord(atom: string, date: string): Word | null {
 	const entries = atom.split("<entry>").slice(1);
-	const entry =
-		entries.find((e) => e.includes(`/wotd/${date.replaceAll("-", "")}`)) ??
-		entries.at(-1);
+	const entry = entries.find((e) =>
+		e.includes(`/wotd/${date.replaceAll("-", "")}`),
+	);
 	const summary = /<summary[^>]*>([\s\S]*?)<\/summary>/.exec(entry ?? "")?.[1];
 	if (!summary) return null;
 	const html = decodeEntities(summary);

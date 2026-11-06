@@ -1,14 +1,14 @@
 import { env } from "cloudflare:workers";
-import { allFailed, buildDay, missingSections } from "./build";
+import { buildDay, dayTtl } from "./build";
 import { cached } from "./cache";
 import { games } from "./games";
 import { fetchWeather } from "./sources/weather";
 import type { Today } from "./types";
-import { amsterdamDate, secondsUntilMidnight } from "./util";
+import { amsterdamDate } from "./util";
 
-export const WEATHER_TTL = 15 * 60;
-/** A day with a source missing is rebuilt soon, so a passing outage does not last until midnight. */
-const PARTIAL_TTL = 10 * 60;
+const WEATHER_TTL = 15 * 60;
+/** Failed weather is retried after a minute, not on every request. */
+const FAILED_TTL = 60;
 
 export async function getToday(now: Date = new Date()): Promise<Today> {
 	const date = amsterdamDate(now);
@@ -17,20 +17,16 @@ export async function getToday(now: Date = new Date()): Promise<Today> {
 	const [day, weather] = await Promise.all([
 		cached(
 			cache,
-			`day/${date}`,
+			// bump the version when the Day shape changes: entries outlive a deploy
+			`day/v1/${date}`,
 			() => buildDay(date, now, apiKey),
-			(d) =>
-				allFailed(d)
-					? null
-					: missingSections(d) > 0
-						? PARTIAL_TTL
-						: secondsUntilMidnight(now),
+			(d) => dayTtl(d, now, !!apiKey),
 		),
 		cached(
 			cache,
 			"weather",
 			() => fetchWeather(now),
-			(w) => (w ? WEATHER_TTL : null),
+			(w) => (w ? WEATHER_TTL : FAILED_TTL),
 		),
 	]);
 	// games are static: added here so a change to the list shows without waiting for midnight

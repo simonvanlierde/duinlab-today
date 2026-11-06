@@ -6,7 +6,11 @@ export async function getText(url: string, accept = "*/*"): Promise<string> {
 		headers: { "user-agent": UA, accept },
 		signal: AbortSignal.timeout(TIMEOUT_MS),
 	});
-	if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+	// host and path only: a query string can carry an API key into the logs
+	if (!res.ok) {
+		const u = new URL(url);
+		throw new Error(`${u.host}${u.pathname}: HTTP ${res.status}`);
+	}
 	return res.text();
 }
 
@@ -28,6 +32,10 @@ export async function safe<T>(
 		return null;
 	}
 }
+
+/** `s` when it is an https URL, else undefined: upstream links go into href and src. */
+export const httpsUrl = (s: string | undefined) =>
+	s && URL.canParse(s) && new URL(s).protocol === "https:" ? s : undefined;
 
 const ENTITIES: Record<string, string> = {
 	amp: "&",
@@ -65,7 +73,7 @@ export function stripTags(html: string): string {
 }
 
 /** 32-bit FNV-1a, enough to seed a per-day choice. */
-export function hashString(s: string): number {
+function hashString(s: string): number {
 	let h = 0x811c9dc5;
 	for (let i = 0; i < s.length; i++) {
 		h ^= s.charCodeAt(i);

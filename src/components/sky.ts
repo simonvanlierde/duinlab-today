@@ -107,6 +107,8 @@ export function windLine(w: Weather["now"]): string {
 
 export function rainLine(steps: Weather["rainNext2h"]): string {
 	if (steps.length === 0) return "";
+	// the first step is the current quarter hour
+	if ((steps[0]?.mm ?? 0) > 0) return "Rain now";
 	const wet = steps.find((s) => s.mm > 0);
 	return wet ? `Dry until ${wet.time}` : "Dry for 2 hours";
 }
@@ -122,8 +124,6 @@ export function moonPath(m: Moon, r = 9): string {
 	const term = (waxing ? 1 : 0) ^ (k > 0 ? 1 : 0) ? 1 : 0;
 	return `M ${r} 0 A ${r} ${r} 0 0 ${limb} ${r} ${2 * r} A ${rx.toFixed(2)} ${r} 0 0 ${term} ${r} 0 Z`;
 }
-
-export type { Sun };
 
 /**
  * Hand-tuned sky colours by sun altitude in degrees (art direction, not physics): four

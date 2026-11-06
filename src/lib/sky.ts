@@ -1,4 +1,4 @@
-import type { Moon, Phase, Sun } from "./types";
+import type { Moon, Sun } from "./types";
 import { isoAmsterdam } from "./util";
 
 const LAT = 52.08;
@@ -53,20 +53,6 @@ export function sunTimes(date: string): Sun {
 		sunset: isoAmsterdam(crossing(date, 90.833, false)),
 		dusk: isoAmsterdam(crossing(date, 96, false)),
 	};
-}
-
-/**
- * night: before dawn and from dusk; first-light: dawn to sunrise; dawn: the 90 minutes after
- * sunrise; day: until an hour before sunset; dusk: that last hour until civil dusk.
- */
-export function phaseAt(sun: Sun, now: Date): Phase {
-	const t = now.getTime();
-	const at = (iso: string) => Date.parse(iso);
-	if (t < at(sun.dawn) || t >= at(sun.dusk)) return "night";
-	if (t < at(sun.sunrise)) return "first-light";
-	if (t < at(sun.sunrise) + 90 * 60000) return "dawn";
-	if (t < at(sun.sunset) - 60 * 60000) return "day";
-	return "dusk";
 }
 
 const SYNODIC_DAYS = 29.530588853;
