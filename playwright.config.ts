@@ -20,7 +20,8 @@ export default defineConfig({
 	webServer: {
 		command: `pnpm build && pnpm exec wrangler dev --port ${port}`,
 		url: `http://localhost:${port}`,
-		reuseExistingServer: true,
+		// a reused server could be serving an older build
+		reuseExistingServer: false,
 		timeout: 240_000,
 	},
 });

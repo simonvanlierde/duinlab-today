@@ -4,10 +4,11 @@
 default:
     @just --list
 
-# The checks CI runs: lint, types, unit tests.
+# The checks CI runs: lint, types, unit tests, build.
 check:
     pnpm check
     pnpm test
+    pnpm build
 
 # Fix and format.
 fmt:

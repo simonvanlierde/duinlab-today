@@ -9,26 +9,28 @@ import Plain from "../layouts/Plain.astro";
 	<Fragment slot="title">About this page</Fragment>
 
 	<p>
-		A daily page for two of us in The Hague, open to anyone: one picture, a few facts, a word, a quiz and ten
-		games. It changes at midnight, Amsterdam time.
+		A daily page for two of us in The Hague, open to anyone: one picture, a few facts, a word, a quiz and a
+		handful of games. It changes at midnight, Amsterdam time.
 	</p>
 
 	<h2>Privacy</h2>
 	<p>
 		No cookies, no analytics. Your played games, streaks and quiz answers stay in this browser's local storage
-		(<code>today.games.v1</code>, <code>today.quiz.v1</code>) and are never sent anywhere. Clear the site's data
+		(<code>today.games.v1</code>, <code>today.quiz.v1</code>, and <code>today.sunrise.v1</code> for the date of
+		your last visit) and are never sent anywhere. Clear the site's data
 		to remove them.
 	</p>
 	<p>
 		A Cloudflare Worker serves the page. Cloudflare keeps request logs for a few days: the address asked for,
-		the time, and connection details such as your IP address. I only read them to trace a fault.
+		the time, and connection details such as your IP address. I only read them to trace a fault. The day's picture loads straight from NASA, The Met or YouTube, so
+		they see your IP address too.
 	</p>
 
 	<h2>Accessibility</h2>
 	<p>
 		The aim is WCAG 2.2 AA. Text contrast holds in every sky, games and answers are at least 44 pixels tall,
 		keyboard focus is visible, motion stops when your system asks for less, and the page reads in full without
-		JavaScript. Every change runs an axe check. If something gets in your way,
+		JavaScript. CI scans the home, about and 404 pages with axe. If something gets in your way,
 		<a href="https://github.com/simonvanlierde/duinlab-today/issues">open an issue</a>.
 	</p>
 

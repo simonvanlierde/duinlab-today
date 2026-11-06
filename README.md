@@ -1,27 +1,32 @@
 # duinlab-today
 
 A small daily page at <https://today.duinlab.nl>: the day's picture, a few sourced facts, the
-weather in The Hague, a five-question quiz and ten daily web games with played-today marks
-and streaks. The sky at the top follows the sun's position over The Hague, minute by minute.
+weather in The Hague, a five-question quiz and a short list of daily web games with
+played-today marks and streaks. The sky at the top follows the sun's position over The Hague, minute by minute.
 
-It is an Astro site rendered by a Cloudflare Worker. The Worker fetches each source once and
-caches it until midnight (Europe/Amsterdam); the weather is cached for 15 minutes. The same
-data is served as JSON at `/today.json`. Checkmarks and streaks stay in your browser; nothing
-about visitors is stored.
+It is an Astro site rendered by a Cloudflare Worker. The Worker fetches the sources once and
+caches the day until midnight (Europe/Amsterdam). If a source failed, it tries again after 10
+minutes. The weather is cached for 15 minutes. The same data is served as JSON at
+`/today.json`, which browsers and proxies may cache for 5 minutes. Checkmarks and streaks stay
+in your browser; the server keeps nothing beyond Cloudflare's request logs.
 
 ## Develop
 
+You need Node 22 or later (CI uses 26). `packageManager` in `package.json` pins pnpm.
+
 ```sh
 pnpm install
-pnpm dev
+pnpm exec playwright install chromium
+just dev
 ```
 
-`just check` runs what CI runs (lint, types, unit tests); `just e2e` runs the browser tests,
-including an axe accessibility scan, against a production build.
+`just dev` starts the dev server in the background; `pnpm exec astro dev stop` ends it.
+`just check` runs CI's lint, types, unit tests and build. `just e2e` runs the browser tests
+against a production build, including an axe scan of the home, about and 404 pages.
 
-`NASA_API_KEY` goes in `.dev.vars` for local runs and in a Worker secret in production
-(`pnpm wrangler secret put NASA_API_KEY`). Without it the picture falls back to the APOD feed
-or The Met.
+For the NASA picture, put a line `NASA_API_KEY=<your key>` in `.dev.vars` for local runs. In
+production it is a Worker secret (`pnpm wrangler secret put NASA_API_KEY`). Without a key the
+picture comes from The Met. The tests don't need it.
 
 ## Sources
 

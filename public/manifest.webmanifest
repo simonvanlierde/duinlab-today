@@ -1,7 +1,7 @@
 {
 	"name": "today.duinlab.nl",
 	"short_name": "today",
-	"description": "A small daily paper: one picture, a few facts, a word, a quiz and ten games.",
+	"description": "A small daily paper: one picture, a few facts, a word, a quiz and the daily games.",
 	"start_url": "/",
 	"display": "standalone",
 	"background_color": "#0d1129",

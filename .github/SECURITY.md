@@ -14,8 +14,8 @@ expect a fix.
 
 ## Scope
 
-The site keeps no accounts and no data about visitors; per-browser state lives in local
-storage only.
+The site keeps no accounts and no data about visitors beyond Cloudflare's request logs;
+per-browser state lives in local storage only.
 
 In scope: the code in this repository, the Worker it deploys to `today.duinlab.nl`, the CI
 workflows in `.github/workflows`, and the dependencies in the lockfile when the problem

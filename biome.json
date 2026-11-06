@@ -6,7 +6,7 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["**", "!!**/dist"]
+		"includes": ["*.{json,jsonc,json5,mjs,ts}", "src/**", "test/**", "e2e/**"]
 	},
 	"formatter": {
 		"enabled": true,
