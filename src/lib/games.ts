@@ -4,7 +4,7 @@ export const games: Game[] = [
 	{
 		id: "factmap",
 		name: "Factmap",
-		url: "https://factmap.world/",
+		url: "https://www.factmap.world/",
 		blurb: "Place the day's facts on the map.",
 	},
 	{
@@ -16,7 +16,7 @@ export const games: Game[] = [
 	{
 		id: "shikaku",
 		name: "Shikaku of the day",
-		url: "https://www.shikakuoftheday.com/",
+		url: "https://shikakuofthe.day/",
 		blurb: "Cut the grid into rectangles that match the numbers.",
 	},
 	{

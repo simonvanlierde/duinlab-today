@@ -86,7 +86,7 @@ const heading = longDate(today.date);
 							<span class="temp">{Math.round(weather.now.temperatureC)}&deg;</span> {weather.now.description}
 						</p>
 						<ul class="plain">
-							<li>High {Math.round(weather.today.maxC)}&deg;, low {Math.round(weather.today.minC)}&deg;, up to {weather.today.rainChanceMax}% chance of rain</li>
+							<li>High {Math.round(weather.today.maxC)}&deg;, low {Math.round(weather.today.minC)}&deg;{weather.today.rainChanceMax > 0 ? `, up to ${weather.today.rainChanceMax}% chance of rain` : ", no rain expected"}</li>
 							<li>{windLine(weather.now)}</li>
 							{rainLine(weather.rainNext2h) && <li>{rainLine(weather.rainNext2h)}</li>}
 						</ul>
