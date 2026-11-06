@@ -1,7 +1,7 @@
 <script lang="ts">
 import { onMount } from "svelte";
 import type { Quiz } from "../lib/types";
-import { amsterdamDay } from "./games.svelte";
+import { amsterdamDay, shift } from "./games.svelte";
 
 let { quiz }: { quiz: Quiz } = $props();
 
@@ -18,11 +18,15 @@ const LINES = [
 const total = $derived(quiz.questions.length);
 let picks = $state<(number | null)[]>([]);
 let at = $state(0);
+/** Days on which every question was answered, for the streak. */
+let done = $state<string[]>([]);
 
 onMount(() => {
 	picks = quiz.questions.map(() => null);
 	try {
 		const saved = JSON.parse(localStorage.getItem(KEY) ?? "null");
+		if (Array.isArray(saved?.done))
+			done = saved.done.filter((d: unknown) => typeof d === "string");
 		if (saved?.day === amsterdamDay() && Array.isArray(saved.picks))
 			picks = picks.map((_, i) =>
 				typeof saved.picks[i] === "number" ? saved.picks[i] : null,
@@ -30,19 +34,35 @@ onMount(() => {
 	} catch {
 		// private window: the quiz still works for this visit
 	}
-	const open = picks.findIndex((p) => p === null);
+	const open = picks.indexOf(null);
 	at = open === -1 ? total : open;
 });
 
 function pick(i: number) {
 	if (picks[at] !== null && picks[at] !== undefined) return;
 	picks[at] = i;
+	const day = amsterdamDay();
+	if (picks.every((p) => p !== null) && !done.includes(day))
+		done = [...done, day].slice(-60);
 	try {
-		localStorage.setItem(KEY, JSON.stringify({ day: amsterdamDay(), picks }));
+		localStorage.setItem(KEY, JSON.stringify({ day, picks, done }));
 	} catch {
 		// nothing to keep then
 	}
 }
+
+/** Consecutive days with the whole quiz answered, ending today or yesterday. */
+const streak = $derived.by(() => {
+	let day = amsterdamDay();
+	if (!done.includes(day)) day = shift(day, -1);
+	let n = 0;
+	while (done.includes(day)) {
+		n++;
+		day = shift(day, -1);
+	}
+	return n;
+});
+const answered = $derived(picks.filter((p) => p !== null).length);
 
 const q = $derived(quiz.questions[at]);
 const chosen = $derived(picks[at] ?? null);
@@ -51,7 +71,8 @@ const score = $derived(
 );
 </script>
 
-<div class="quiz-live">
+<div class="quiz-live" style={`--lift:${total ? answered / total : 0}`}>
+	<span class="lift" aria-hidden="true"></span>
 	<h2 class="cue" id="h-quiz">
 		Quiz
 		{#if at < total}<span class="qn">{at + 1} of {total}</span>{/if}
@@ -87,7 +108,9 @@ const score = $derived(
 	{:else}
 		<p class="score"><span class="figure">{score}</span> of {total}. {LINES[Math.round((score / total) * 5)]}</p>
 		<p class="quiz-foot">
-			<span class="mute">New questions tomorrow.</span>
+			<span class="mute">
+				{streak > 1 ? `${streak} days in a row.` : "Day one of a streak."} New questions tomorrow.
+			</span>
 			<a class="src" href={quiz.credit.url}>{quiz.credit.name}</a>
 		</p>
 	{/if}

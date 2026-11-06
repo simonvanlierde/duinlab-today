@@ -25,9 +25,10 @@
 	font-display: swap;
 }
 
-/* The sky lives in the masthead only: four stops from zenith (k0) to the horizon (k3),
-   then the dune in the ground colour. The ground is one calm colour: cream, or deep ink
-   at night. Masthead text sits in the k0-k1 part, which keeps white text at AA. */
+/* The sky lives in the masthead: four stops from zenith (k0) to the horizon (k3), then the
+   dune in the ground colour. The page sets all five from the sun's altitude (skyAt in
+   sky.ts); the ground follows the sky, dark until just before sunrise. Masthead text sits
+   in the k0-k1 part, which keeps white text at AA. */
 @property --k0 {
 	syntax: "<color>";
 	inherits: true;
@@ -78,6 +79,7 @@
 	transition-property: --k0, --k1, --k2, --k3, --ground;
 	transition-duration: 2.4s;
 	transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+	--ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 	scrollbar-color: color-mix(in oklab, var(--ink) 35%, transparent) transparent;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -86,41 +88,8 @@
 	}
 }
 
-:root[data-phase="night"] {
-	--k0: #050920;
-	--k1: #0b1440;
-	--k2: #1a2766;
-	--k3: #2d3a80;
-	--ground: #0d1129;
+:root[data-ground="dark"] {
 	color-scheme: dark;
-}
-:root[data-phase="first-light"] {
-	--k0: #0a1030;
-	--k1: #142463;
-	--k2: #2c4fc0;
-	--k3: #e9a3b3;
-}
-:root[data-phase="dawn"] {
-	--k0: #142a78;
-	--k1: #34449f;
-	--k2: #d4809c;
-	--k3: #f7cdb8;
-}
-:root[data-phase="dusk"] {
-	--k0: #1e1650;
-	--k1: #45297a;
-	--k2: #b4507e;
-	--k3: #f2a98c;
-}
-/* last, so the all-played white-out beats whichever phase is set */
-:root[data-phase="day"],
-:root[data-whiteout] {
-	--k0: #1d55ad;
-	--k1: #2c69c2;
-	--k2: #7fb1e8;
-	--k3: #d6e7f7;
-	--ground: #fffaf7;
-	color-scheme: light;
 }
 
 *,
@@ -338,6 +307,82 @@ h1 {
 .moon svg {
 	display: inline-block;
 }
+.sky {
+	overflow: clip;
+}
+/* stars: a fixed handful, fading in below -5 degrees */
+.sky::before,
+.sky::after {
+	content: "";
+	position: absolute;
+	inset: 0 0 30% 0;
+	pointer-events: none;
+	opacity: var(--stars, 0);
+	transition: opacity 2.4s;
+}
+.sky::before {
+	background:
+		radial-gradient(1.5px 1.5px at 8% 30%, #fff 50%, transparent),
+		radial-gradient(1px 1px at 19% 62%, #fff 50%, transparent),
+		radial-gradient(1.5px 1.5px at 31% 18%, #fff 50%, transparent),
+		radial-gradient(1px 1px at 47% 44%, #fff 50%, transparent),
+		radial-gradient(1px 1px at 58% 12%, #fff 50%, transparent),
+		radial-gradient(1.5px 1.5px at 71% 56%, #fff 50%, transparent),
+		radial-gradient(1px 1px at 84% 26%, #fff 50%, transparent),
+		radial-gradient(1px 1px at 93% 48%, #fff 50%, transparent);
+}
+.sky::after {
+	background:
+		radial-gradient(1px 1px at 13% 50%, #fff 50%, transparent),
+		radial-gradient(1.5px 1.5px at 39% 66%, #fff 50%, transparent),
+		radial-gradient(1px 1px at 53% 28%, #fff 50%, transparent),
+		radial-gradient(1px 1px at 66% 36%, #fff 50%, transparent),
+		radial-gradient(1.5px 1.5px at 78% 9%, #fff 50%, transparent),
+		radial-gradient(1px 1px at 97% 70%, #fff 50%, transparent);
+}
+@media (prefers-reduced-motion: no-preference) {
+	.sky::after {
+		animation: twinkle 7s ease-in-out infinite alternate;
+	}
+}
+@keyframes twinkle {
+	from {
+		opacity: calc(var(--stars, 0) * 0.35);
+	}
+	to {
+		opacity: var(--stars, 0);
+	}
+}
+.mast {
+	position: relative;
+	z-index: 1;
+}
+/* the sun: crosses the horizon band from sunrise to sunset, up by its altitude */
+.sun {
+	position: absolute;
+	left: calc(6% + var(--sun-x, 0.5) * 88%);
+	bottom: calc(16px + clamp(-40px, var(--sun-alt, 10) * 3px, var(--hz) - 22px));
+	width: 64px;
+	height: 64px;
+	translate: -50% 50%;
+	border-radius: 50%;
+	background: radial-gradient(
+		circle,
+		#fffaf0 0 17%,
+		color-mix(in oklab, #ffd6a0 80%, transparent) 24%,
+		color-mix(in oklab, #ffc7a0 25%, transparent) 45%,
+		transparent 70%
+	);
+	opacity: clamp(0, (var(--sun-alt, 10) + 4) / 4, 1);
+	transition:
+		left 2.4s var(--ease-out),
+		bottom 2.4s var(--ease-out),
+		opacity 2.4s;
+	pointer-events: none;
+}
+html:not(.js) .sun {
+	display: none;
+}
 .dune {
 	position: absolute;
 	left: 0;
@@ -365,7 +410,7 @@ h1 {
 .front {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
-	grid-template-areas: "games" "pic" "read" "quote";
+	grid-template-areas: "games" "pic" "read" "otd" "quote";
 	gap: 8px 48px;
 	padding-top: 4px;
 }
@@ -378,10 +423,15 @@ h1 {
 .reading {
 	grid-area: read;
 }
+.otd {
+	grid-area: otd;
+	max-width: 62ch;
+	border-top: 1px solid var(--rule);
+}
 @media (min-width: 1100px) {
 	.front {
 		grid-template-columns: minmax(0, 5fr) minmax(0, 4fr) minmax(0, 2.6fr);
-		grid-template-areas: "pic read games" "quote read games";
+		grid-template-areas: "pic read games" "otd quote games";
 		grid-template-rows: auto 1fr;
 		align-items: start;
 	}
@@ -411,7 +461,7 @@ h1 {
 }
 @media (min-width: 1100px) {
 	.pic img {
-		max-height: max(260px, calc(100svh - 300px));
+		max-height: max(240px, calc(100svh - 470px));
 	}
 }
 .pic figcaption {
@@ -704,7 +754,7 @@ summary {
 	display: grid;
 	gap: 6px;
 	margin-top: 12px;
-	padding-block: 10px 12px;
+	padding-block: 8px 10px;
 	border-top: 1px solid var(--rule);
 	font-size: 0.875rem;
 }
@@ -723,9 +773,148 @@ summary {
 	font-size: 0.9375rem;
 	color: var(--mute);
 }
-@media (min-width: 1100px) {
-	.quote {
-		border-top: 0;
-		padding-top: 4px;
+
+/* the quiz lifts its own small horizon: a dawn glow that rises with each answer */
+.quiz-live {
+	position: relative;
+	isolation: isolate;
+}
+.lift {
+	position: absolute;
+	inset: auto -12px 0;
+	z-index: -1;
+	height: calc(var(--lift, 0) * 100%);
+	background: radial-gradient(
+		ellipse 50% 100% at 50% 100%,
+		color-mix(in oklab, var(--K3) 40%, transparent),
+		transparent 75%
+	);
+	transition: height 1.2s var(--ease-out);
+	pointer-events: none;
+}
+
+/* the last two weeks, under a game's name on hover */
+.game {
+	position: relative;
+}
+.hover-ticks {
+	position: absolute;
+	left: 24px;
+	bottom: 4px;
+	display: flex;
+	align-items: flex-end;
+	gap: 2px;
+	opacity: 0;
+	translate: 0 3px;
+	transition:
+		opacity 0.2s,
+		translate 0.3s var(--ease-out);
+	pointer-events: none;
+}
+.hover-ticks .tick {
+	width: 4px;
+	height: 2px;
+}
+.hover-ticks .tick.on {
+	height: 6px;
+}
+@media (hover: hover) {
+	.game:hover .hover-ticks,
+	.game:focus-within .hover-ticks {
+		opacity: 1;
+		translate: 0 0;
+	}
+}
+
+/* a mark lights with a short swell when a game is opened */
+@media (prefers-reduced-motion: no-preference) {
+	.mark.lit {
+		animation: light 0.6s var(--ease-out);
+	}
+}
+@keyframes light {
+	from {
+		scale: 1.6;
+		box-shadow: 0 1px 14px color-mix(in oklab, var(--lit) 80%, transparent);
+	}
+}
+
+/* the weather line: the whole line is the link */
+.wx {
+	text-decoration: none;
+}
+.wx:hover {
+	text-decoration: underline;
+	text-decoration-color: color-mix(in oklab, currentColor 60%, transparent);
+}
+
+/* about */
+.link {
+	padding: 0;
+	background: none;
+	border: 0;
+	font: inherit;
+	color: inherit;
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.2em;
+	text-decoration-color: color-mix(in oklab, currentColor 45%, transparent);
+	cursor: pointer;
+}
+.foot .link,
+.foot a {
+	/* a taller hit area without a taller line */
+	padding-block: 10px;
+	margin-block: -10px;
+}
+.about {
+	inset: auto 16px 16px auto;
+	width: min(34rem, calc(100% - 32px));
+	max-height: calc(100dvh - 32px);
+	overflow: auto;
+	padding: 20px 22px 12px;
+	color: var(--ink);
+	background: var(--ground);
+	border: 1px solid var(--rule);
+	border-radius: 12px;
+	box-shadow: 0 12px 40px -12px rgb(0 0 0 / 0.35);
+	font-size: 0.9375rem;
+}
+.about h2 {
+	margin-bottom: 8px;
+	font-size: 1.25rem;
+	font-weight: 500;
+}
+.about p + p {
+	margin-top: 0.7em;
+}
+.about .close {
+	display: block;
+	min-height: 44px;
+	margin-left: auto;
+	font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+}
+.about::backdrop {
+	background: rgb(10 16 48 / 0.25);
+}
+@media (prefers-reduced-motion: no-preference) {
+	.about {
+		transition:
+			opacity 0.3s var(--ease-out),
+			translate 0.4s var(--ease-out),
+			display 0.4s allow-discrete,
+			overlay 0.4s allow-discrete;
+	}
+	.about:popover-open {
+		@starting-style {
+			opacity: 0;
+			translate: 0 12px;
+		}
+	}
+	.about:not(:popover-open) {
+		opacity: 0;
+		translate: 0 12px;
 	}
 }

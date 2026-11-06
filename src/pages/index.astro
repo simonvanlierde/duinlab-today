@@ -27,6 +27,8 @@ const { picture, word, quote, quiz, weather, onThisDay } = today;
 const fact = today.didYouKnow[0];
 const heading = longDate(today.date);
 const hasQuiz = !!quiz && quiz.questions.length > 0;
+const BUIENRADAR = "https://www.buienradar.nl/weer/den-haag/nl/2747373";
+const SOURCE = "https://github.com/simonvanlierde/duinlab-today";
 const what = `A small daily page: one picture, a few sourced facts, a word, a quiz and ${today.games.length} daily games.`;
 ---
 
@@ -55,10 +57,11 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 				{
 					weather && (
 						<li>
-							<span class="temp">{Math.round(weather.now.temperatureC)}&deg;</span>
-							{` ${weather.now.description}, ${Math.round(weather.today.maxC)}° / ${Math.round(weather.today.minC)}° · `}
-							<span title={windLine(weather.now)}>wind {weather.now.windFrom} {weather.now.windBeaufort}</span>
-							{rainLine(weather.rainNext2h) && ` · ${rainLine(weather.rainNext2h).toLowerCase()}`}
+							<a class="wx" href={BUIENRADAR} title={`${windLine(weather.now)}. Forecast and rain radar on Buienradar`}>
+								<span class="temp">{Math.round(weather.now.temperatureC)}&deg;</span>
+								{` ${weather.now.description}, ${Math.round(weather.today.maxC)}° / ${Math.round(weather.today.minC)}° · wind ${weather.now.windFrom} ${weather.now.windBeaufort}`}
+								{rainLine(weather.rainNext2h) && ` · ${rainLine(weather.rainNext2h).toLowerCase()}`}
+							</a>
 						</li>
 					)
 				}
@@ -74,6 +77,7 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 				</li>
 			</ul>
 		</div>
+		<span class="sun" aria-hidden="true"></span>
 		<svg class="dune" viewBox="0 0 390 56" preserveAspectRatio="none" aria-hidden="true">
 			<path d="M0 36 C50 26 90 16 150 24 S250 38 310 22 S370 14 390 20 V56 H0Z" opacity=".3" />
 			<path d="M0 46 C60 38 120 36 190 42 S320 46 390 36 V56 H0Z" />
@@ -136,17 +140,6 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 				)
 			}
 			{
-				onThisDay && (
-					<section class="sec" aria-labelledby="h-otd">
-						<Cue id="h-otd">On this day</Cue>
-						<p>
-							<strong class="year">{onThisDay.year}</strong> {onThisDay.text}{" "}
-							<span class="src"><a href={onThisDay.url}>{onThisDay.credit.name}</a></span>
-						</p>
-					</section>
-				)
-			}
-			{
 				hasQuiz && (
 					<section class="sec quiz" aria-labelledby="h-quiz">
 						<Quiz client:load quiz={quiz} />
@@ -171,6 +164,17 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 			}
 		</div>
 		{
+			onThisDay && (
+				<section class="sec otd" aria-labelledby="h-otd">
+					<Cue id="h-otd">On this day</Cue>
+					<p>
+						<strong class="year">{onThisDay.year}</strong> {onThisDay.text}{" "}
+						<span class="src"><a href={onThisDay.url}>{onThisDay.credit.name}</a></span>
+					</p>
+				</section>
+			)
+		}
+		{
 			quote && (
 				<figure class="quote">
 					<blockquote>&ldquo;{quote.text}&rdquo;</blockquote>
@@ -185,9 +189,32 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 
 	<footer class="wrap foot">
 		<p class="mute small">
-			The day turns over at midnight in Amsterdam. Played marks stay in this browser.{" "}
-			{weather && <>Weather by <a href={weather.credit.url}>{weather.credit.name}</a>.{" "}</>}
-			<a href="/today.json">today.json</a>
+			The day turns over at midnight in Amsterdam.{" "}
+			<button type="button" class="link" popovertarget="about">About</button> &middot;{" "}
+			<a href={SOURCE}>Source</a> (MIT)
 		</p>
 	</footer>
+
+	<div id="about" popover class="about" aria-labelledby="about-h">
+		<h2 id="about-h">About this page</h2>
+		<p>
+			A small daily paper for two people in The Hague, public for anyone who finds it. One picture, a few
+			facts, a word, a quiz and {today.games.length} games, new at midnight Amsterdam time.
+		</p>
+		<p>
+			Nothing personal leaves your browser: played marks, streaks and quiz answers stay in its local storage.
+			No accounts, no cookies, no tracking.
+		</p>
+		<p>
+			Every fact comes from a source and links to it: Wikipedia, Wiktionary, NASA APOD, The Met, Open Trivia DB
+			(CC BY-SA 4.0), ZenQuotes and Open-Meteo{weather && <> (<a href={weather.credit.url}>credit</a>)</>}. The sky
+			follows the sun over The Hague, worked out on the page. The weather line links to{" "}
+			<a href={BUIENRADAR}>Buienradar</a>.
+		</p>
+		<p>
+			Code: <a href={SOURCE}>github.com/simonvanlierde/duinlab-today</a>, MIT licence. The day's data as JSON:{" "}
+			<a href="/today.json">today.json</a>.
+		</p>
+		<button type="button" class="link close" popovertarget="about" popovertargetaction="hide">Close</button>
+	</div>
 </Base>

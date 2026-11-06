@@ -191,3 +191,16 @@ test.describe("without JavaScript", () => {
 		await expect(page.locator(".quiz-static details")).not.toHaveCount(0);
 	});
 });
+
+test("the about panel opens, links the source, and closes", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await expect(page.locator(".wx")).toHaveAttribute("href", /buienradar\.nl/);
+	await page.getByRole("button", { name: "About" }).click();
+	const about = page.locator("#about");
+	await expect(about).toBeVisible();
+	await expect(about.getByRole("link", { name: /github/ })).toBeVisible();
+	await about.getByRole("button", { name: "Close" }).click();
+	await expect(about).toBeHidden();
+});

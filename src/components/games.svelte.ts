@@ -9,7 +9,8 @@ export function amsterdamDay(d = new Date()): string {
 	}).format(d);
 }
 
-function shift(day: string, by: number): string {
+/** The YYYY-MM-DD day `by` days after `day`. */
+export function shift(day: string, by: number): string {
 	const d = new Date(`${day}T12:00:00Z`);
 	d.setUTCDate(d.getUTCDate() + by);
 	return d.toISOString().slice(0, 10);
@@ -66,6 +67,7 @@ function syncSky() {
 	const root = document.documentElement;
 	if (!store.off && allPlayed()) root.setAttribute("data-whiteout", "");
 	else root.removeAttribute("data-whiteout");
+	document.dispatchEvent(new Event("sky"));
 }
 
 let wired = false;

@@ -53,6 +53,11 @@ const done = $derived(live && allPlayed());
 				<span class="label">{g.name}</span>
 				<span class="sr">{live ? (played ? ", played" : ", not yet") : ""} (opens in a new tab)</span>
 			</a>
+			{#if live}
+				<span class="hover-ticks" aria-hidden="true">
+					{#each ticks(g.id) as on, i (i)}<i class="tick" class:on></i>{/each}
+				</span>
+			{/if}
 			{#if live && n > 0}
 				<span class="streak" title={`${n} day streak`}>
 					<span class="figure">{n}</span><span class="sr"> day streak</span>
