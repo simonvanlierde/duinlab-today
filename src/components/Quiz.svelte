@@ -1,5 +1,5 @@
 <script lang="ts">
-import { onMount } from "svelte";
+import { onMount, tick } from "svelte";
 import type { Quiz } from "../lib/types";
 import { amsterdamDay, shift } from "./games.svelte";
 
@@ -20,6 +20,10 @@ let picks = $state<(number | null)[]>([]);
 let at = $state(0);
 /** Days on which every question was answered, for the streak. */
 let done = $state<string[]>([]);
+/** Saved picks belong to these questions; a rebuilt day can bring new ones. */
+const sig = $derived(quiz.questions.map((q) => q.question).join("\n"));
+let nextBtn = $state<HTMLButtonElement>();
+let top = $state<HTMLElement>();
 
 onMount(() => {
 	picks = quiz.questions.map(() => null);
@@ -27,7 +31,11 @@ onMount(() => {
 		const saved = JSON.parse(localStorage.getItem(KEY) ?? "null");
 		if (Array.isArray(saved?.done))
 			done = saved.done.filter((d: unknown) => typeof d === "string");
-		if (saved?.day === amsterdamDay() && Array.isArray(saved.picks))
+		if (
+			saved?.day === amsterdamDay() &&
+			saved.sig === sig &&
+			Array.isArray(saved.picks)
+		)
 			picks = picks.map((_, i) =>
 				typeof saved.picks[i] === "number" ? saved.picks[i] : null,
 			);
@@ -38,7 +46,7 @@ onMount(() => {
 	at = open === -1 ? total : open;
 });
 
-function pick(i: number) {
+async function pick(i: number) {
 	if (picks[at] !== null && picks[at] !== undefined) return;
 	picks[at] = i;
 	const day = amsterdamDay();
@@ -48,10 +56,19 @@ function pick(i: number) {
 		const score = picks.filter(
 			(p, j) => p === quiz.questions[j].correct,
 		).length;
-		localStorage.setItem(KEY, JSON.stringify({ day, picks, done, score }));
+		localStorage.setItem(KEY, JSON.stringify({ day, sig, picks, done, score }));
 	} catch {
 		// nothing to keep then
 	}
+	await tick();
+	nextBtn?.focus();
+}
+
+/** Keyboard focus follows the quiz: to the next question, or to the score. */
+async function next() {
+	at++;
+	await tick();
+	top?.focus();
 }
 
 /** Consecutive days with the whole quiz answered, ending today or yesterday. */
@@ -89,7 +106,7 @@ const score = $derived(
 		{#if at < total}<span class="qn">{at + 1} of {total}</span>{/if}
 	</h2>
 	{#if q}
-		<p class="q">{q.question}</p>
+		<p class="q" tabindex="-1" bind:this={top}>{q.question}</p>
 		<ul class="answers plain" class:two={q.answers.length === 2}>
 			{#each q.answers as a, i (i)}
 				<li>
@@ -98,7 +115,7 @@ const score = $derived(
 						class="answer"
 						class:right={chosen !== null && i === q.correct}
 						class:wrong={chosen === i && i !== q.correct}
-						disabled={chosen !== null}
+						aria-disabled={chosen !== null}
 						onclick={() => pick(i)}
 					>
 						{a}
@@ -111,13 +128,13 @@ const score = $derived(
 		<p class="quiz-foot" aria-live="polite">
 			{#if chosen !== null}
 				<span>{chosen === q.correct ? "Right." : `It was ${q.answers[q.correct]}.`}</span>
-				<button type="button" class="next" onclick={() => at++}>{at + 1 < total ? "Next question" : "See the score"}</button>
+				<button type="button" class="next" bind:this={nextBtn} onclick={next}>{at + 1 < total ? "Next question" : "See the score"}</button>
 			{:else}
 				<a class="src" href={quiz.credit.url}>{quiz.credit.name}</a>
 			{/if}
 		</p>
 	{:else}
-		<p class="score"><span class="figure">{score}</span> of {total}. {LINES[Math.round((score / total) * 5)]}</p>
+		<p class="score" tabindex="-1" bind:this={top}><span class="figure">{score}</span> of {total}. {LINES[Math.round((score / total) * 5)]}</p>
 		<p class="quiz-foot">
 			<span class="mute">
 				{streak > 1 ? `${streak} days in a row.` : "Day 1 of a streak."}

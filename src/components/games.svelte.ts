@@ -1,4 +1,4 @@
-// Played-today state, kept in this browser only. Shared by the board and the list islands.
+// Played-today state, kept in this browser only: the games island reads and writes it.
 export const KEY = "today.games.v1";
 const KEEP_DAYS = 60;
 
@@ -62,7 +62,7 @@ export function allPlayed(): boolean {
 	return store.ids.length > 0 && store.ids.every((id) => isPlayed(id));
 }
 
-/** All ten played: the sky rises to full day for the rest of the day. */
+/** Every game played: the sky rises to full day for the rest of the day. */
 function syncSky() {
 	const root = document.documentElement;
 	if (!store.off && allPlayed()) root.setAttribute("data-whiteout", "");

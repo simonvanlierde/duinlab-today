@@ -1,5 +1,5 @@
 <script lang="ts">
-import { onMount } from "svelte";
+import { onMount, tick } from "svelte";
 import type { Game } from "../lib/types";
 import {
 	allPlayed,
@@ -24,6 +24,22 @@ const done = $derived(live && allPlayed());
 /** Phones fold the board to one line once all are played; this opens it again. */
 let unfolded = $state(false);
 let shared = $state("");
+let unfoldBtn = $state<HTMLButtonElement>();
+let board = $state<HTMLOListElement>();
+
+/** Opening the last game folds the board away; keyboard focus moves to the unfold button. */
+async function open(id: string) {
+	mark(id);
+	await tick();
+	if (done && !unfolded && board && getComputedStyle(board).display === "none")
+		unfoldBtn?.focus();
+}
+
+async function unfold() {
+	unfolded = true;
+	await tick();
+	board?.querySelector("a")?.focus();
+}
 
 /** One line to paste to each other: the quiz score and the games played today. */
 async function share() {
@@ -43,6 +59,8 @@ async function share() {
 	}).format(new Date());
 	const played = games.filter((g) => isPlayed(g.id)).map((g) => g.name);
 	const text = `today.duinlab.nl, ${day}${quiz} · games ${played.length}/${games.length}${played.length ? `: ${played.join(", ")}` : ""}`;
+	shared = "";
+	await tick();
 	try {
 		if (navigator.share && matchMedia("(pointer: coarse)").matches) {
 			await navigator.share({ text });
@@ -50,8 +68,10 @@ async function share() {
 		}
 		await navigator.clipboard.writeText(text);
 		shared = "Copied. Paste it to someone.";
-	} catch {
-		shared = text;
+	} catch (e) {
+		// the person closed the share sheet
+		if (e instanceof DOMException && e.name === "AbortError") return;
+		shared = `Copy this: ${text}`;
 	}
 }
 </script>
@@ -70,9 +90,9 @@ async function share() {
 </div>
 
 {#if done && !unfolded}
-	<button type="button" class="link unfold" onclick={() => (unfolded = true)}>Show the board</button>
+	<button type="button" class="link unfold" bind:this={unfoldBtn} onclick={unfold}>Show the board</button>
 {/if}
-<ol class="games" class:off={!live} class:folded={done && !unfolded}>
+<ol class="games" bind:this={board} class:off={!live} class:folded={done && !unfolded}>
 	{#each games as g (g.id)}
 		{@const played = live && isPlayed(g.id)}
 		{@const n = live ? streak(g.id) : 0}
@@ -83,8 +103,8 @@ async function share() {
 				rel="noopener"
 				class="name"
 				title={g.blurb}
-				onclick={() => mark(g.id)}
-				onauxclick={() => mark(g.id)}
+				onclick={() => open(g.id)}
+				onauxclick={(e) => e.button === 1 && open(g.id)}
 			>
 				<span class="mark" class:lit={played} aria-hidden="true"></span>
 				<span class="label">{g.name}</span>
@@ -115,7 +135,8 @@ async function share() {
 				{@const n = streak(g.id)}
 				<li class="streak-row">
 					<span class="streak-name">{g.name}</span>
-					<span class="ticks" aria-label={`${n} day streak`}>
+					<span class="sr">{n} day streak</span>
+					<span class="ticks" aria-hidden="true">
 						{#each ticks(g.id) as on, i (i)}
 							<i class="tick" class:on></i>
 						{/each}
@@ -131,5 +152,5 @@ async function share() {
 		<button type="button" class="link share" onclick={share}>Share today</button>
 	{/if}
 	</div>
-	{#if shared}<p class="shared" aria-live="polite">{shared}</p>{/if}
+	<p class="shared" aria-live="polite">{shared}</p>
 {/if}
