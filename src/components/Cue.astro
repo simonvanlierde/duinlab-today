@@ -1,0 +1,12 @@
+---
+interface Props {
+	n?: number;
+	id?: string;
+}
+const { n, id } = Astro.props;
+---
+
+<h2 class="cue" id={id}>
+	{n !== undefined && <span class="num">{n}</span>}
+	<span class="cue-text"><slot /></span>
+</h2>

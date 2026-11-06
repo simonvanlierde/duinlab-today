@@ -1,16 +1,226 @@
 ---
+import Cue from "../components/Cue.astro";
+import GamesBoard from "../components/GamesBoard.svelte";
+import GamesList from "../components/GamesList.svelte";
+import Horizon from "../components/Horizon.astro";
+import {
+	clock,
+	longDate,
+	moonPath,
+	numbering,
+	PHASE_LABEL,
+	PHASE_LINE,
+	PHASES,
+	phaseAt,
+	rainLine,
+	type SkyPhase,
+	saturation,
+	windLine,
+} from "../components/sky";
+import Base from "../layouts/Base.astro";
+import { getToday } from "../lib/today";
+
+const now = new Date();
+const today = await getToday(now);
+const asked = Astro.url.searchParams.get("phase");
+const forced = PHASES.includes(asked as SkyPhase);
+const phase = forced ? (asked as SkyPhase) : phaseAt(today.sun, now.getTime());
+const n = numbering(today);
+const { picture, word, quote, quiz, weather, onThisDay } = today;
+const heading = longDate(today.date);
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Base
+	today={today}
+	phase={phase}
+	forced={forced}
+	saturation={saturation(weather)}
+	title={`today.duinlab.nl - ${heading}`}
+	description="A small daily page: one picture, a few sourced facts, a word, a quiz and ten daily games."
+>
+	<header class="band b0">
+		<div class="wrap">
+			<p class="topline">
+				<span>today.duinlab.nl</span>
+				<span><span data-clock>{clock(now)}</span> &middot; <span data-phase-label>{PHASE_LABEL[phase]}</span></span>
+			</p>
+			<div class="mast">
+				<div>
+					<h1>{heading}</h1>
+					<p class="greet" data-phase-line>{PHASE_LINE[phase]}</p>
+				</div>
+				<div class="mast-side">
+					<p class="what-is">
+						A small daily page: one picture, a few sourced facts, a word, a quiz and {today.games.length} daily games.
+					</p>
+					<p class="sky-facts">
+						<span>sun up <b>{clock(today.sun.sunrise)}</b> &middot; down <b>{clock(today.sun.sunset)}</b></span>
+						<span class="moon">
+							<svg viewBox="0 0 18 18" width="16" height="16" aria-hidden="true">
+								<circle cx="9" cy="9" r="8.5" fill="none" stroke="currentColor" stroke-width="1" />
+								<path d={moonPath(today.moon, 9)} fill="currentColor" />
+							</svg>
+							{today.moon.name}
+						</span>
+					</p>
+				</div>
+			</div>
+		</div>
+	</header>
+	<Horizon from={0} dune />
+
+	<div class="band b1">
+		<div class="wrap cols cols-board">
+			{
+				today.games.length > 0 && (
+					<div class="board-wrap">
+						<GamesBoard client:load games={today.games} />
+					</div>
+				)
+			}
+			{
+				weather && (
+					<section class="weather" aria-labelledby="weather-h">
+						<Cue id="weather-h">Weather, The Hague</Cue>
+						<p class="now">
+							<span class="temp">{Math.round(weather.now.temperatureC)}&deg;</span> {weather.now.description}
+						</p>
+						<ul class="plain">
+							<li>High {Math.round(weather.today.maxC)}&deg;, low {Math.round(weather.today.minC)}&deg;, up to {weather.today.rainChanceMax}% chance of rain</li>
+							<li>{windLine(weather.now)}</li>
+							{rainLine(weather.rainNext2h) && <li>{rainLine(weather.rainNext2h)}</li>}
+						</ul>
+						<p class="src"><a href={weather.credit.url}>{weather.credit.name}</a></p>
+					</section>
+				)
+			}
+		</div>
+	</div>
+	<Horizon from={1} />
+
+	<main>
+		<div class="band b2">
+			<div class="wrap cols">
+				{
+					picture && (
+						<section class="sec" aria-labelledby="h-picture">
+							<Cue n={n.picture} id="h-picture">Picture</Cue>
+							<figure>
+								<img
+									src={picture.imageUrl}
+									alt={picture.alt}
+									width={picture.width ?? undefined}
+									height={picture.height ?? undefined}
+									fetchpriority="high"
+								/>
+								<figcaption>
+									<a href={picture.pageUrl}><em>{picture.title}</em></a>
+									{picture.by && <>, {picture.by}</>}
+									{picture.date && <>, {picture.date}</>}.
+									<span class="src"><a href={picture.credit.url}>{picture.credit.name}</a></span>
+								</figcaption>
+							</figure>
+						</section>
+					)
+				}
+				<div class="stack">
+					{
+						today.didYouKnow.length > 0 && (
+							<section class="sec" aria-labelledby="h-dyk">
+								<Cue n={n.didYouKnow} id="h-dyk">Did you know</Cue>
+								<ul class="plain facts">
+									{today.didYouKnow.map((f) => (
+										<li>
+											<span class="that">&hellip; that</span> {f.text}{" "}
+											<span class="src"><a href={f.url}>{f.credit.name}</a></span>
+										</li>
+									))}
+								</ul>
+							</section>
+						)
+					}
+					{
+						word && (
+							<section class="sec" aria-labelledby="h-word">
+								<Cue n={n.word} id="h-word">Word</Cue>
+								<p class="word">
+									<strong lang="en">{word.word}</strong>
+									{word.partOfSpeech && <em class="pos">{word.partOfSpeech}</em>}
+								</p>
+								<p>
+									{word.gloss}{" "}
+									<span class="src"><a href={word.url}>{word.credit.name}</a></span>
+								</p>
+							</section>
+						)
+					}
+				</div>
+			</div>
+		</div>
+		<Horizon from={2} />
+
+		<div class="band b3">
+			<div class="wrap cols">
+				{
+					quiz && quiz.questions.length > 0 && (
+						<section class="sec" aria-labelledby="h-quiz">
+							<Cue n={n.quiz} id="h-quiz">Quiz</Cue>
+							<ol class="quiz">
+								{quiz.questions.map((q) => (
+									<li>
+										<p class="q">{q.question}</p>
+										<p class="opts">{q.answers.join(" · ")}</p>
+										<details>
+											<summary>Show the answer</summary>
+											<p class="ans">{q.answers[q.correct]}</p>
+										</details>
+									</li>
+								))}
+							</ol>
+							<p class="src"><a href={quiz.credit.url}>{quiz.credit.name}</a></p>
+						</section>
+					)
+				}
+				{
+					today.games.length > 0 && (
+						<section class="sec" aria-labelledby="h-games">
+							<Cue n={n.games} id="h-games">Games</Cue>
+							<GamesList client:load games={today.games} />
+						</section>
+					)
+				}
+			</div>
+		</div>
+		<Horizon from={3} />
+
+		<div class="band b4">
+			<div class="wrap cols">
+				{
+					onThisDay && (
+						<section class="sec" aria-labelledby="h-otd">
+							<Cue n={n.onThisDay} id="h-otd">On this day</Cue>
+							<p class="otd">
+								<strong class="year">{onThisDay.year}</strong> {onThisDay.text}{" "}
+								<span class="src"><a href={onThisDay.url}>{onThisDay.credit.name}</a></span>
+							</p>
+						</section>
+					)
+				}
+				{
+					quote && (
+						<figure class="quote">
+							<blockquote>{quote.text}</blockquote>
+							<figcaption>
+								{quote.author} <span class="src"><a href={quote.credit.url}>{quote.credit.name}</a></span>
+							</figcaption>
+						</figure>
+					)
+				}
+			</div>
+			<footer class="wrap foot">
+				<p>The day turns over at midnight in Amsterdam. Played marks and streaks stay in this browser.</p>
+				<p><a href="/today.json">today.json</a></p>
+			</footer>
+		</div>
+	</main>
+</Base>

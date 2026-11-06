@@ -1,0 +1,98 @@
+---
+import "../styles/global.css";
+import {
+	PHASE_LABEL,
+	PHASE_LINE,
+	phaseAt,
+	type SkyPhase,
+} from "../components/sky";
+import type { Today } from "../lib/types";
+
+interface Props {
+	today: Today;
+	phase: SkyPhase;
+	/** `?phase=` was given: the page keeps that sky and the clock does not move it. */
+	forced: boolean;
+	saturation: number;
+	title: string;
+	description: string;
+}
+const { today, phase, forced, saturation, title, description } = Astro.props;
+
+// Same rule as the server: the phase follows the browser clock, and the all-played
+// white-out is applied before first paint so a reload does not flash the night sky.
+const boot = `(${(
+	(cfg: {
+		sun: Today["sun"];
+		forced: boolean;
+		labels: Record<string, string>;
+		lines: Record<string, string>;
+		ids: string[];
+		key: string;
+		phaseAt: (sun: Today["sun"], now: number) => string;
+	}) => {
+		const root = document.documentElement;
+		root.classList.add("js");
+		const fmt = new Intl.DateTimeFormat("en-GB", {
+			timeZone: "Europe/Amsterdam",
+			hour: "2-digit",
+			minute: "2-digit",
+			hour12: false,
+		});
+		const paint = () => {
+			const now = new Date();
+			for (const el of document.querySelectorAll("[data-clock]"))
+				el.textContent = fmt.format(now);
+			if (cfg.forced) return;
+			const p = cfg.phaseAt(cfg.sun, now.getTime());
+			root.dataset.phase = p;
+			for (const el of document.querySelectorAll("[data-phase-label]"))
+				el.textContent = cfg.labels[p];
+			for (const el of document.querySelectorAll("[data-phase-line]"))
+				el.textContent = cfg.lines[p];
+		};
+		try {
+			const day = new Intl.DateTimeFormat("en-CA", {
+				timeZone: "Europe/Amsterdam",
+			}).format(new Date());
+			const saved = JSON.parse(localStorage.getItem(cfg.key) ?? "{}");
+			if (
+				cfg.ids.length > 0 &&
+				cfg.ids.every((id) => saved[id]?.includes(day))
+			) {
+				root.setAttribute("data-whiteout", "");
+			}
+		} catch {
+			// no storage: no white-out
+		}
+		paint();
+		document.addEventListener("DOMContentLoaded", paint);
+		setInterval(paint, 30000);
+	}
+).toString()})(${JSON.stringify({
+	sun: today.sun,
+	forced,
+	labels: PHASE_LABEL,
+	lines: PHASE_LINE,
+	ids: today.games.map((g) => g.id),
+	key: "today.games.v1",
+	phaseAt: "__PHASE_AT__",
+}).replace('"__PHASE_AT__"', phaseAt.toString())})`;
+---
+
+<!doctype html>
+<html lang="en" data-phase={phase} style={`--sat:${saturation}`}>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="preload" href="/fonts/literata.woff2" as="font" type="font/woff2" crossorigin />
+		<link rel="preload" href="/fonts/barlow-600.woff2" as="font" type="font/woff2" crossorigin />
+		<script is:inline set:html={boot}></script>
+	</head>
+	<body>
+		<slot />
+	</body>
+</html>
