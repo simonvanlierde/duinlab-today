@@ -1,12 +1,10 @@
 ---
 interface Props {
-	n?: number;
 	id?: string;
+	/** Heading for screen readers only, where the content names itself. */
+	sr?: boolean;
 }
-const { n, id } = Astro.props;
+const { id, sr = false } = Astro.props;
 ---
 
-<h2 class="cue" id={id}>
-	{n !== undefined && <span class="num">{n}</span>}
-	<span class="cue-text"><slot /></span>
-</h2>
+<h2 class:list={["cue", { sr }]} id={id}><slot /></h2>

@@ -1,4 +1,4 @@
-import type { Moon, Sun, Today, Weather } from "../lib/types";
+import type { Moon, Sun, Weather } from "../lib/types";
 
 export const PHASES = ["night", "first-light", "dawn", "day", "dusk"] as const;
 export type SkyPhase = (typeof PHASES)[number];
@@ -65,11 +65,11 @@ export function longDate(day: string): string {
 		.replace(",", "");
 }
 
-/** Chroma multiplier for the sky: full colour when clear, mostly grey when overcast. */
+/** Chroma multiplier for the sky: full colour when clear, a greyer sky (not a grey one) when overcast. */
 export function saturation(weather: Weather | null): number {
 	if (!weather) return 1;
 	const cover = Math.min(100, Math.max(0, weather.now.cloudCover)) / 100;
-	return Number((1 - 0.7 * cover).toFixed(2));
+	return Number((1 - 0.35 * cover).toFixed(2));
 }
 
 const BEAUFORT = [
@@ -109,22 +109,6 @@ export function rainLine(steps: Weather["rainNext2h"]): string {
 	if (steps.length === 0) return "";
 	const wet = steps.find((s) => s.mm > 0);
 	return wet ? `Dry until ${wet.time}` : "Dry for the next two hours";
-}
-
-/** The sections that exist, numbered in reading order with no gaps. */
-export function numbering(t: Today): Record<string, number> {
-	const present: [string, boolean][] = [
-		["picture", !!t.picture],
-		["didYouKnow", t.didYouKnow.length > 0],
-		["word", !!t.word],
-		["quiz", !!t.quiz && t.quiz.questions.length > 0],
-		["games", t.games.length > 0],
-		["onThisDay", !!t.onThisDay],
-	];
-	const out: Record<string, number> = {};
-	let n = 0;
-	for (const [key, ok] of present) if (ok) out[key] = ++n;
-	return out;
 }
 
 /** SVG path for the lit part of the moon disc; `r` is the radius, centred on (r, r). */

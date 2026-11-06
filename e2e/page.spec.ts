@@ -24,21 +24,49 @@ test("renders the sky, the sections and the ten games", async ({ page }) => {
 		"data-phase",
 		/night|first-light|dawn|day|dusk/,
 	);
-	const labels = await page.locator(".cue .num").allTextContents();
-	expect(labels.map(Number)).toEqual(labels.map((_, i) => i + 1)); // numbered 1..n, no gaps
 	await expect(page.locator(".games .game")).toHaveCount(10);
-	await expect(page.locator(".dots .dot")).toHaveCount(10);
 });
 
-test("the board is visible without scrolling and links to the rows", async ({
+test("the games are visible without scrolling", async ({ page }) => {
+	await page.goto("/");
+	const box = await page.locator(".games").boundingBox();
+	const view = page.viewportSize();
+	expect(box && view && box.y + box.height <= view.height).toBe(true);
+});
+
+test("the desktop page fits one screen", async ({ page }) => {
+	for (const [width, height] of [
+		[1440, 900],
+		[1280, 800],
+	]) {
+		await page.setViewportSize({ width, height });
+		await page.goto("/");
+		const tall = await page.evaluate(
+			() => document.documentElement.scrollHeight,
+		);
+		expect(tall).toBeLessThanOrEqual(height);
+	}
+});
+
+test("the quiz asks one question at a time and keeps the score", async ({
 	page,
 }) => {
 	await page.goto("/");
-	const box = await page.locator(".board").boundingBox();
-	const view = page.viewportSize();
-	expect(box && view && box.y + box.height <= view.height).toBe(true);
-	await page.locator(".dots .dot").nth(6).click();
-	await expect(page).toHaveURL(/#game-/);
+	const quiz = page.locator(".quiz-live");
+	// the server-rendered buttons are inert until the island hydrates
+	await page.locator("astro-island:not([ssr]) .quiz-live").waitFor();
+	await expect(quiz.locator(".q")).toHaveCount(1);
+	const total = Number(
+		(await quiz.locator(".qn").textContent())?.match(/of (\d+)/)?.[1],
+	);
+	for (let i = 0; i < total; i++) {
+		await quiz.locator(".answer").first().click();
+		await expect(quiz.locator(".answer").first()).toBeDisabled();
+		await quiz.locator(".next").click();
+	}
+	await expect(quiz.locator(".score")).toContainText(`of ${total}.`);
+	await page.reload();
+	await expect(quiz.locator(".score")).toContainText(`of ${total}.`);
 });
 
 test("opening a game marks it, un-mark undoes it, and state survives a reload", async ({
@@ -56,15 +84,18 @@ test("opening a game marks it, un-mark undoes it, and state survives a reload", 
 	await play(page, "Wordle");
 	await expect(page.locator(".count")).toContainText("1 of 10 played");
 	const row = page.locator(".game", { hasText: "Wordle" });
-	await expect(row.locator(".state")).toHaveText("played");
+	await expect(row.locator(".name")).toContainText(", played");
 	await expect(row.locator(".streak .figure")).toHaveText("1");
 
 	await page.reload();
 	await expect(page.locator(".count")).toContainText("1 of 10 played");
 
-	await row.getByRole("button", { name: /un-mark/i }).click();
+	await page.locator(".streaks summary").click();
+	await page
+		.getByRole("button", { name: "Un-mark NYT Wordle as played" })
+		.click();
 	await expect(page.locator(".count")).toContainText("0 of 10 played");
-	await expect(row.locator(".state")).toHaveText("not yet");
+	await expect(row.locator(".name")).toContainText(", not yet");
 });
 
 test("all ten played lights the white-out, and it persists", async ({
@@ -82,10 +113,10 @@ test("all ten played lights the white-out, and it persists", async ({
 	await expect(page.locator("html")).toHaveAttribute("data-whiteout", "");
 	await page.reload();
 	await expect(page.locator("html")).toHaveAttribute("data-whiteout", "");
+	await page.locator(".streaks summary").click();
 	await page
-		.locator(".game")
-		.first()
 		.getByRole("button", { name: /un-mark/i })
+		.first()
 		.click();
 	await expect(page.locator("html")).not.toHaveAttribute("data-whiteout", "");
 });
@@ -122,7 +153,7 @@ test("without localStorage the games are plain links and nothing breaks", async 
 	await page.goto("/");
 	await expect(page.locator(".games .name")).toHaveCount(10);
 	await expect(page.locator(".count")).toContainText("10 daily games");
-	await expect(page.locator(".state:visible")).toHaveCount(0);
+	await expect(page.locator(".games .streak")).toHaveCount(0);
 	expect(errors).toEqual([]);
 });
 
@@ -157,6 +188,6 @@ test.describe("without JavaScript", () => {
 		const links = page.locator(".games a.name");
 		await expect(links).toHaveCount(10);
 		await expect(links.first()).toHaveAttribute("href", /^https:/);
-		await expect(page.locator(".state:visible")).toHaveCount(0);
+		await expect(page.locator(".quiz-static details")).not.toHaveCount(0);
 	});
 });
