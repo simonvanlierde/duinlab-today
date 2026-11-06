@@ -1,6 +1,6 @@
 import type { Game } from "./types";
 
-export const games: Game[] = [
+const list: Game[] = [
 	{
 		id: "factmap",
 		name: "Factmap",
@@ -62,3 +62,8 @@ export const games: Game[] = [
 		blurb: "Find the mystery animal by how closely related your guesses are.",
 	},
 ];
+
+/** Alphabetical, ignoring the "NYT " prefix, so a game is easy to find. */
+export const games: Game[] = list.toSorted((a, b) =>
+	a.name.replace(/^NYT /, "").localeCompare(b.name.replace(/^NYT /, "")),
+);

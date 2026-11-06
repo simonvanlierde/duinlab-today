@@ -45,7 +45,10 @@ function pick(i: number) {
 	if (picks.every((p) => p !== null) && !done.includes(day))
 		done = [...done, day].slice(-60);
 	try {
-		localStorage.setItem(KEY, JSON.stringify({ day, picks, done }));
+		const score = picks.filter(
+			(p, j) => p === quiz.questions[j].correct,
+		).length;
+		localStorage.setItem(KEY, JSON.stringify({ day, picks, done, score }));
 	} catch {
 		// nothing to keep then
 	}
@@ -63,6 +66,14 @@ const streak = $derived.by(() => {
 	return n;
 });
 const answered = $derived(picks.filter((p) => p !== null).length);
+
+// the page's end line needs to know the quiz is finished
+$effect(() => {
+	document.documentElement.toggleAttribute(
+		"data-quiz-done",
+		total > 0 && answered === total,
+	);
+});
 
 const q = $derived(quiz.questions[at]);
 const chosen = $derived(picks[at] ?? null);

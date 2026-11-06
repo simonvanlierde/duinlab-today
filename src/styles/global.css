@@ -628,9 +628,7 @@ summary {
 	color: var(--lit-text);
 }
 .first-visit {
-	display: flex;
-	align-items: center;
-	min-height: 44px;
+	margin-top: 10px;
 	font-size: 0.9375rem;
 	font-style: italic;
 	color: var(--mute);
@@ -916,5 +914,192 @@ summary {
 	.about:not(:popover-open) {
 		opacity: 0;
 		translate: 0 12px;
+	}
+}
+
+/* skip link: out of sight until focused */
+.skip {
+	position: absolute;
+	z-index: 10;
+	left: 16px;
+	top: -100px;
+	padding: 10px 14px;
+	background: var(--ground);
+	color: var(--ink);
+	border-radius: 6px;
+}
+.skip:focus {
+	top: 8px;
+}
+
+.occasion {
+	margin-top: 4px;
+	font-size: 0.9375rem;
+	color: #f4dcc8;
+}
+
+/* the count rolls to its new number */
+@property --n {
+	syntax: "<integer>";
+	inherits: false;
+	initial-value: 0;
+}
+.roll {
+	counter-reset: n var(--n);
+	transition: --n 0.8s var(--ease-out);
+}
+.roll::after {
+	content: counter(n);
+}
+@media (prefers-reduced-motion: reduce) {
+	.roll {
+		transition: none;
+	}
+}
+
+/* the board folds on phones once all ten are played */
+@media (max-width: 1099px) {
+	.games.folded {
+		display: none;
+	}
+}
+@media (min-width: 1100px) {
+	.unfold {
+		display: none;
+	}
+}
+.unfold,
+.share {
+	min-height: 44px;
+	font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+	font-weight: 600;
+	font-size: 0.9375rem;
+	letter-spacing: 0.04em;
+	color: var(--mute);
+}
+.games-foot {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: start;
+	justify-content: space-between;
+	gap: 0 16px;
+}
+.games-foot .streaks {
+	flex: 1 1 auto;
+}
+.shared {
+	font-size: 0.875rem;
+	color: var(--mute);
+	overflow-wrap: anywhere;
+}
+
+/* the end of the paper: every game played and the quiz done (or no quiz today) */
+.the-end {
+	display: none;
+	margin-top: 8px;
+	font-style: italic;
+	color: var(--mute);
+}
+:root[data-whiteout]:is([data-quiz-done], :not(:has(.quiz-live))) .the-end {
+	display: block;
+}
+
+/* the back dune drifts, slowly */
+@media (prefers-reduced-motion: no-preference) {
+	.dune path:first-child {
+		animation: drift 48s ease-in-out infinite alternate;
+	}
+}
+@keyframes drift {
+	to {
+		d: path("M0 30 C60 22 100 24 160 30 S260 34 320 24 S372 20 390 26 V56 H0Z");
+	}
+}
+
+/* the picture develops like a print */
+@media (prefers-reduced-motion: no-preference) {
+	.pic img {
+		animation: develop 1.6s var(--ease-out) both;
+	}
+}
+@keyframes develop {
+	from {
+		opacity: 0.25;
+		filter: saturate(0) brightness(1.25);
+	}
+}
+
+/* on short desktop screens the masthead gives the picture room */
+@media (min-width: 1100px) and (max-height: 840px) {
+	.sky {
+		--hz: 52px;
+	}
+	h1 {
+		font-size: 2.375rem;
+	}
+	.mast {
+		padding-top: 0;
+	}
+}
+
+/* about and 404 */
+.sky-slim .mast {
+	padding-top: 16px;
+}
+.prose {
+	max-width: calc(62ch + 64px);
+	padding-block: 16px 32px;
+}
+.prose h2 {
+	margin: 1.4em 0 0.3em;
+	font-size: 1.25rem;
+	font-weight: 500;
+}
+.prose p + p {
+	margin-top: 0.7em;
+}
+code {
+	font-size: 0.875em;
+}
+
+/* the paper on paper: one page, black on white, links spelled out */
+@media print {
+	:root {
+		--ground: #fff;
+		color-scheme: light;
+	}
+	.bar,
+	.skip,
+	.sun,
+	.dune,
+	.rail,
+	.quiz,
+	.the-end,
+	.sky::before,
+	.sky::after {
+		display: none;
+	}
+	.sky {
+		color: #000;
+		background: none;
+	}
+	.greet,
+	.strip,
+	.what,
+	.occasion {
+		color: #333;
+	}
+	.front {
+		grid-template-columns: 1fr 1fr;
+		grid-template-areas: "pic read" "otd quote";
+	}
+	.pic img {
+		max-height: 9cm;
+		animation: none;
+	}
+	.sec a[href^="http"]::after {
+		content: " (" attr(href) ")";
+		font-size: 0.75em;
+		overflow-wrap: anywhere;
 	}
 }

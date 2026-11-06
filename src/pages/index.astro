@@ -4,6 +4,7 @@ import Games from "../components/Games.svelte";
 import Quiz from "../components/Quiz.svelte";
 import {
 	clock,
+	daylight,
 	longDate,
 	moonPath,
 	PHASE_LABEL,
@@ -16,6 +17,8 @@ import {
 	windLine,
 } from "../components/sky";
 import Base from "../layouts/Base.astro";
+import { occasionLine } from "../lib/occasions";
+import { sunTimes } from "../lib/sky";
 import { getToday } from "../lib/today";
 
 const now = new Date();
@@ -28,7 +31,18 @@ const fact = today.didYouKnow[0];
 const heading = longDate(today.date);
 const hasQuiz = !!quiz && quiz.questions.length > 0;
 const BUIENRADAR = "https://www.buienradar.nl/weer/den-haag/nl/2747373";
-const SOURCE = "https://github.com/simonvanlierde/duinlab-today";
+const yesterday = new Date(`${today.date}T12:00:00Z`);
+yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+const light = daylight(
+	today.sun,
+	sunTimes(yesterday.toISOString().slice(0, 10)),
+);
+const tomorrow = new Date(`${today.date}T12:00:00Z`);
+tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+const nextSunrise = clock(
+	sunTimes(tomorrow.toISOString().slice(0, 10)).sunrise,
+);
+const occasion = occasionLine(today.date);
 const what = `A small daily page: one picture, a few sourced facts, a word, a quiz and ${today.games.length} daily games.`;
 ---
 
@@ -40,6 +54,7 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 	title={`today.duinlab.nl - ${heading}`}
 	description={what}
 >
+	<a class="skip" href="#paper">Skip to the paper</a>
 	<p class="bar">
 		<span class="wrap bar-in">
 			<span>today.duinlab.nl</span>
@@ -51,6 +66,7 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 			<div>
 				<h1>{heading}</h1>
 				<p class="greet" data-phase-line>{PHASE_LINE[phase]}</p>
+				{occasion && <p class="occasion">{occasion}</p>}
 			</div>
 			<ul class="plain strip">
 				<li class="what">{what}</li>
@@ -75,6 +91,7 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 						{today.moon.name}
 					</span>
 				</li>
+				<li>{light}</li>
 			</ul>
 		</div>
 		<span class="sun" aria-hidden="true"></span>
@@ -84,11 +101,14 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 		</svg>
 	</header>
 
-	<main class="wrap front">
+	<main class="wrap front" id="paper">
 		{
 			today.games.length > 0 && (
 				<section class="rail" aria-labelledby="h-games">
 					<Games client:load games={today.games} />
+					<p class="the-end" aria-live="polite">
+						That's the paper. The sun is back at {nextSunrise} tomorrow.
+					</p>
 				</section>
 			)
 		}
@@ -103,6 +123,7 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 							width={picture.width ?? undefined}
 							height={picture.height ?? undefined}
 							fetchpriority="high"
+							decoding="async"
 						/>
 						<figcaption>
 							<a href={picture.pageUrl}><em>{picture.title}</em></a>
@@ -189,32 +210,9 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 
 	<footer class="wrap foot">
 		<p class="mute small">
-			The day turns over at midnight in Amsterdam.{" "}
-			<button type="button" class="link" popovertarget="about">About</button> &middot;{" "}
-			<a href={SOURCE}>Source</a> (MIT)
+			The day turns over at midnight in Amsterdam. <a href="/about">About, privacy and sources</a> &middot;{" "}
+			<a href="https://github.com/simonvanlierde/duinlab-today">Source</a> (MIT) &middot; Simon van Lierde &middot;{" "}
+			<a href="https://duinlab.nl">duinlab.nl</a>
 		</p>
 	</footer>
-
-	<div id="about" popover class="about" aria-labelledby="about-h">
-		<h2 id="about-h">About this page</h2>
-		<p>
-			A small daily paper for two people in The Hague, public for anyone who finds it. One picture, a few
-			facts, a word, a quiz and {today.games.length} games, new at midnight Amsterdam time.
-		</p>
-		<p>
-			Nothing personal leaves your browser: played marks, streaks and quiz answers stay in its local storage.
-			No accounts, no cookies, no tracking.
-		</p>
-		<p>
-			Every fact comes from a source and links to it: Wikipedia, Wiktionary, NASA APOD, The Met, Open Trivia DB
-			(CC BY-SA 4.0), ZenQuotes and Open-Meteo{weather && <> (<a href={weather.credit.url}>credit</a>)</>}. The sky
-			follows the sun over The Hague, worked out on the page. The weather line links to{" "}
-			<a href={BUIENRADAR}>Buienradar</a>.
-		</p>
-		<p>
-			Code: <a href={SOURCE}>github.com/simonvanlierde/duinlab-today</a>, MIT licence. The day's data as JSON:{" "}
-			<a href="/today.json">today.json</a>.
-		</p>
-		<button type="button" class="link close" popovertarget="about" popovertargetaction="hide">Close</button>
-	</div>
 </Base>

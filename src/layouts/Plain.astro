@@ -1,0 +1,53 @@
+---
+import "../styles/global.css";
+import { PHASE_SUN, SKY, skyAt } from "../components/sky";
+
+interface Props {
+	title: string;
+	description: string;
+	/** The sky to show: day for the about page, night for a missing page. */
+	sky?: "day" | "night";
+}
+const { title, description, sky = "day" } = Astro.props;
+const s = skyAt(PHASE_SUN[sky].alt, true, SKY);
+const style = Object.entries(s.vars)
+	.map(([k, v]) => `${k}:${v}`)
+	.join(";");
+---
+
+<!doctype html>
+<html lang="en" data-ground={s.dark ? "dark" : "light"} style={style}>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="manifest" href="/manifest.webmanifest" />
+	</head>
+	<body>
+		<p class="bar">
+			<span class="wrap bar-in">
+				<a href="/">today.duinlab.nl</a>
+				<span>{sky === "night" ? "below the horizon" : "about"}</span>
+			</span>
+		</p>
+		<header class="sky sky-slim">
+			<div class="wrap mast"><h1><slot name="title" /></h1></div>
+			<svg class="dune" viewBox="0 0 390 56" preserveAspectRatio="none" aria-hidden="true">
+				<path d="M0 36 C50 26 90 16 150 24 S250 38 310 22 S370 14 390 20 V56 H0Z" opacity=".3" />
+				<path d="M0 46 C60 38 120 36 190 42 S320 46 390 36 V56 H0Z" />
+			</svg>
+		</header>
+		<main class="wrap prose" id="paper">
+			<slot />
+		</main>
+		<footer class="wrap foot">
+			<p class="mute small">
+				<a href="/">Today's paper</a> &middot; <a href="https://github.com/simonvanlierde/duinlab-today">Source</a> (MIT)
+				&middot; Simon van Lierde &middot; <a href="https://duinlab.nl">duinlab.nl</a>
+			</p>
+		</footer>
+	</body>
+</html>

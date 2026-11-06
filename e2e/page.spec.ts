@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 
 const KEY = "today.games.v1";
@@ -192,15 +193,43 @@ test.describe("without JavaScript", () => {
 	});
 });
 
-test("the about panel opens, links the source, and closes", async ({
+test("the about page says what is kept and links the source", async ({
 	page,
 }) => {
 	await page.goto("/");
 	await expect(page.locator(".wx")).toHaveAttribute("href", /buienradar\.nl/);
-	await page.getByRole("button", { name: "About" }).click();
-	const about = page.locator("#about");
-	await expect(about).toBeVisible();
-	await expect(about.getByRole("link", { name: /github/ })).toBeVisible();
-	await about.getByRole("button", { name: "Close" }).click();
-	await expect(about).toBeHidden();
+	await page.getByRole("link", { name: /About, privacy/ }).click();
+	await expect(page.locator("h1")).toHaveText("About this page");
+	await expect(
+		page.getByRole("link", { name: /github\.com\/simonvanlierde/ }),
+	).toBeVisible();
+	const missing = await page.goto("/no-such-page");
+	expect(missing?.status()).toBe(404);
+	await expect(page.locator("h1")).toHaveText("Below the horizon");
 });
+
+test("security headers and a CSP that the page keeps to", async ({ page }) => {
+	const blocked: string[] = [];
+	page.on("console", (m) => {
+		if (/Content Security Policy/i.test(m.text())) blocked.push(m.text());
+	});
+	const res = await page.goto("/");
+	expect(res?.headers()["x-content-type-options"]).toBe("nosniff");
+	const csp = res?.headers()["content-security-policy"] ?? "";
+	expect(csp).toMatch(/script-src 'self' 'sha256-/);
+	expect(csp).not.toMatch(/script-src[^;]*'unsafe-inline'/);
+	await page.locator("astro-island:not([ssr]) .quiz-live").waitFor();
+	expect(blocked).toEqual([]);
+});
+
+for (const path of ["/", "/about", "/no-such-page"]) {
+	test(`no axe violations (WCAG 2.2 AA) on ${path}`, async ({ page }) => {
+		await page.goto(path);
+		// let the sky settle: contrast is checked on the final colours
+		await page.waitForTimeout(2800);
+		const { violations } = await new AxeBuilder({ page })
+			.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+			.analyze();
+		expect(violations.map((v) => `${v.id}: ${v.nodes[0]?.target}`)).toEqual([]);
+	});
+}

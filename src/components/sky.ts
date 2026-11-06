@@ -310,3 +310,15 @@ export function skyAt(
 		dark: t < 0.5 ? a.dark : b.dark,
 	};
 }
+
+/** "9 h 18 min of light, 3 min less than yesterday", from today's and yesterday's sun times. */
+export function daylight(today: Sun, yesterday: Sun): string {
+	const len = (s: Sun) => Date.parse(s.sunset) - Date.parse(s.sunrise);
+	const mins = Math.round(len(today) / 60000);
+	const delta = Math.round((len(today) - len(yesterday)) / 60000);
+	const change =
+		delta === 0
+			? "about the same as yesterday"
+			: `${Math.abs(delta)} min ${delta < 0 ? "less" : "more"} than yesterday`;
+	return `${Math.floor(mins / 60)} h ${mins % 60} min of light, ${change}`;
+}

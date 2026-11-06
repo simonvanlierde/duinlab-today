@@ -61,8 +61,27 @@ const boot = `(${(
 		});
 		const rise = Date.parse(cfg.sun.sunrise);
 		const set = Date.parse(cfg.sun.sunset);
-		const paint = () => {
+		const favicon = document.querySelector<HTMLLinkElement>(
+			"link[rel=icon][type='image/svg+xml']",
+		);
+		const themeColor = document.querySelector<HTMLMetaElement>(
+			"meta[name=theme-color]",
+		);
+		let lastIcon = "";
+		/** The tab icon and the browser bar take the sky's colours. */
+		const tint = () => {
+			const cs = getComputedStyle(root);
+			const c = (n: string) => cs.getPropertyValue(n).trim();
+			const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><defs><linearGradient id="g" x2="0" y2="1"><stop offset="0" stop-color="${c("--k0")}"/><stop offset=".6" stop-color="${c("--k2")}"/><stop offset="1" stop-color="${c("--k3")}"/></linearGradient></defs><rect width="32" height="32" rx="7" fill="url(#g)"/><path d="M0 25C8 21 14 20 20 23S28 24 32 22V32H0Z" fill="${c("--ground")}"/></svg>`;
+			if (svg === lastIcon) return;
+			lastIcon = svg;
+			if (favicon)
+				favicon.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+			if (themeColor) themeColor.content = c("--k0");
+		};
+		const paint = (at?: number) => {
 			const now = Date.now();
+			const skyNow = at ?? now;
 			for (const el of document.querySelectorAll("[data-clock]"))
 				el.textContent = fmt.format(now);
 			const p = (cfg.forced ?? cfg.phaseAt(cfg.sun, now)) as SkyPhase;
@@ -76,15 +95,16 @@ const boot = `(${(
 				: cfg.forced
 					? cfg.phaseSun[p]
 					: {
-							alt: cfg.sunAltitude(now),
-							rising: cfg.sunAltitude(now + 600000) > cfg.sunAltitude(now),
+							alt: cfg.sunAltitude(skyNow),
+							rising:
+								cfg.sunAltitude(skyNow + 600000) > cfg.sunAltitude(skyNow),
 						};
 			const sky = cfg.skyAt(sun.alt, sun.rising, cfg.table);
 			for (const [k, v] of Object.entries(sky.vars))
 				root.style.setProperty(k, v);
 			root.dataset.ground = sky.dark ? "dark" : "light";
 			// the sun disc: across the masthead from sunrise to sunset, up by altitude
-			const x = Math.min(1, Math.max(0, (now - rise) / (set - rise)));
+			const x = Math.min(1, Math.max(0, (skyNow - rise) / (set - rise)));
 			root.style.setProperty("--sun-x", x.toFixed(4));
 			root.style.setProperty("--sun-alt", sun.alt.toFixed(2));
 		};
@@ -102,10 +122,34 @@ const boot = `(${(
 		} catch {
 			// no storage: no white-out
 		}
-		paint();
-		document.addEventListener("DOMContentLoaded", paint);
-		document.addEventListener("sky", paint);
-		setInterval(paint, 30000);
+		// the first visit of the day replays the last 45 minutes of sky in one transition
+		let replay = false;
+		try {
+			const day = new Intl.DateTimeFormat("en-CA", {
+				timeZone: "Europe/Amsterdam",
+			}).format(new Date());
+			replay =
+				!cfg.forced &&
+				localStorage.getItem("today.sunrise.v1") !== day &&
+				!matchMedia("(prefers-reduced-motion: reduce)").matches;
+			localStorage.setItem("today.sunrise.v1", day);
+		} catch {
+			// no storage: no replay
+		}
+		const repaint = () => paint();
+		if (replay) {
+			paint(Date.now() - 45 * 60000);
+			addEventListener("load", () =>
+				requestAnimationFrame(() => requestAnimationFrame(repaint)),
+			);
+		} else {
+			paint();
+			document.addEventListener("DOMContentLoaded", repaint);
+		}
+		document.addEventListener("sky", repaint);
+		setInterval(repaint, 30000);
+		addEventListener("load", () => setTimeout(tint, 3000));
+		setInterval(tint, 60000);
 	}
 ).toString()})(${JSON.stringify({
 	sun: today.sun,
@@ -123,6 +167,12 @@ const boot = `(${(
 	.replace('"__PHASE_AT__"', phaseAt.toString())
 	.replace('"__SUN_ALT__"', sunAltitude.toString())
 	.replace('"__SKY_AT__"', skyAt.toString())})`;
+
+// the inline script is allowed by its hash, not by 'unsafe-inline'
+const digest = new Uint8Array(
+	await crypto.subtle.digest("SHA-256", new TextEncoder().encode(boot)),
+);
+Astro.csp?.insertScriptHash(`sha256-${btoa(String.fromCharCode(...digest))}`);
 ---
 
 <!doctype html>
@@ -137,7 +187,21 @@ const boot = `(${(
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>{title}</title>
 		<meta name="description" content={description} />
+		<link rel="canonical" href="https://today.duinlab.nl/" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		<link rel="manifest" href="/manifest.webmanifest" />
+		<meta name="theme-color" content="#0a1030" />
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="today.duinlab.nl" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content="https://today.duinlab.nl/" />
+		<meta property="og:image" content="https://today.duinlab.nl/og.png" />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content="A dawn sky over a low dune, with the words today.duinlab.nl" />
+		<meta name="twitter:card" content="summary_large_image" />
 		<link rel="preload" href="/fonts/literata.woff2" as="font" type="font/woff2" crossorigin />
 		<link rel="preload" href="/fonts/barlow-600.woff2" as="font" type="font/woff2" crossorigin />
 		<script is:inline set:html={boot}></script>

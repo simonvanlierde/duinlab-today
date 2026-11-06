@@ -1,0 +1,32 @@
+// Renovate (needs the Renovate GitHub App on this repo). Minor and patch updates merge
+// themselves after a week's wait once CI passes; majors wait for a person.
+{
+	$schema: "https://docs.renovatebot.com/renovate-schema.json",
+	extends: ["config:recommended", ":semanticCommits"],
+	schedule: ["before 9am on monday"],
+	// a compromised release has a week to be caught and yanked; security updates skip this
+	minimumReleaseAge: "7 days",
+	platformAutomerge: false,
+	lockFileMaintenance: {
+		enabled: true,
+		schedule: ["on monday"],
+		minimumReleaseAge: null,
+		automerge: true,
+	},
+	packageRules: [
+		{ matchManagers: ["github-actions"], groupName: "actions" },
+		{
+			matchManagers: ["npm"],
+			matchUpdateTypes: ["minor", "patch"],
+			groupName: "runtime",
+			automerge: true,
+		},
+		{
+			matchManagers: ["npm"],
+			matchDepTypes: ["devDependencies"],
+			matchUpdateTypes: ["minor", "patch"],
+			groupName: "dev tooling",
+			automerge: true,
+		},
+	],
+}
