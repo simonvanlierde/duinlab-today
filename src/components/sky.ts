@@ -12,11 +12,11 @@ export const PHASE_LABEL: Record<SkyPhase, string> = {
 };
 
 export const PHASE_LINE: Record<SkyPhase, string> = {
-	night: "Still dark out. The paper is awake anyway.",
+	night: "Still dark out.",
 	"first-light": "Good morning. The sky is still deciding.",
-	dawn: "The sun is nearly up. The coffee is ready.",
-	day: "Daylight. Take a minute before it takes you.",
-	dusk: "The light is going. A good time for the paper.",
+	dawn: "The sun is up, just.",
+	day: "Daylight.",
+	dusk: "The light is going.",
 };
 
 /**
@@ -108,7 +108,7 @@ export function windLine(w: Weather["now"]): string {
 export function rainLine(steps: Weather["rainNext2h"]): string {
 	if (steps.length === 0) return "";
 	const wet = steps.find((s) => s.mm > 0);
-	return wet ? `Dry until ${wet.time}` : "Dry for the next two hours";
+	return wet ? `Dry until ${wet.time}` : "Dry for 2 hours";
 }
 
 /** SVG path for the lit part of the moon disc; `r` is the radius, centred on (r, r). */
@@ -311,14 +311,12 @@ export function skyAt(
 	};
 }
 
-/** "9 h 18 min of light, 3 min less than yesterday", from today's and yesterday's sun times. */
+/** "9 h 18 min of daylight, −3 min": the day's length and its change since yesterday. */
 export function daylight(today: Sun, yesterday: Sun): string {
 	const len = (s: Sun) => Date.parse(s.sunset) - Date.parse(s.sunrise);
 	const mins = Math.round(len(today) / 60000);
 	const delta = Math.round((len(today) - len(yesterday)) / 60000);
 	const change =
-		delta === 0
-			? "about the same as yesterday"
-			: `${Math.abs(delta)} min ${delta < 0 ? "less" : "more"} than yesterday`;
-	return `${Math.floor(mins / 60)} h ${mins % 60} min of light, ${change}`;
+		delta === 0 ? "" : `, ${delta < 0 ? "\u2212" : "+"}${Math.abs(delta)} min`;
+	return `${Math.floor(mins / 60)} h ${mins % 60} min of daylight${change}`;
 }

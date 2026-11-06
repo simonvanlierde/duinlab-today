@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { allFailed, buildDay, missingSections } from "./build";
 import { cached } from "./cache";
+import { games } from "./games";
 import { fetchWeather } from "./sources/weather";
 import type { Today } from "./types";
 import { amsterdamDate, secondsUntilMidnight } from "./util";
@@ -32,5 +33,6 @@ export async function getToday(now: Date = new Date()): Promise<Today> {
 			(w) => (w ? WEATHER_TTL : null),
 		),
 	]);
-	return { ...day, weather };
+	// games are static: added here so a change to the list shows without waiting for midnight
+	return { ...day, games, weather };
 }

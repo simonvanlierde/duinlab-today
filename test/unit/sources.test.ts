@@ -207,7 +207,7 @@ describe("day assembly and cache", () => {
 		expect(day.quote?.author).toBe("Robert Kiyosaki");
 		expect(day.picture).toBeNull();
 		expect(day.didYouKnow).toEqual([]);
-		expect(day.games.length).toBeGreaterThan(0);
+		expect(day.sun.sunrise).toMatch(/^2026-11-06T07:/);
 		expect(allFailed(day)).toBe(false);
 
 		vi.stubGlobal("fetch", async () => new Response("", { status: 503 }));

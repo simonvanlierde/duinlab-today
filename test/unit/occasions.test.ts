@@ -24,10 +24,10 @@ describe("occasions", () => {
 describe("daylight", () => {
 	it("gives the length of the day and its change", () => {
 		expect(daylight(sunTimes("2026-11-06"), sunTimes("2026-11-05"))).toMatch(
-			/^9 h \d+ min of light, [34] min less than yesterday$/,
+			/^9 h \d+ min of daylight, −[34] min$/,
 		);
 		expect(daylight(sunTimes("2026-03-21"), sunTimes("2026-03-20"))).toMatch(
-			/min more than yesterday$/,
+			/daylight, \+\d min$/,
 		);
 	});
 });

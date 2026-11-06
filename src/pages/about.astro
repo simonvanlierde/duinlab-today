@@ -4,47 +4,46 @@ import Plain from "../layouts/Plain.astro";
 
 <Plain
 	title="About · today.duinlab.nl"
-	description="What today.duinlab.nl is, what it keeps (nothing about you), where its facts come from, and its source code."
+	description="What today.duinlab.nl is, what it keeps, where its facts come from, and its code."
 >
 	<Fragment slot="title">About this page</Fragment>
 
 	<p>
-		A small daily paper for two people in The Hague, public for anyone who finds it: one picture, a few
-		facts, a word, a quiz and ten daily games. It turns over at midnight, Amsterdam time.
+		A daily page for two of us in The Hague, open to anyone: one picture, a few facts, a word, a quiz and ten
+		games. It changes at midnight, Amsterdam time.
 	</p>
 
 	<h2>Privacy</h2>
 	<p>
-		The page sets no cookies and runs no analytics. Played marks, streaks and quiz answers stay in your
-		browser's local storage (keys <code>today.games.v1</code> and <code>today.quiz.v1</code>) and are never
-		sent anywhere. Clear your site data to remove them.
+		No cookies, no analytics. Your played games, streaks and quiz answers stay in this browser's local storage
+		(<code>today.games.v1</code>, <code>today.quiz.v1</code>) and are never sent anywhere. Clear the site's data
+		to remove them.
 	</p>
 	<p>
-		The page is served by a Cloudflare Worker. Cloudflare keeps request logs (the address requested, the time,
-		and connection details such as your IP address) for a few days so problems can be traced. Nobody uses them
-		for anything else.
+		A Cloudflare Worker serves the page. Cloudflare keeps request logs for a few days: the address asked for,
+		the time, and connection details such as your IP address. I only read them to trace a fault.
 	</p>
 
 	<h2>Accessibility</h2>
 	<p>
-		The aim is WCAG 2.2 AA: text contrast checked against every sky, a 44-pixel target for every game and
-		answer, keyboard focus you can see, motion that stops when your system asks for less, and a page that reads
-		in full without JavaScript. Each change is checked with axe in the test suite. If something gets in your
-		way, <a href="https://github.com/simonvanlierde/duinlab-today/issues">open an issue</a>.
+		The aim is WCAG 2.2 AA. Text contrast holds in every sky, games and answers are at least 44 pixels tall,
+		keyboard focus is visible, motion stops when your system asks for less, and the page reads in full without
+		JavaScript. Every change runs an axe check. If something gets in your way,
+		<a href="https://github.com/simonvanlierde/duinlab-today/issues">open an issue</a>.
 	</p>
 
 	<h2>Sources</h2>
 	<p>
-		Every fact links to where it came from: Wikipedia (On this day, Did you know), Wiktionary (word of the day),
-		NASA APOD and The Metropolitan Museum of Art (public-domain works), Open Trivia DB (CC BY-SA 4.0), ZenQuotes,
-		and <a href="https://open-meteo.com/">Open-Meteo</a> for the weather. The weather line links to
-		<a href="https://www.buienradar.nl/weer/den-haag/nl/2747373">Buienradar</a> for the full forecast and rain
-		radar. The sky follows the sun over The Hague, worked out on the page; no API is asked.
+		Each fact links to where it came from: Wikipedia, Wiktionary, NASA APOD, The Metropolitan Museum of Art,
+		Open Trivia DB (CC BY-SA 4.0), ZenQuotes, and <a href="https://open-meteo.com/">Open-Meteo</a> for the
+		weather. The weather line opens
+		<a href="https://www.buienradar.nl/weer/den-haag/nl/2747373">Buienradar</a>. The sky is worked out from
+		the sun's position over The Hague, in your browser.
 	</p>
 
 	<h2>Code</h2>
 	<p>
 		<a href="https://github.com/simonvanlierde/duinlab-today">github.com/simonvanlierde/duinlab-today</a>, MIT
-		licence. The day's data is also at <a href="/today.json">today.json</a>.
+		licence. The day's data is at <a href="/today.json">today.json</a>.
 	</p>
 </Plain>

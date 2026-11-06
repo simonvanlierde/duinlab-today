@@ -33,13 +33,13 @@ const list: Game[] = [
 	},
 	{
 		id: "connections",
-		name: "NYT Connections",
+		name: "Connections",
 		url: "https://www.nytimes.com/games/connections",
 		blurb: "Sort sixteen words into four groups.",
 	},
 	{
 		id: "wordle",
-		name: "NYT Wordle",
+		name: "Wordle",
 		url: "https://www.nytimes.com/games/wordle/index.html",
 		blurb: "Five letters, six tries.",
 	},
@@ -63,7 +63,7 @@ const list: Game[] = [
 	},
 ];
 
-/** Alphabetical, ignoring the "NYT " prefix, so a game is easy to find. */
+/** Alphabetical, so a game is easy to find. */
 export const games: Game[] = list.toSorted((a, b) =>
-	a.name.replace(/^NYT /, "").localeCompare(b.name.replace(/^NYT /, "")),
+	a.name.localeCompare(b.name),
 );

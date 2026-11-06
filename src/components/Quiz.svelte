@@ -120,7 +120,7 @@ const score = $derived(
 		<p class="score"><span class="figure">{score}</span> of {total}. {LINES[Math.round((score / total) * 5)]}</p>
 		<p class="quiz-foot">
 			<span class="mute">
-				{streak > 1 ? `${streak} days in a row.` : "Day one of a streak."} New questions tomorrow.
+				{streak > 1 ? `${streak} days in a row.` : "Day 1 of a streak."}
 			</span>
 			<a class="src" href={quiz.credit.url}>{quiz.credit.name}</a>
 		</p>

@@ -43,6 +43,8 @@ const nextSunrise = clock(
 	sunTimes(tomorrow.toISOString().slice(0, 10)).sunrise,
 );
 const occasion = occasionLine(today.date);
+const HOLIDAYS =
+	"https://calendar.google.com/calendar/embed?src=en.dutch%23holiday%40group.v.calendar.google.com&ctz=Europe%2FAmsterdam";
 const what = `A small daily page: one picture, a few sourced facts, a word, a quiz and ${today.games.length} daily games.`;
 ---
 
@@ -66,10 +68,15 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 			<div>
 				<h1>{heading}</h1>
 				<p class="greet" data-phase-line>{PHASE_LINE[phase]}</p>
-				{occasion && <p class="occasion">{occasion}</p>}
+				{
+					occasion && (
+						<p class="occasion">
+							<a href={HOLIDAYS} title="Dutch holidays on Google Calendar">{occasion}</a>
+						</p>
+					)
+				}
 			</div>
 			<ul class="plain strip">
-				<li class="what">{what}</li>
 				{
 					weather && (
 						<li>
@@ -210,7 +217,7 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 
 	<footer class="wrap foot">
 		<p class="mute small">
-			The day turns over at midnight in Amsterdam. <a href="/about">About, privacy and sources</a> &middot;{" "}
+			New every midnight. <a href="/about">About</a> &middot;{" "}
 			<a href="https://github.com/simonvanlierde/duinlab-today">Source</a> (MIT) &middot; Simon van Lierde &middot;{" "}
 			<a href="https://duinlab.nl">duinlab.nl</a>
 		</p>

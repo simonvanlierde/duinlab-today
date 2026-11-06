@@ -41,9 +41,7 @@ async function share() {
 		day: "numeric",
 		month: "short",
 	}).format(new Date());
-	const played = games
-		.filter((g) => isPlayed(g.id))
-		.map((g) => g.name.replace(/^NYT /, ""));
+	const played = games.filter((g) => isPlayed(g.id)).map((g) => g.name);
 	const text = `today.duinlab.nl, ${day}${quiz} · games ${played.length}/${games.length}${played.length ? `: ${played.join(", ")}` : ""}`;
 	try {
 		if (navigator.share && matchMedia("(pointer: coarse)").matches) {
@@ -111,7 +109,7 @@ async function share() {
 {:else if live}
 	<div class="games-foot">
 	<details class="streaks">
-		<summary>Last two weeks, and un-mark</summary>
+		<summary>Past 14 days, un-mark</summary>
 		<ol class="plain">
 			{#each games as g (g.id)}
 				{@const n = streak(g.id)}

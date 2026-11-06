@@ -92,9 +92,7 @@ test("opening a game marks it, un-mark undoes it, and state survives a reload", 
 	await expect(page.locator(".count")).toContainText("1 of 10 played");
 
 	await page.locator(".streaks summary").click();
-	await page
-		.getByRole("button", { name: "Un-mark NYT Wordle as played" })
-		.click();
+	await page.getByRole("button", { name: "Un-mark Wordle as played" }).click();
 	await expect(page.locator(".count")).toContainText("0 of 10 played");
 	await expect(row.locator(".name")).toContainText(", not yet");
 });
@@ -172,14 +170,20 @@ test("no horizontal scroll and 44px game rows", async ({ page }) => {
 		expect(h).toBeGreaterThanOrEqual(44);
 });
 
-test("the sky follows the browser clock across sunrise", async ({ page }) => {
-	await page.clock.install({ time: new Date("2026-11-06T05:30:00Z") }); // 06:30 Amsterdam
+test("the sky follows the browser clock from night to day", async ({
+	page,
+}) => {
+	// the server builds the page for today, so the browser clock starts on today's date
+	const today = new Intl.DateTimeFormat("en-CA", {
+		timeZone: "Europe/Amsterdam",
+	}).format(new Date());
+	await page.clock.install({ time: new Date(`${today}T00:30:00Z`) });
 	await page.goto("/");
 	await expect(page.locator("html")).toHaveAttribute("data-phase", "night");
-	await page.clock.fastForward("02:00:00"); // 08:30
-	await expect(page.locator("html")).toHaveAttribute("data-phase", /dawn|day/);
-	await page.clock.fastForward("04:00:00"); // 12:30
+	await expect(page.locator("html")).toHaveAttribute("data-ground", "dark");
+	await page.clock.fastForward("11:30:00"); // around 13:00 Amsterdam, summer or winter
 	await expect(page.locator("html")).toHaveAttribute("data-phase", "day");
+	await expect(page.locator("html")).toHaveAttribute("data-ground", "light");
 });
 
 test.describe("without JavaScript", () => {
@@ -198,7 +202,7 @@ test("the about page says what is kept and links the source", async ({
 }) => {
 	await page.goto("/");
 	await expect(page.locator(".wx")).toHaveAttribute("href", /buienradar\.nl/);
-	await page.getByRole("link", { name: /About, privacy/ }).click();
+	await page.getByRole("link", { name: "About", exact: true }).click();
 	await expect(page.locator("h1")).toHaveText("About this page");
 	await expect(
 		page.getByRole("link", { name: /github\.com\/simonvanlierde/ }),

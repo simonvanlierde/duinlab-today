@@ -285,10 +285,6 @@ h1 {
 	color: #eef0fd;
 	font-variant-numeric: tabular-nums;
 }
-.what {
-	color: #d3d9f6;
-	font-size: 0.875rem;
-}
 .strip li + li {
 	margin-top: 4px;
 }
@@ -1085,7 +1081,6 @@ code {
 	}
 	.greet,
 	.strip,
-	.what,
 	.occasion {
 		color: #333;
 	}

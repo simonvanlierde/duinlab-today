@@ -1,4 +1,3 @@
-import { games } from "./games";
 import { moonAt, sunTimes } from "./sky";
 import { fetchPicture } from "./sources/picture";
 import { fetchQuote } from "./sources/quote";
@@ -7,8 +6,8 @@ import { fetchWikipedia } from "./sources/wikipedia";
 import { fetchWord } from "./sources/wiktionary";
 import type { Today } from "./types";
 
-/** Everything but weather: fetched in parallel, each source failing on its own. */
-export type Day = Omit<Today, "weather">;
+/** The day's sources, fetched in parallel, each failing on its own. Weather and games are added on read. */
+export type Day = Omit<Today, "weather" | "games">;
 
 export async function buildDay(
 	date: string,
@@ -33,11 +32,10 @@ export async function buildDay(
 		word,
 		quote,
 		quiz,
-		games,
 	};
 }
 
-/** Sections a source supplies; `sun`, `moon` and `games` are computed and always present. */
+/** Sections a source supplies; `sun` and `moon` are computed and always present. */
 export const missingSections = (d: Day) =>
 	[d.picture, d.onThisDay, d.word, d.quote, d.quiz].filter((s) => s === null)
 		.length + (d.didYouKnow.length === 0 ? 1 : 0);
