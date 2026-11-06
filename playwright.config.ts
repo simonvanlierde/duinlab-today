@@ -18,7 +18,7 @@ export default defineConfig({
 		},
 	],
 	webServer: {
-		command: `mise exec -- pnpm build && mise exec -- pnpm exec wrangler dev --port ${port}`,
+		command: `pnpm build && pnpm exec wrangler dev --port ${port}`,
 		url: `http://localhost:${port}`,
 		reuseExistingServer: true,
 		timeout: 240_000,
