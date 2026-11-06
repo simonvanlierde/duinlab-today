@@ -66,10 +66,15 @@ export function decodeEntities(s: string): string {
 	});
 }
 
+/** Plain text from an HTML fragment; the page escapes it again when it renders. */
 export function stripTags(html: string): string {
-	return decodeEntities(html.replace(/<[^>]*>/g, ""))
-		.replace(/\s+/g, " ")
-		.trim();
+	let text = html;
+	// repeat until stable: one pass leaves "<script" behind in "<scr<b>ipt"
+	for (let prev = ""; prev !== text; ) {
+		prev = text;
+		text = text.replace(/<[^>]*>/g, "");
+	}
+	return decodeEntities(text).replace(/\s+/g, " ").trim();
 }
 
 /** 32-bit FNV-1a, enough to seed a per-day choice. */

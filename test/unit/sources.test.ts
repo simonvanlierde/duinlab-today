@@ -206,7 +206,7 @@ describe("picture rule", () => {
 	function stubFetch(apodOk: boolean) {
 		vi.stubGlobal("fetch", async (url: string) => {
 			const json = (b: unknown) => new Response(JSON.stringify(b));
-			if (url.includes("api.nasa.gov"))
+			if (new URL(url).host === "api.nasa.gov")
 				return apodOk ? json(goodApod) : new Response("", { status: 500 });
 			if (url.includes("v1.1/search"))
 				return json(
