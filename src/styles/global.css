@@ -461,7 +461,7 @@ html:not(.js) .sun {
 }
 @media (min-width: 1100px) {
 	.pic img {
-		max-height: max(240px, calc(100svh - 470px));
+		max-height: max(240px, calc(100svh - 520px));
 	}
 }
 .pic figcaption {
@@ -979,16 +979,48 @@ summary {
 	}
 }
 
-/* on short desktop screens the masthead gives the picture room */
+/* on short desktop screens the masthead shrinks to two lines, so the paper fits one screen */
 @media (min-width: 1100px) and (max-height: 840px) {
 	.sky {
-		--hz: 52px;
+		--hz: 28px;
+	}
+	.dune {
+		height: 22px;
 	}
 	h1 {
-		font-size: 2.375rem;
+		font-size: 2rem;
 	}
 	.mast {
+		grid-template-columns: min-content minmax(0, 1fr);
 		padding-top: 0;
+	}
+	/* the date and the phase line share a row */
+	.mast > div {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		column-gap: 16px;
+	}
+	.greet {
+		margin-top: 0;
+	}
+	/* the date on its own row, then the phase line and the occasion side by side */
+	h1 {
+		flex-basis: 100%;
+		white-space: nowrap;
+	}
+	/* weather, sun and daylight run on as one paragraph */
+	.strip {
+		justify-self: end;
+	}
+	/* lines break between items, not inside one */
+	.strip li {
+		display: inline;
+		white-space: nowrap;
+	}
+	.strip li:not(:last-child)::after {
+		content: " · ";
+		white-space: normal;
 	}
 }
 
