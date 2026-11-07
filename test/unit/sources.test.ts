@@ -212,6 +212,11 @@ describe("parsers", () => {
 			{ time: "10:25", mm: 0.1 },
 		]);
 		expect(rainLine(parseRaintext(raintext))).toBe("Dry until 10:15");
+		// Buienradar ends its lines with CRLF; git stores the fixture with LF
+		expect(parseRaintext("000|10:05\r\n141|10:10\r\n")).toEqual([
+			{ time: "10:05", mm: 0 },
+			{ time: "10:10", mm: 10 },
+		]);
 	});
 
 	it("takes the rain from Buienradar and falls back to Open-Meteo", async () => {
