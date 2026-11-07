@@ -96,9 +96,6 @@ const boot = `(${(
 			const hhmm = fmt.format(now);
 			for (const el of document.querySelectorAll("[data-clock]"))
 				el.textContent = hhmm;
-			// the now dot on the day band
-			const [h = 0, m = 0] = hhmm.split(":").map(Number);
-			root.style.setProperty("--day-x", ((h * 60 + m) / 1440).toFixed(4));
 			let played = "";
 			try {
 				const saved = JSON.parse(localStorage.getItem(cfg.key) ?? "{}");

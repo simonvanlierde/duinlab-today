@@ -293,52 +293,10 @@ h1 {
 .strip li + li {
 	margin-top: 4px;
 }
-/* the day band: midnight to midnight, night, blue hour, golden hour and day, with a dot for now */
-.band {
-	position: relative;
-	display: block;
-	height: 6px;
-	margin-block: 4px 10px;
-	border-radius: 3px;
-	background: var(--band);
-	box-shadow: 0 0 0 1px rgb(255 255 255 / 0.28);
-}
-.band::after {
-	content: "";
-	position: absolute;
-	top: 50%;
-	left: calc(var(--day-x, 0) * 100%);
-	width: 10px;
-	height: 10px;
-	translate: -50% -50%;
-	border-radius: 50%;
-	background: #fff;
-	box-shadow: 0 0 0 2px rgb(20 24 60 / 0.55);
-}
-html:not(.js) .band::after {
-	display: none;
-}
 /* the played count in the bar: on phones only, where the bar stays on screen while you scroll */
 @media (min-width: 700px) {
 	[data-progress] {
 		display: none;
-	}
-}
-@media (max-width: 699px) {
-	/* phones: the strip is one line that scrolls sideways, fading out at the edge */
-	.strip {
-		display: flex;
-		overflow-x: auto;
-		white-space: nowrap;
-		scrollbar-width: none;
-		padding-inline-end: 2rem;
-		mask-image: linear-gradient(to left, transparent, #000 2rem);
-	}
-	.strip li + li {
-		margin-top: 0;
-	}
-	.strip li:not(:last-child)::after {
-		content: "\a0\b7\a0";
 	}
 }
 .strip b {
@@ -347,14 +305,44 @@ html:not(.js) .band::after {
 .temp {
 	font-size: 1.25rem;
 }
+/* the moon: its real phase, high in the sky; it opens the sun and moon times */
 .moon {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	margin-left: 10px;
+	position: absolute;
+	z-index: 2;
+	top: 14px;
+	right: max(8px, calc((100% - 1320px) / 2 + 20px));
+	padding: 8px;
+	border: 0;
+	border-radius: 50%;
+	background: none;
+	color: #f6f1dc;
+	cursor: pointer;
+	filter: drop-shadow(0 0 6px rgb(246 241 220 / 0.45));
+	transition:
+		filter 0.3s,
+		scale 0.3s var(--ease-out);
+}
+.moon:hover,
+.moon:focus-visible {
+	filter: drop-shadow(0 0 10px rgb(246 241 220 / 0.8));
+	scale: 1.08;
 }
 .moon svg {
-	display: inline-block;
+	display: block;
+}
+.almanac {
+	margin: auto;
+	padding: 16px 20px;
+	border: 1px solid var(--rule);
+	border-radius: 10px;
+	background: var(--ground);
+	color: var(--ink);
+	font-variant-numeric: tabular-nums;
+	line-height: 1.6;
+	box-shadow: 0 12px 40px rgb(0 0 0 / 0.3);
+}
+.almanac::backdrop {
+	background: rgb(10 12 30 / 0.35);
 }
 .sky {
 	overflow: clip;
@@ -1079,12 +1067,14 @@ summary {
 		flex-basis: 100%;
 		white-space: nowrap;
 	}
-	/* weather, sun and daylight run on as one paragraph */
-	.side {
+	.strip {
 		justify-self: end;
 	}
-	.band {
-		margin-block: 0 6px;
+	/* the weather now sits at the top right too: the moon moves to the open sky mid-way */
+	.moon {
+		top: 2px;
+		right: auto;
+		left: 50%;
 	}
 	/* lines break between items, not inside one */
 	.strip li {

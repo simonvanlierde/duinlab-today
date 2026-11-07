@@ -1,6 +1,5 @@
 ---
 import Cue from "../components/Cue.astro";
-import { dayBand } from "../components/dayband";
 import Games from "../components/Games.svelte";
 import Quiz from "../components/Quiz.svelte";
 import {
@@ -19,7 +18,7 @@ import {
 } from "../components/sky";
 import Base from "../layouts/Base.astro";
 import { occasionLine } from "../lib/occasions";
-import { sunTimes } from "../lib/sky";
+import { sunPasses, sunTimes } from "../lib/sky";
 import { getToday } from "../lib/today";
 
 const now = new Date();
@@ -48,7 +47,11 @@ const nextSunrise = clock(
 	sunTimes(tomorrow.toISOString().slice(0, 10)).sunrise,
 );
 const occasion = occasionLine(today.date);
-const band = dayBand(today.date, today.sun);
+const golden = clock(sunPasses(today.date, 6, false));
+const lit = Math.round(
+	((1 - Math.cos(2 * Math.PI * today.moon.phase)) / 2) * 100,
+);
+const cap = (s: string) => s[0]?.toUpperCase() + s.slice(1);
 const HOLIDAYS =
 	"https://calendar.google.com/calendar/embed?src=en.dutch%23holiday%40group.v.calendar.google.com&ctz=Europe%2FAmsterdam";
 const what = `A small daily page: one picture, a few sourced facts, a word, a quiz and ${today.games.length} daily games.`;
@@ -82,16 +85,9 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 					)
 				}
 			</div>
-			<div class="side">
-			<span
-				class="band"
-				style={`--band:${band.gradient}`}
-				title={`Night, blue hour, golden hour and day, midnight to midnight. Golden hour tonight ${band.golden[0]} to ${band.golden[1]}`}
-				aria-hidden="true"
-			></span>
-			<ul class="plain strip">
-				{
-					weather && (
+			{
+				weather && (
+					<ul class="plain strip">
 						<li>
 							<a class="wx" href={FORECAST} title={`${windLine(weather.now)}. The week ahead on meteoblue`}>
 								<span class="temp">{Math.round(weather.now.temperatureC)}&deg;</span>
@@ -106,21 +102,21 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 								</>
 							)}
 						</li>
-					)
-				}
-				<li>
-					sun up <b>{clock(today.sun.sunrise)}</b>, down <b>{clock(today.sun.sunset)}</b>, golden hour from <b>{band.golden[0]}</b>
-					<span class="moon">
-						<svg viewBox="0 0 18 18" width="15" height="15" aria-hidden="true">
-							<circle cx="9" cy="9" r="8.5" fill="none" stroke="currentColor" stroke-width="1" />
-							<path d={moonPath(today.moon, 9)} fill="currentColor" />
-						</svg>
-						{today.moon.name}
-					</span>
-				</li>
-				<li>{light}</li>
-			</ul>
-			</div>
+					</ul>
+				)
+			}
+		</div>
+		<button class="moon" type="button" popovertarget="almanac" aria-label={`${cap(today.moon.name)}: sun and moon times`}>
+			<svg viewBox="0 0 18 18" width="26" height="26" aria-hidden="true">
+				<circle cx="9" cy="9" r="8.6" fill="currentColor" opacity=".16" />
+				<path d={moonPath(today.moon, 9)} fill="currentColor" />
+			</svg>
+		</button>
+		<div id="almanac" class="almanac" popover>
+			<p>Sun up <b>{clock(today.sun.sunrise)}</b>, down <b>{clock(today.sun.sunset)}</b></p>
+			<p>Golden hour from <b>{golden}</b></p>
+			<p>{light}</p>
+			<p>{cap(today.moon.name)}, {lit}% lit</p>
 		</div>
 		<span class="sun" aria-hidden="true"></span>
 		<svg class="dune" viewBox="0 0 390 56" preserveAspectRatio="none" aria-hidden="true">

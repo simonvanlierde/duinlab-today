@@ -28,6 +28,20 @@ test("renders the sky, the sections and the ten games", async ({ page }) => {
 	await expect(page.locator(".games .game")).toHaveCount(10);
 });
 
+test("the moon opens the sun and moon times, and Escape closes them", async ({
+	page,
+}) => {
+	await page.goto("/");
+	const almanac = page.locator("#almanac");
+	await expect(almanac).toBeHidden();
+	await page.getByRole("button", { name: /sun and moon times/ }).click();
+	await expect(almanac).toBeVisible();
+	await expect(almanac).toContainText(/Sun up \d\d:\d\d, down \d\d:\d\d/);
+	await expect(almanac).toContainText(/% lit/);
+	await page.keyboard.press("Escape");
+	await expect(almanac).toBeHidden();
+});
+
 test("the games are visible without scrolling", async ({ page }) => {
 	await page.goto("/");
 	const box = await page.locator(".games").boundingBox();

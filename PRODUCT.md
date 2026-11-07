@@ -48,8 +48,8 @@ Met), never generated text. The same `/today.json` feeds the household's email d
   Open Trivia DB (five questions per day, CC BY-SA 4.0, credited), NASA APOD (API key), The
   Met collection API (public-domain highlights, and the picture when APOD has none),
   ZenQuotes (credited).
-- Also on the page: a 24-hour band above the weather (night, blue hour, golden hour, day, a
-  dot for now), the games played in the phone's bar, Dutch holidays and customs ahead (a
+- Also on the page: the moon in its real phase, high in the sky, which opens the sun times,
+  golden hour, day length and moon phase; the games played in the phone's bar, Dutch holidays and customs ahead (a
   static table), day length, a share
   line for the quiz score and games played, and an About page (privacy, accessibility,
   sources, code).
