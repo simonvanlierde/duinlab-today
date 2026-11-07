@@ -33,7 +33,8 @@ Met), never generated text. The same `/today.json` feeds the household's email d
 
 ## Operating Context
 
-- The day turns over at midnight Europe/Amsterdam; everyone sees the same page that day.
+- The day turns over at midnight Europe/Amsterdam. Each Cloudflare location builds its own
+  copy of the day, so two visitors far apart can get a different quiz or picture.
 - Games open on their own sites in a new tab; the page cannot see whether a game was finished,
   so opening one counts as playing it.
 - Games: factmap.world, TimeGuessr, Shikaku of the day, Krillion, Catfishing, Connections,

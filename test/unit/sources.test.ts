@@ -251,6 +251,19 @@ describe("day assembly and cache", () => {
 		expect(day.didYouKnow).toEqual([]);
 		expect(day.sun.sunrise).toMatch(/^2026-11-06T07:/);
 		expect(allFailed(day)).toBe(false);
+		// /today.json's public shape (README "Data"): a rename here breaks the digest
+		expect(Object.keys(day).sort()).toEqual([
+			"date",
+			"didYouKnow",
+			"generatedAt",
+			"moon",
+			"onThisDay",
+			"picture",
+			"quiz",
+			"quote",
+			"sun",
+			"word",
+		]);
 
 		vi.stubGlobal("fetch", async () => new Response("", { status: 503 }));
 		expect(allFailed(await buildDay("2026-11-06", new Date(), undefined))).toBe(

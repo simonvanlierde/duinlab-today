@@ -28,6 +28,27 @@ For the NASA picture, put a line `NASA_API_KEY=<your key>` in `.dev.vars` for lo
 production it is a Worker secret (`pnpm wrangler secret put NASA_API_KEY`). Without a key the
 picture comes from The Met. The tests don't need it.
 
+## Data
+
+`/today.json` holds the same data as the page, for scripts such as an email digest. The
+types in [`src/lib/types.ts`](src/lib/types.ts) describe every field. The top-level keys
+are:
+
+| Key | Type | When its source fails |
+|---|---|---|
+| `date` | the Amsterdam day, `YYYY-MM-DD` | always present |
+| `generatedAt` | ISO instant (UTC) the day was built | always present |
+| `sun`, `moon` | worked out locally | always present |
+| `games` | the daily games | always present |
+| `picture`, `onThisDay`, `word`, `quote`, `quiz`, `weather` | objects | `null` |
+| `didYouKnow` | a list of facts | `[]` |
+
+Sun times carry the Amsterdam offset. `weather.rainNext2h[].time` is `HH:MM` on the
+Amsterdam clock. New fields may appear at any time. A commit that renames or removes a field says so
+in its message.
+When every source fails, the endpoint still answers 200, with a short cache time. When the
+Worker itself fails, it answers 503 with `{"error": ...}`.
+
 ## Sources
 
 Wikipedia (On this day, Did you know), Wiktionary (word of the day), NASA APOD, The
