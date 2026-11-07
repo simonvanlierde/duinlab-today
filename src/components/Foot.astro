@@ -1,0 +1,30 @@
+---
+// The small print under every page; the slot holds the page's own first link.
+---
+
+<footer class="wrap foot">
+	<p class="mute small">
+		<slot /> <a href="https://github.com/simonvanlierde/duinlab-today">Source</a> (MIT) &middot; Simon van Lierde &middot;{" "}
+		<a href="https://duinlab.nl">duinlab.nl</a>
+	</p>
+</footer>
+
+<style>
+	.small {
+		font-size: 0.8125rem;
+	}
+	.foot {
+		display: grid;
+		gap: 6px;
+		margin-top: 12px;
+		padding-block: 8px 10px;
+		border-top: 1px solid var(--rule);
+		font-size: 0.875rem;
+	}
+	/* links from the slot carry the page's scope, hence :global */
+	.foot :global(a) {
+		/* a taller hit area without a taller line */
+		padding-block: 10px;
+		margin-block: -10px;
+	}
+</style>

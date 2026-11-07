@@ -1,16 +1,241 @@
 ---
+import Cue from "../components/Cue.astro";
+import Dune from "../components/Dune.astro";
+import Foot from "../components/Foot.astro";
+import Games from "../components/Games.svelte";
+import Quiz from "../components/Quiz.svelte";
+import {
+	moonPath,
+	PHASE_LABEL,
+	PHASE_LINE,
+	saturation,
+} from "../components/sky";
+import Base from "../layouts/Base.astro";
+import { clock, longDate, rainLine, sunLines, windLine } from "../lib/format";
+import { occasionLine } from "../lib/occasions";
+import { PHASES, phaseAt, type SkyPhase } from "../lib/sun";
+import { getToday } from "../lib/today";
+
+const now = new Date();
+const today = await getToday(now);
+const asked = Astro.url.searchParams.get("phase");
+const forced = PHASES.includes(asked as SkyPhase);
+const phase = forced ? (asked as SkyPhase) : phaseAt(today.sun, now.getTime());
+const { picture, word, quote, quiz, weather, onThisDay } = today;
+// days stored before the featured article existed have no such key
+const featured = today.featured ?? null;
+const rain = weather ? rainLine(weather.rainNext2h) : "";
+const fact = today.didYouKnow[0];
+const heading = longDate(today.date);
+const hasQuiz = !!quiz && quiz.questions.length > 0;
+const FORECAST =
+	"https://www.meteoblue.com/en/weather/week/the-hague_netherlands_2747373";
+const almanac = sunLines(today);
+const occasion = occasionLine(today.date);
+const HOLIDAYS =
+	"https://calendar.google.com/calendar/embed?src=en.dutch%23holiday%40group.v.calendar.google.com&ctz=Europe%2FAmsterdam";
+const what = `A small daily page: one picture, a few sourced facts, a word, a quiz and ${today.games.length} daily games.`;
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Base
+	today={today}
+	phase={phase}
+	forced={forced}
+	saturation={saturation(weather)}
+	title={`today.duinlab.nl - ${heading}`}
+	description={what}
+>
+	<a class="skip" href="#paper">Skip to the paper</a>
+	<p class="bar">
+		<span class="wrap bar-in">
+			<span>today.duinlab.nl</span>
+			<span><span data-clock>{clock(now)}</span> &middot; <span data-phase-label>{PHASE_LABEL[phase]}</span><span data-progress></span></span>
+		</span>
+	</p>
+	<header class="sky">
+		<div class="wrap mast">
+			<div>
+				<h1>{heading}</h1>
+				<p class="greet" data-phase-line>{PHASE_LINE[phase]}</p>
+				{
+					occasion && (
+						<p class="occasion">
+							<a href={HOLIDAYS} title="Dutch holidays on Google Calendar">{occasion}<span class="sr"> (Dutch holidays on Google Calendar)</span></a>
+						</p>
+					)
+				}
+			</div>
+			{
+				weather && (
+					<ul class="plain strip">
+						<li>
+							<a class="wx" href={FORECAST} title={`${windLine(weather.now)}. The week ahead on meteoblue`}>
+								<span class="temp">{Math.round(weather.now.temperatureC)}&deg;</span>
+								{` ${weather.now.description}, ${Math.round(weather.today.maxC)}° / ${Math.round(weather.today.minC)}° · wind ${weather.now.windFrom} ${weather.now.windBeaufort}`}
+								<span class="sr">. {windLine(weather.now)}. The week ahead on meteoblue</span>
+							</a>
+							{rain && (
+								<>
+									{" · "}
+									<a href={(weather.rainCredit ?? weather.credit).url} title={`Rain radar: ${(weather.rainCredit ?? weather.credit).name}`}>
+										{rain.toLowerCase()}
+										<span class="sr"> (rain radar: {(weather.rainCredit ?? weather.credit).name})</span>
+									</a>
+								</>
+							)}
+						</li>
+					</ul>
+				)
+			}
+		</div>
+		<button class="moon" type="button" popovertarget="almanac" aria-label={`${almanac.moonName}: sun and moon times`}>
+			<svg viewBox="0 0 18 18" width="26" height="26" aria-hidden="true">
+				<circle cx="9" cy="9" r="8.6" fill="currentColor" opacity=".16" />
+				<path d={moonPath(today.moon, 9)} fill="currentColor" />
+			</svg>
+		</button>
+		<div id="almanac" class="almanac" popover>
+			<p>Sun up <b>{almanac.sunrise}</b>, down <b>{almanac.sunset}</b></p>
+			<p>Golden hour from <b>{almanac.golden}</b></p>
+			<p>{almanac.daylight}</p>
+			<p>{almanac.moon}</p>
+		</div>
+		<span class="sun" aria-hidden="true"></span>
+		<Dune />
+	</header>
+
+	<main class="wrap front" id="paper">
+		{
+			today.games.length > 0 && (
+				<section class="rail" aria-labelledby="h-games">
+					<Games client:load games={today.games} />
+					<p class="the-end" aria-live="polite">
+						That's the paper. The sun is back at {almanac.nextSunrise} tomorrow.
+					</p>
+				</section>
+			)
+		}
+		{
+			picture && (
+				<section class="pic" aria-labelledby="h-picture">
+					<Cue id="h-picture" sr>Picture</Cue>
+					<figure>
+						<img
+							src={picture.imageUrl}
+							alt={picture.alt}
+							width={picture.width ?? undefined}
+							height={picture.height ?? undefined}
+							fetchpriority="high"
+							decoding="async"
+						/>
+						<figcaption>
+							<a href={picture.pageUrl}><em>{picture.title}</em></a>
+							{picture.by && <>, {picture.by}</>}
+							{picture.date && <>, {picture.date}</>}.{" "}
+							<span class="src"><a href={picture.credit.url}>{picture.credit.name}</a></span>
+						</figcaption>
+					</figure>
+				</section>
+			)
+		}
+			{
+				featured && (
+					<section class="sec feat" aria-labelledby="h-featured">
+						<Cue id="h-featured">Featured article</Cue>
+						<p>
+							<a href={featured.url}><strong>{featured.title}</strong></a>. {featured.extract}{" "}
+							<span class="src"><a href={featured.credit.url}>{featured.credit.name}</a></span>
+						</p>
+					</section>
+				)
+			}
+		<div class="reading">
+			{
+				fact && (
+					<section class="sec" aria-labelledby="h-dyk">
+						<Cue id="h-dyk">Did you know</Cue>
+						<p class="fact">
+							<span class="that">&hellip; that</span> {fact.text}{" "}
+							<span class="src"><a href={fact.url}>{fact.credit.name}</a></span>
+						</p>
+					</section>
+				)
+			}
+			{
+				word && (
+					<section class="sec" aria-labelledby="h-word">
+						<Cue id="h-word">Word</Cue>
+						<p>
+							<strong class="word" lang="en">{word.word}</strong>
+							{word.partOfSpeech && <em class="pos">{word.partOfSpeech}</em>}
+							{word.gloss}{" "}
+							<span class="src"><a href={word.url}>{word.credit.name}</a></span>
+						</p>
+					</section>
+				)
+			}
+			{
+				hasQuiz && (
+					<section class="sec quiz" aria-labelledby="h-quiz">
+						<Quiz client:load quiz={quiz} />
+						<noscript>
+							<h2 class="cue">Quiz</h2>
+							<ol class="quiz-static">
+								{quiz.questions.map((q) => (
+									<li>
+										<p>{q.question}</p>
+										<p class="mute">{q.answers.join(" · ")}</p>
+										<details>
+											<summary>Show the answer</summary>
+											<p>{q.answers[q.correct]}</p>
+										</details>
+									</li>
+								))}
+							</ol>
+							<p class="src"><a href={quiz.credit.url}>{quiz.credit.name}</a></p>
+						</noscript>
+					</section>
+				)
+			}
+		</div>
+		{
+			onThisDay && (
+				<section class="sec otd" aria-labelledby="h-otd">
+					<Cue id="h-otd">On this day</Cue>
+					<p>
+						<strong class="year">{onThisDay.year}</strong> {onThisDay.text}{" "}
+						<span class="src"><a href={onThisDay.url}>{onThisDay.credit.name}</a></span>
+					</p>
+				</section>
+			)
+		}
+		{
+			quote && (
+				<figure class="quote">
+					<blockquote>&ldquo;{quote.text}&rdquo;</blockquote>
+					<figcaption>
+						{quote.author}{" "}
+						<span class="src"><a href={quote.credit.url}>{quote.credit.name}</a></span>
+					</figcaption>
+				</figure>
+			)
+		}
+	</main>
+
+	{
+		today.news.length > 0 && (
+			<section class="wrap news" aria-labelledby="h-news">
+				<Cue id="h-news">Headlines</Cue>
+				<ul class="plain">
+					{today.news.map((h) => (
+						<li>
+							<span class="paper">{h.source}</span> <a href={h.url}>{h.title}</a>
+						</li>
+					))}
+				</ul>
+			</section>
+		)
+	}
+
+	<Foot>New every midnight. <a href="/about">About</a> &middot;</Foot>
+</Base>

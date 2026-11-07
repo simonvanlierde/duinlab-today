@@ -1,0 +1,7 @@
+# Static files skip the Worker, so they get their headers here.
+/*
+  X-Content-Type-Options: nosniff
+
+# Font files are not hashed: rename one when it changes.
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable

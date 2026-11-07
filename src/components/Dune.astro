@@ -1,0 +1,42 @@
+---
+// The dune at the foot of the masthead, in the ground colour.
+---
+
+<svg class="dune" viewBox="0 0 390 56" preserveAspectRatio="none" aria-hidden="true">
+	<path d="M0 36 C50 26 90 16 150 24 S250 38 310 22 S370 14 390 20 V56 H0Z" opacity=".3" />
+	<path d="M0 46 C60 38 120 36 190 42 S320 46 390 36 V56 H0Z" />
+</svg>
+
+<style>
+	.dune {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: -1px;
+		width: 100%;
+		height: 40px;
+		fill: var(--ground);
+	}
+	/* the back dune drifts, slowly */
+	@media (prefers-reduced-motion: no-preference) {
+		.dune path:first-child {
+			animation: drift 48s ease-in-out infinite alternate;
+		}
+	}
+	@keyframes drift {
+		to {
+			d: path("M0 30 C60 22 100 24 160 30 S260 34 320 24 S372 20 390 26 V56 H0Z");
+		}
+	}
+	/* the short desktop masthead (global.css) */
+	@media (min-width: 1100px) and (max-height: 940px) {
+		.dune {
+			height: 22px;
+		}
+	}
+	@media print {
+		.dune {
+			display: none;
+		}
+	}
+</style>

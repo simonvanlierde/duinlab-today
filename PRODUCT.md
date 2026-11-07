@@ -33,15 +33,26 @@ Met), never generated text. The same `/today.json` feeds the household's email d
 
 ## Operating Context
 
-- The day turns over at midnight Europe/Amsterdam; everyone sees the same page that day.
+- The day turns over at midnight Europe/Amsterdam; everyone sees the same page that day (the
+  day is stored once, in Workers KV).
 - Games open on their own sites in a new tab; the page cannot see whether a game was finished,
   so opening one counts as playing it.
-- Games: factmap.world, TimeGuessr, Shikaku of the day, Krillion, Catfishing, NYT Connections,
-  NYT Wordle, Raddle, Timdle, Metazooa.
-- Weather: Open-Meteo forecast for The Hague (52.08 N, 4.31 E), no key, credited.
-- Sources: Wikipedia featured feed (On this day, Did you know), Wiktionary word of the day,
-  Open Trivia DB (five questions per day, CC BY-SA 4.0, credited), NASA APOD (API key; RSS as
-  fallback), The Met collection API (public-domain highlights), ZenQuotes (credited).
+- Games: factmap.world, TimeGuessr, Shikaku of the day, Krillion, Catfishing, Connections,
+  Wordle, Raddle, Timdle, Metazooa.
+- Weather: Open-Meteo forecast for The Hague (52.08 N, 4.31 E), no key, credited; the weather
+  line links to meteoblue's week forecast. The rain line comes from Buienradar's radar (5-minute
+  steps), with Open-Meteo as the fallback.
+- Headlines: the top story from NOS, NRC, the BBC, the Guardian and the New York Times,
+  below the paper. Five lines, not a news section.
+- Sources: Wikipedia featured feed (On this day, Did you know, the featured article), Wiktionary word of the day,
+  Open Trivia DB (five questions per day, CC BY-SA 4.0, credited), NASA APOD (API key), The
+  Met collection API (public-domain highlights, and the picture when APOD has none),
+  ZenQuotes (credited).
+- Also on the page: the moon in its real phase, high in the sky, which opens the sun times,
+  golden hour, day length and moon phase; the games played in the phone's bar, Dutch holidays and customs ahead (a
+  static table), day length, a share
+  line for the quiz score and games played, and an About page (privacy, accessibility,
+  sources, code).
 
 ## Capabilities and Constraints
 

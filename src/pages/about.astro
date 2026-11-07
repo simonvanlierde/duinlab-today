@@ -1,0 +1,53 @@
+---
+import Plain from "../layouts/Plain.astro";
+---
+
+<Plain
+	title="About · today.duinlab.nl"
+	description="What today.duinlab.nl is, what it keeps, where its facts come from, and its code."
+>
+	<Fragment slot="title">About this page</Fragment>
+
+	<p>
+		A daily page for two of us in The Hague, open to anyone: one picture, a few facts, a word, a quiz and a
+		handful of games. It changes at midnight, Amsterdam time.
+	</p>
+
+	<h2>Privacy</h2>
+	<p>
+		No cookies, no analytics. Your played games, streaks and quiz answers stay in this browser's local storage
+		(<code>today.games.v1</code>, <code>today.quiz.v1</code>, and <code>today.sunrise.v1</code> for the date of
+		your last visit) and are never sent anywhere. Clear the site's data
+		to remove them.
+	</p>
+	<p>
+		A Cloudflare Worker serves the page. Cloudflare keeps request logs for a few days: the address asked for,
+		the time, and connection details such as your IP address. I only read them to trace a fault. The day's picture loads straight from NASA, The Met or YouTube, so
+		they see your IP address too.
+	</p>
+
+	<h2>Accessibility</h2>
+	<p>
+		The aim is WCAG 2.2 AA. Text contrast holds in every sky, games and answers are at least 44 pixels tall,
+		keyboard focus is visible, motion stops when your system asks for less, and the page reads in full without
+		JavaScript. CI scans the home, about and 404 pages with axe. If something gets in your way,
+		<a href="https://github.com/simonvanlierde/duinlab-today/issues">open an issue</a>.
+	</p>
+
+	<h2>Sources</h2>
+	<p>
+		Each fact links to where it came from: Wikipedia, Wiktionary, NASA APOD, The Metropolitan Museum of Art,
+		Open Trivia DB (CC BY-SA 4.0), ZenQuotes, and <a href="https://open-meteo.com/">Open-Meteo</a> for the
+		weather. The rain line comes from <a href="https://www.buienradar.nl/">Buienradar</a>'s radar, or from
+		Open-Meteo when Buienradar is down. The weather line opens
+		<a href="https://www.meteoblue.com/en/weather/week/the-hague_netherlands_2747373">meteoblue</a>. The
+		headlines are the top story of NOS, NRC, the BBC, the Guardian and the New York Times. The sky is worked out from
+		the sun's position over The Hague, in your browser.
+	</p>
+
+	<h2>Code</h2>
+	<p>
+		<a href="https://github.com/simonvanlierde/duinlab-today">github.com/simonvanlierde/duinlab-today</a>, MIT
+		licence. The day's data is at <a href="/today.json">today.json</a>.
+	</p>
+</Plain>

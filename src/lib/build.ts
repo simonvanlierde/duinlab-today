@@ -1,0 +1,87 @@
+import { fetchPicture, preferredPicture } from "./sources/picture";
+import { fetchQuote } from "./sources/quote";
+import { fetchQuiz } from "./sources/trivia";
+import { fetchWikipedia } from "./sources/wikipedia";
+import { fetchWord } from "./sources/wiktionary";
+import { moonAt, sunTimes } from "./sun";
+import type { Today } from "./types";
+
+/** The day's sources, fetched in parallel, each failing on its own. Weather, news and games are added on read. */
+export type Day = Omit<Today, "weather" | "news" | "games">;
+
+export async function buildDay(
+	date: string,
+	now: Date,
+	apiKey: string | undefined,
+): Promise<Day> {
+	const [wiki, picture, word, quote, quiz] = await Promise.all([
+		fetchWikipedia(date),
+		fetchPicture(date, apiKey),
+		fetchWord(date),
+		fetchQuote(),
+		fetchQuiz(date),
+	]);
+	return {
+		date,
+		generatedAt: now.toISOString(),
+		sun: sunTimes(date),
+		moon: moonAt(new Date(`${date}T12:00:00Z`)),
+		picture,
+		didYouKnow: wiki.didYouKnow,
+		onThisDay: wiki.onThisDay,
+		featured: wiki.featured,
+		word,
+		quote,
+		quiz,
+	};
+}
+
+/** Sections a source supplies; `sun` and `moon` are computed and always present. */
+const sections = (d: Day) => [
+	d.picture,
+	d.onThisDay,
+	d.featured,
+	d.word,
+	d.quote,
+	d.quiz,
+	d.didYouKnow.length > 0 ? d.didYouKnow : null,
+];
+
+export const missingSections = (d: Day) =>
+	sections(d).filter((s) => s === null).length;
+
+export const allFailed = (d: Day) => sections(d).every((s) => s === null);
+
+/** Not final yet: a source is missing, or The Met stands in for APOD, which publishes at 06:00. */
+export function incomplete(d: Day, hasApodKey: boolean): boolean {
+	return (
+		missingSections(d) > 0 ||
+		(hasApodKey &&
+			preferredPicture(d.date) === "apod" &&
+			d.picture?.kind === "met")
+	);
+}
+
+/**
+ * A rebuild keeps every section the earlier build already had, so the quiz never changes under
+ * someone halfway through it. The picture switches only to the day's preferred source.
+ */
+export function mergeDay(prev: Day | null, fresh: Day): Day {
+	if (!prev || prev.date !== fresh.date) return fresh;
+	const preferred = preferredPicture(fresh.date);
+	return {
+		...fresh,
+		picture:
+			prev.picture?.kind === preferred
+				? prev.picture
+				: fresh.picture?.kind === preferred
+					? fresh.picture
+					: (prev.picture ?? fresh.picture),
+		didYouKnow: prev.didYouKnow.length > 0 ? prev.didYouKnow : fresh.didYouKnow,
+		onThisDay: prev.onThisDay ?? fresh.onThisDay,
+		featured: prev.featured ?? fresh.featured,
+		word: prev.word ?? fresh.word,
+		quote: prev.quote ?? fresh.quote,
+		quiz: prev.quiz ?? fresh.quiz,
+	};
+}

@@ -1,0 +1,78 @@
+---
+import "../styles/global.css";
+import { skyBootScript } from "../components/boot";
+import { PHASE_SUN, SKY, skyAt } from "../components/sky";
+import { type SkyPhase, sunAltitude } from "../lib/sun";
+import type { Today } from "../lib/types";
+
+interface Props {
+	today: Today;
+	phase: SkyPhase;
+	/** `?phase=` was given: the page keeps that sky and the clock does not move it. */
+	forced: boolean;
+	saturation: number;
+	title: string;
+	description: string;
+}
+const { today, phase, forced, saturation, title, description } = Astro.props;
+
+const now = Date.now();
+const sun = forced
+	? PHASE_SUN[phase]
+	: {
+			alt: sunAltitude(now),
+			rising: sunAltitude(now + 600000) > sunAltitude(now),
+		};
+const first = skyAt(sun.alt, sun.rising, SKY);
+const style = Object.entries({ ...first.vars, "--sat": String(saturation) })
+	.map(([k, v]) => `${k}:${v}`)
+	.join(";");
+
+const boot = skyBootScript({
+	sun: today.sun,
+	forced: forced ? phase : null,
+	ids: today.games.map((g) => g.id),
+});
+
+// the inline script is allowed by its hash, not by 'unsafe-inline'
+const digest = new Uint8Array(
+	await crypto.subtle.digest("SHA-256", new TextEncoder().encode(boot)),
+);
+Astro.csp?.insertScriptHash(`sha256-${btoa(String.fromCharCode(...digest))}`);
+---
+
+<!doctype html>
+<html
+	lang="en"
+	data-phase={phase}
+	data-ground={first.dark ? "dark" : "light"}
+	style={style}
+>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href="https://today.duinlab.nl/" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		<link rel="manifest" href="/manifest.webmanifest" />
+		<meta name="theme-color" content="#0a1030" />
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="today.duinlab.nl" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content="https://today.duinlab.nl/" />
+		<meta property="og:image" content="https://today.duinlab.nl/og.png" />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content="A dawn sky over a low dune, with the words today.duinlab.nl" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<link rel="preload" href="/fonts/literata.woff2" as="font" type="font/woff2" crossorigin />
+		<link rel="preload" href="/fonts/barlow-600.woff2" as="font" type="font/woff2" crossorigin />
+		<script is:inline set:html={boot}></script>
+	</head>
+	<body>
+		<slot />
+	</body>
+</html>

@@ -1,0 +1,16 @@
+---
+interface Props {
+	id?: string;
+	/** Heading for screen readers only, where the content names itself. */
+	sr?: boolean;
+}
+const { id, sr = false } = Astro.props;
+---
+
+<h2 class:list={["cue", { sr }]} id={id}><slot /></h2>
+
+<style>
+	.cue.sr {
+		position: absolute;
+	}
+</style>

@@ -1,0 +1,14 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "duinlab-today",
+	"compatibility_date": "2026-10-20",
+	"observability": { "enabled": true },
+	// the Astro handler plus the hourly refresh of the day (src/worker.ts)
+	"main": "./src/worker.ts",
+	"triggers": { "crons": ["5 * * * *"] },
+	// the built day, one key per date, the same for every Cloudflare location
+	"kv_namespaces": [
+		{ "binding": "DAYS", "id": "300b6192395a4909abf0b46357156964" }
+	],
+	"routes": [{ "pattern": "today.duinlab.nl", "custom_domain": true }]
+}

@@ -1,0 +1,798 @@
+@font-face {
+	font-family: "Literata";
+	src: url("/fonts/literata.woff2") format("woff2");
+	font-weight: 400 600;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: "Literata";
+	src: url("/fonts/literata-italic.woff2") format("woff2");
+	font-weight: 400 600;
+	font-style: italic;
+	font-display: swap;
+}
+@font-face {
+	font-family: "Barlow Semi Condensed";
+	src: url("/fonts/barlow-500.woff2") format("woff2");
+	font-weight: 500;
+	font-display: swap;
+}
+@font-face {
+	font-family: "Barlow Semi Condensed";
+	src: url("/fonts/barlow-600.woff2") format("woff2");
+	font-weight: 600;
+	font-display: swap;
+}
+
+/* The sky lives in the masthead: four stops from zenith (k0) to the horizon (k3), then the
+   dune in the ground colour. The page sets all five from the sun's altitude (skyAt in
+   sky.ts); the ground follows the sky, dark until just before sunrise. Masthead text sits
+   in the k0-k1 part, which keeps white text at AA. */
+@property --k0 {
+	syntax: "<color>";
+	inherits: true;
+	initial-value: #0a1030;
+}
+@property --k1 {
+	syntax: "<color>";
+	inherits: true;
+	initial-value: #142463;
+}
+@property --k2 {
+	syntax: "<color>";
+	inherits: true;
+	initial-value: #2c4fc0;
+}
+@property --k3 {
+	syntax: "<color>";
+	inherits: true;
+	initial-value: #e9a3b3;
+}
+@property --ground {
+	syntax: "<color>";
+	inherits: true;
+	initial-value: #fffaf7;
+}
+@property --bar {
+	syntax: "<color>";
+	inherits: true;
+	initial-value: #0a1030;
+}
+
+:root {
+	--sat: 1;
+	--K0: oklch(from var(--k0) l calc(c * var(--sat)) h);
+	--K1: oklch(from var(--k1) l calc(c * var(--sat)) h);
+	--K2: oklch(from var(--k2) l calc(c * var(--sat)) h);
+	--K3: oklch(from var(--k3) l calc(c * var(--sat)) h);
+	--day-bar: #dce9f7;
+	--ink: light-dark(#1d1a26, #f1eef8);
+	--mute: light-dark(#585164, #c4c5de);
+	--lit: light-dark(#c2410c, #ff9f5a);
+	--lit-text: light-dark(#9a3412, #ffc493);
+	--rule: color-mix(in oklab, var(--ink) 16%, transparent);
+	--ground-2: color-mix(in oklab, var(--ink) 5%, var(--ground));
+	color-scheme: light;
+	color: var(--ink);
+	background: var(--ground);
+	/* color-scheme flips the ink half-way through the ground's ease, not before it starts */
+	transition-property: --k0, --k1, --k2, --k3, --ground, color-scheme;
+	transition-behavior: allow-discrete;
+	transition-duration: 2.4s;
+	transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+	--ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+	scrollbar-color: color-mix(in oklab, var(--ink) 35%, transparent) transparent;
+}
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		transition: none;
+	}
+}
+
+:root[data-ground="dark"] {
+	color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+* {
+	margin: 0;
+}
+html {
+	-webkit-text-size-adjust: 100%;
+}
+body {
+	font-family: "Literata", Georgia, serif;
+	font-size: 1rem;
+	line-height: 1.55;
+	font-optical-sizing: auto;
+	overflow-wrap: break-word;
+}
+img,
+svg {
+	display: block;
+	max-width: 100%;
+}
+::selection {
+	background: light-dark(#f4c9b0, #3f58bd);
+	color: light-dark(#1d1a26, #fff);
+}
+button {
+	font: inherit;
+	color: inherit;
+}
+
+a {
+	color: inherit;
+	text-decoration-line: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.2em;
+	text-decoration-color: color-mix(in oklab, currentColor 45%, transparent);
+}
+a:hover {
+	text-decoration-color: currentColor;
+}
+:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 3px;
+	border-radius: 2px;
+}
+.sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+.plain {
+	list-style: none;
+	padding: 0;
+}
+.mute {
+	color: var(--mute);
+}
+
+.wrap {
+	max-width: 1320px;
+	margin-inline: auto;
+	padding-inline: 16px;
+}
+@media (min-width: 700px) {
+	.wrap {
+		padding-inline: 32px;
+	}
+}
+
+/* labels and figures */
+.bar,
+.cue,
+.count,
+.undo,
+.next,
+.verdict,
+summary,
+.src {
+	font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+}
+.bar,
+.cue,
+.verdict,
+.undo {
+	text-transform: uppercase;
+	letter-spacing: 0.14em;
+	font-weight: 600;
+	font-size: 0.8125rem;
+	line-height: 1.2;
+}
+.figure,
+.temp,
+.year {
+	font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+	font-variant-numeric: tabular-nums;
+	font-weight: 600;
+}
+.src {
+	font-size: 0.875rem;
+	letter-spacing: 0.03em;
+	color: var(--mute);
+	white-space: nowrap;
+}
+
+/* the bar: the sky's top edge. On a phone it stays put and walks toward day as you scroll. */
+.bar {
+	--bar: var(--K0);
+	position: relative;
+	z-index: 2;
+	background: var(--bar);
+	/* white on a dark sky, ink on a light one */
+	color: oklch(from var(--bar) clamp(0.2, (0.6 - l) * 1000, 0.97) 0.02 280);
+}
+.bar-in {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 16px;
+	min-height: 40px;
+	font-variant-numeric: tabular-nums;
+}
+@media (max-width: 699px) {
+	/* keyboard focus never lands under the sticky bar */
+	html {
+		scroll-padding-top: 48px;
+	}
+	.bar {
+		position: sticky;
+		top: 0;
+	}
+	@supports (animation-timeline: scroll()) {
+		@media (prefers-reduced-motion: no-preference) {
+			.bar {
+				animation: bar-to-day linear both;
+				animation-timeline: scroll(root);
+				animation-range: 0 1400px;
+			}
+		}
+	}
+}
+/* the jump between 48% and 52% skips the mid-blue where neither white nor ink reaches AA */
+@keyframes bar-to-day {
+	48% {
+		--bar: color-mix(in oklab, var(--K0) 72%, var(--day-bar));
+	}
+	52% {
+		--bar: color-mix(in oklab, var(--K0) 18%, var(--day-bar));
+	}
+	to {
+		--bar: var(--day-bar);
+	}
+}
+
+/* masthead */
+.sky {
+	/* the horizon band under the text: text only ever sits on the k0-k1 part */
+	--hz: 76px;
+	position: relative;
+	color: #fff;
+	background: linear-gradient(
+		to bottom,
+		var(--K0),
+		var(--K1) calc(100% - var(--hz)),
+		var(--K2) calc(100% - var(--hz) * 0.55),
+		var(--K3) calc(100% - 12px)
+	);
+}
+.mast {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 12px 48px;
+	padding-top: 12px;
+	padding-bottom: var(--hz);
+}
+h1 {
+	font-size: clamp(2rem, 1.4rem + 1.8vw, 2.75rem);
+	font-weight: 500;
+	line-height: 1.08;
+	letter-spacing: -0.02em;
+	text-wrap: balance;
+}
+.greet {
+	margin-top: 6px;
+	font-size: 1.0625rem;
+	font-style: italic;
+	color: #dfe4fb;
+}
+.strip {
+	font-size: 0.9375rem;
+	line-height: 1.45;
+	color: #eef0fd;
+	font-variant-numeric: tabular-nums;
+}
+.strip li + li {
+	margin-top: 4px;
+}
+/* the played count in the bar: on phones only, where the bar stays on screen while you scroll */
+@media (min-width: 700px) {
+	[data-progress] {
+		display: none;
+	}
+}
+.strip b {
+	font-weight: 600;
+}
+.temp {
+	font-size: 1.25rem;
+}
+/* the moon: its real phase, high in the sky; it opens the sun and moon times */
+.moon {
+	position: absolute;
+	z-index: 2;
+	top: 14px;
+	right: max(8px, calc((100% - 1320px) / 2 + 20px));
+	padding: 8px;
+	border: 0;
+	border-radius: 50%;
+	background: none;
+	color: #f6f1dc;
+	cursor: pointer;
+	filter: drop-shadow(0 0 6px rgb(246 241 220 / 0.45));
+	transition:
+		filter 0.3s,
+		scale 0.3s var(--ease-out);
+}
+.moon:hover,
+.moon:focus-visible {
+	filter: drop-shadow(0 0 10px rgb(246 241 220 / 0.8));
+	scale: 1.08;
+}
+.moon svg {
+	display: block;
+}
+.almanac {
+	margin: auto;
+	padding: 16px 20px;
+	border: 1px solid var(--rule);
+	border-radius: 10px;
+	background: var(--ground);
+	color: var(--ink);
+	font-variant-numeric: tabular-nums;
+	line-height: 1.6;
+	box-shadow: 0 12px 40px rgb(0 0 0 / 0.3);
+}
+.almanac::backdrop {
+	background: rgb(10 12 30 / 0.35);
+}
+.sky {
+	overflow: clip;
+}
+/* stars: a fixed handful, fading in below -5 degrees */
+.sky::before,
+.sky::after {
+	content: "";
+	position: absolute;
+	inset: 0 0 30% 0;
+	pointer-events: none;
+	opacity: var(--stars, 0);
+	transition: opacity 2.4s;
+}
+.sky::before {
+	background:
+		radial-gradient(1.5px 1.5px at 8% 30%, #fff 50%, transparent),
+		radial-gradient(1px 1px at 19% 62%, #fff 50%, transparent),
+		radial-gradient(1.5px 1.5px at 31% 18%, #fff 50%, transparent),
+		radial-gradient(1px 1px at 47% 44%, #fff 50%, transparent),
+		radial-gradient(1px 1px at 58% 12%, #fff 50%, transparent),
+		radial-gradient(1.5px 1.5px at 71% 56%, #fff 50%, transparent),
+		radial-gradient(1px 1px at 84% 26%, #fff 50%, transparent),
+		radial-gradient(1px 1px at 93% 48%, #fff 50%, transparent);
+}
+.sky::after {
+	background:
+		radial-gradient(1px 1px at 13% 50%, #fff 50%, transparent),
+		radial-gradient(1.5px 1.5px at 39% 66%, #fff 50%, transparent),
+		radial-gradient(1px 1px at 53% 28%, #fff 50%, transparent),
+		radial-gradient(1px 1px at 66% 36%, #fff 50%, transparent),
+		radial-gradient(1.5px 1.5px at 78% 9%, #fff 50%, transparent),
+		radial-gradient(1px 1px at 97% 70%, #fff 50%, transparent);
+}
+@media (prefers-reduced-motion: no-preference) {
+	.sky::after {
+		animation: twinkle 7s ease-in-out infinite alternate;
+	}
+}
+@keyframes twinkle {
+	from {
+		opacity: calc(var(--stars, 0) * 0.35);
+	}
+	to {
+		opacity: var(--stars, 0);
+	}
+}
+.mast {
+	position: relative;
+	z-index: 1;
+}
+/* the sun: crosses the horizon band from sunrise to sunset, up by its altitude */
+.sun {
+	position: absolute;
+	left: calc(6% + var(--sun-x, 0.5) * 88%);
+	bottom: calc(16px + clamp(-40px, var(--sun-alt, 10) * 3px, var(--hz) - 22px));
+	width: 64px;
+	height: 64px;
+	translate: -50% 50%;
+	border-radius: 50%;
+	background: radial-gradient(
+		circle,
+		#fffaf0 0 17%,
+		color-mix(in oklab, #ffd6a0 80%, transparent) 24%,
+		color-mix(in oklab, #ffc7a0 25%, transparent) 45%,
+		transparent 70%
+	);
+	opacity: clamp(0, (var(--sun-alt, 10) + 4) / 4, 1);
+	transition:
+		left 2.4s var(--ease-out),
+		bottom 2.4s var(--ease-out),
+		opacity 2.4s;
+	pointer-events: none;
+}
+html:not(.js) .sun {
+	display: none;
+}
+@media (min-width: 900px) {
+	.mast {
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: end;
+		padding-top: 4px;
+	}
+	.sky {
+		--hz: 64px;
+	}
+	.strip {
+		text-align: right;
+	}
+}
+
+/* the front page: games, picture, reading */
+.front {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	grid-template-areas: "games" "pic" "read" "feat" "otd" "quote";
+	gap: 8px 48px;
+	padding-top: 4px;
+}
+.rail {
+	grid-area: games;
+}
+.pic {
+	grid-area: pic;
+}
+.reading {
+	grid-area: read;
+}
+.feat {
+	grid-area: feat;
+	max-width: 62ch;
+}
+@media (min-width: 1100px) {
+	/* four lines at most, so the paper keeps to one screen; the title links to the rest */
+	.feat p {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 4;
+		line-clamp: 4;
+		overflow: hidden;
+	}
+}
+.otd {
+	grid-area: otd;
+	max-width: 62ch;
+	border-top: 1px solid var(--rule);
+}
+@media (min-width: 1100px) {
+	.front {
+		grid-template-columns: minmax(0, 5fr) minmax(0, 4fr) minmax(0, 2.6fr);
+		grid-template-areas: "pic read games" "feat read games" "otd quote games";
+		grid-template-rows: auto auto 1fr;
+		align-items: start;
+	}
+	/* a failed source leaves no empty column: without a picture, its column takes the article */
+	.front:not(:has(.pic)) {
+		grid-template-areas: "feat read games" "otd quote games";
+		grid-template-rows: auto 1fr;
+	}
+	.front:not(:has(.pic, .feat)) {
+		grid-template-areas: "read otd games" "read quote games";
+	}
+}
+
+.cue {
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	margin-bottom: 8px;
+	color: var(--mute);
+}
+
+/* picture */
+.pic {
+	padding-block: 12px;
+}
+.pic img {
+	width: auto;
+	height: auto;
+	max-width: 100%;
+	max-height: 70svh;
+	background: var(--ground-2);
+}
+@media (min-width: 1100px) {
+	.pic img {
+		max-height: max(240px, calc(100svh - 520px));
+	}
+}
+/* the featured article sits under the picture on wide screens: on a tall one the full masthead
+   is back too, so the picture gives up the room */
+@media (min-width: 1100px) and (min-height: 941px) {
+	.front:has(.feat) .pic img {
+		max-height: calc(100svh - 620px);
+	}
+}
+.pic figcaption {
+	margin-top: 8px;
+	font-size: 0.9375rem;
+	max-width: 62ch;
+}
+
+/* reading */
+.sec {
+	padding-block: 12px 14px;
+}
+.sec + .sec {
+	border-top: 1px solid var(--rule);
+}
+.reading {
+	max-width: 62ch;
+}
+.that,
+.pos {
+	color: var(--mute);
+	font-style: italic;
+}
+.word {
+	font-size: 1.375rem;
+	font-weight: 500;
+	margin-right: 8px;
+}
+.pos {
+	margin-right: 6px;
+}
+.year {
+	font-size: 1.25rem;
+	margin-right: 4px;
+}
+
+.quiz-static li + li {
+	margin-top: 10px;
+}
+summary {
+	display: flex;
+	align-items: center;
+	min-height: 44px;
+	cursor: pointer;
+	font-weight: 600;
+	font-size: 0.9375rem;
+	letter-spacing: 0.04em;
+	color: var(--mute);
+}
+
+/* games: a 2 x 5 board on the phone, a rail on the desktop */
+.rail {
+	padding-block: 12px 4px;
+}
+.quote {
+	grid-area: quote;
+	max-width: 52ch;
+	padding-block: 12px;
+	border-top: 1px solid var(--rule);
+}
+.quote blockquote {
+	font-style: italic;
+	text-wrap: pretty;
+}
+.quote figcaption {
+	margin-top: 2px;
+	font-size: 0.9375rem;
+	color: var(--mute);
+}
+
+/* the weather line: the whole line is the link */
+.wx {
+	text-decoration: none;
+}
+.wx:hover {
+	text-decoration: underline;
+	text-decoration-color: color-mix(in oklab, currentColor 60%, transparent);
+}
+
+/* about */
+.link {
+	padding: 0;
+	background: none;
+	border: 0;
+	font: inherit;
+	color: inherit;
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.2em;
+	text-decoration-color: color-mix(in oklab, currentColor 45%, transparent);
+	cursor: pointer;
+}
+/* skip link: out of sight until focused */
+.skip {
+	position: absolute;
+	z-index: 10;
+	left: 16px;
+	top: -100px;
+	padding: 10px 14px;
+	background: var(--ground);
+	color: var(--ink);
+	border-radius: 6px;
+}
+.skip:focus {
+	top: 8px;
+}
+
+.occasion {
+	margin-top: 4px;
+	font-size: 0.9375rem;
+	color: #f4dcc8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.sun {
+		transition: none;
+	}
+}
+
+/* the end of the paper: every game played and the quiz done (or no quiz today) */
+.the-end {
+	display: none;
+	margin-top: 8px;
+	font-style: italic;
+	color: var(--mute);
+}
+:root[data-whiteout]:is([data-quiz-done], :not(:has(.quiz-live))) .the-end {
+	display: block;
+}
+
+/* the picture develops like a print */
+@media (prefers-reduced-motion: no-preference) {
+	.pic img {
+		animation: develop 1.6s var(--ease-out) both;
+	}
+}
+@keyframes develop {
+	from {
+		opacity: 0.25;
+		filter: saturate(0) brightness(1.25);
+	}
+}
+
+/* on short desktop screens the masthead shrinks to two lines, so the paper fits one screen */
+@media (min-width: 1100px) and (max-height: 940px) {
+	.sky {
+		--hz: 28px;
+	}
+	h1 {
+		font-size: 2rem;
+	}
+	.mast {
+		grid-template-columns: min-content minmax(0, 1fr);
+		padding-top: 0;
+	}
+	/* the date and the phase line share a row */
+	.mast > div:first-child {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		column-gap: 16px;
+	}
+	.greet {
+		margin-top: 0;
+	}
+	/* the date on its own row, then the phase line and the occasion side by side */
+	h1 {
+		flex-basis: 100%;
+		white-space: nowrap;
+	}
+	.strip {
+		justify-self: end;
+	}
+	/* the weather now sits at the top right too: the moon moves to the open sky mid-way */
+	.moon {
+		top: 2px;
+		right: auto;
+		left: 50%;
+	}
+	/* lines break between items, not inside one */
+	.strip li {
+		display: inline;
+		white-space: nowrap;
+	}
+	.strip li:not(:last-child)::after {
+		content: " · ";
+		white-space: normal;
+	}
+}
+
+/* headlines: below the paper, one top story per newspaper */
+.news {
+	padding-block: 12px 4px;
+}
+.news ul {
+	display: grid;
+	gap: 6px 32px;
+	padding-top: 10px;
+	border-top: 1px solid var(--rule);
+}
+@media (min-width: 900px) {
+	.news ul {
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+	}
+}
+.news li {
+	font-size: 0.9375rem;
+	text-wrap: pretty;
+}
+.news .paper {
+	margin-right: 4px;
+	font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+	font-weight: 600;
+	font-size: 0.75rem;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--mute);
+}
+
+/* about and 404 */
+.sky-slim .mast {
+	padding-top: 16px;
+}
+.prose {
+	max-width: calc(62ch + 64px);
+	padding-block: 16px 32px;
+}
+.prose h2 {
+	margin: 1.4em 0 0.3em;
+	font-size: 1.25rem;
+	font-weight: 500;
+}
+.prose p + p {
+	margin-top: 0.7em;
+}
+code {
+	font-size: 0.875em;
+}
+
+/* the paper on paper: one page, black on white, links spelled out */
+@media print {
+	:root {
+		--ground: #fff;
+		color-scheme: light;
+	}
+	.bar,
+	.skip,
+	.sun,
+	.rail,
+	.quiz,
+	.the-end,
+	.sky::before,
+	.sky::after {
+		display: none;
+	}
+	.sky {
+		color: #000;
+		background: none;
+	}
+	.greet,
+	.strip,
+	.occasion {
+		color: #333;
+	}
+	.front {
+		grid-template-columns: 1fr 1fr;
+		grid-template-areas: "pic read" "otd quote";
+	}
+	.pic img {
+		max-height: 9cm;
+		animation: none;
+	}
+	.sec a[href^="http"]::after {
+		content: " (" attr(href) ")";
+		font-size: 0.75em;
+		overflow-wrap: anywhere;
+	}
+}

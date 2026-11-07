@@ -1,0 +1,47 @@
+---
+import "../styles/global.css";
+import Dune from "../components/Dune.astro";
+import Foot from "../components/Foot.astro";
+import { PHASE_SUN, SKY, skyAt } from "../components/sky";
+
+interface Props {
+	title: string;
+	description: string;
+	/** The sky to show: day for the about page, night for a missing page. */
+	sky?: "day" | "night";
+}
+const { title, description, sky = "day" } = Astro.props;
+const s = skyAt(PHASE_SUN[sky].alt, true, SKY);
+const style = Object.entries(s.vars)
+	.map(([k, v]) => `${k}:${v}`)
+	.join(";");
+---
+
+<!doctype html>
+<html lang="en" data-ground={s.dark ? "dark" : "light"} style={style}>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="manifest" href="/manifest.webmanifest" />
+	</head>
+	<body>
+		<p class="bar">
+			<span class="wrap bar-in">
+				<a href="/">today.duinlab.nl</a>
+				<span>{sky === "night" ? "below the horizon" : "about"}</span>
+			</span>
+		</p>
+		<header class="sky sky-slim">
+			<div class="wrap mast"><h1><slot name="title" /></h1></div>
+			<Dune />
+		</header>
+		<main class="wrap prose" id="paper">
+			<slot />
+		</main>
+		<Foot><a href="/">Today's paper</a> &middot;</Foot>
+	</body>
+</html>
