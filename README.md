@@ -18,14 +18,14 @@ flowchart LR
   sources[("Wikipedia, Wiktionary,<br/>APOD, The Met,<br/>Open Trivia DB, ZenQuotes")] --> build
   build -- "day/v1/date" --> kv[("Workers KV")]
   kv --> page
-  live[("Open-Meteo, news feeds")] -- "Cache API,<br/>15 and 30 min" --> page
+  live[("Open-Meteo, Buienradar,<br/>news feeds")] -- "Cache API,<br/>15 and 30 min" --> page
   page -- "HTML with the data in it" --> browser["Browser: sky script,<br/>games and quiz islands"]
   browser <--> ls[("localStorage:<br/>ticks, streaks, quiz")]
 ```
 
 One Worker serves everything ([`src/worker.ts`](src/worker.ts)).
 
-- **The day** (picture, facts, word, quote, quiz) is built by a cron run at five past every
+- **The day** (picture, facts, featured article, word, quote, quiz) is built by a cron run at five past every
   hour and stored in Workers KV, the same for every Cloudflare location. The run after
   midnight builds the new day. Later runs only touch a day that is incomplete: they retry a
   failed source and pick up APOD once it publishes at 06:00 Amsterdam time. A rebuild keeps
@@ -70,22 +70,23 @@ are:
 | `generatedAt` | ISO instant (UTC) the day was built | always present |
 | `sun`, `moon` | worked out locally | always present |
 | `games` | the daily games | always present |
-| `picture`, `onThisDay`, `word`, `quote`, `quiz`, `weather` | objects | `null` |
+| `picture`, `onThisDay`, `featured`, `word`, `quote`, `quiz`, `weather` | objects | `null` |
 | `didYouKnow` | a list of facts | `[]` |
 | `news` | up to five headlines, one per paper | `[]` |
 
 Sun times carry the Amsterdam offset. `weather.rainNext2h[].time` is `HH:MM` on the
-Amsterdam clock. New fields may appear at any time. A commit that renames or removes a field says so
-in its message.
+Amsterdam clock, and `mm` is mm per hour: 5-minute steps from Buienradar's radar, or 15-minute
+steps from Open-Meteo when Buienradar is down (`weather.rainCredit` says which). New fields may
+appear at any time. A commit that renames or removes a field says so in its message.
 When every source fails, the endpoint still answers 200, with a short cache time. When the
 Worker itself fails, it answers 503 with `{"error": ...}`.
 
 ## Sources
 
-Wikipedia (On this day, Did you know), Wiktionary (word of the day), NASA APOD, The
-Metropolitan Museum of Art (public-domain works), Open Trivia DB (CC BY-SA 4.0), ZenQuotes,
-Open-Meteo, and the front-page RSS feeds of NOS, NRC, the BBC, the Guardian and the New York
-Times. Each item on the page links to its source.
+Wikipedia (On this day, Did you know, the featured article), Wiktionary (word of the day),
+NASA APOD, The Metropolitan Museum of Art (public-domain works), Open Trivia DB (CC BY-SA 4.0),
+ZenQuotes, Open-Meteo, Buienradar (the rain radar), and the front-page RSS feeds of NOS, NRC,
+the BBC, the Guardian and the New York Times. Each item on the page links to its source.
 
 ## Licence
 

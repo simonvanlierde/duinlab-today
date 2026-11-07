@@ -93,8 +93,23 @@ const boot = `(${(
 			}
 			const now = Date.now();
 			const skyNow = at ?? now;
+			const hhmm = fmt.format(now);
 			for (const el of document.querySelectorAll("[data-clock]"))
-				el.textContent = fmt.format(now);
+				el.textContent = hhmm;
+			// the now dot on the day band
+			const [h = 0, m = 0] = hhmm.split(":").map(Number);
+			root.style.setProperty("--day-x", ((h * 60 + m) / 1440).toFixed(4));
+			let played = "";
+			try {
+				const saved = JSON.parse(localStorage.getItem(cfg.key) ?? "{}");
+				const n = cfg.ids.filter((id) => saved[id]?.includes(loaded)).length;
+				if (cfg.ids.length > 0)
+					played = ` \u00b7 ${n}/${cfg.ids.length} played`;
+			} catch {
+				// no storage: no count
+			}
+			for (const el of document.querySelectorAll("[data-progress]"))
+				el.textContent = played;
 			const p = (cfg.forced ?? cfg.phaseAt(cfg.sun, now)) as SkyPhase;
 			root.dataset.phase = p;
 			for (const el of document.querySelectorAll("[data-phase-label]"))

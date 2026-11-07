@@ -1,5 +1,6 @@
 ---
 import Cue from "../components/Cue.astro";
+import { dayBand } from "../components/dayband";
 import Games from "../components/Games.svelte";
 import Quiz from "../components/Quiz.svelte";
 import {
@@ -27,6 +28,9 @@ const asked = Astro.url.searchParams.get("phase");
 const forced = PHASES.includes(asked as SkyPhase);
 const phase = forced ? (asked as SkyPhase) : phaseAt(today.sun, now.getTime());
 const { picture, word, quote, quiz, weather, onThisDay } = today;
+// days stored before the featured article existed have no such key
+const featured = today.featured ?? null;
+const rain = weather ? rainLine(weather.rainNext2h) : "";
 const fact = today.didYouKnow[0];
 const heading = longDate(today.date);
 const hasQuiz = !!quiz && quiz.questions.length > 0;
@@ -44,6 +48,7 @@ const nextSunrise = clock(
 	sunTimes(tomorrow.toISOString().slice(0, 10)).sunrise,
 );
 const occasion = occasionLine(today.date);
+const band = dayBand(today.date, today.sun);
 const HOLIDAYS =
 	"https://calendar.google.com/calendar/embed?src=en.dutch%23holiday%40group.v.calendar.google.com&ctz=Europe%2FAmsterdam";
 const what = `A small daily page: one picture, a few sourced facts, a word, a quiz and ${today.games.length} daily games.`;
@@ -61,7 +66,7 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 	<p class="bar">
 		<span class="wrap bar-in">
 			<span>today.duinlab.nl</span>
-			<span><span data-clock>{clock(now)}</span> &middot; <span data-phase-label>{PHASE_LABEL[phase]}</span></span>
+			<span><span data-clock>{clock(now)}</span> &middot; <span data-phase-label>{PHASE_LABEL[phase]}</span><span data-progress></span></span>
 		</span>
 	</p>
 	<header class="sky">
@@ -77,6 +82,13 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 					)
 				}
 			</div>
+			<div class="side">
+			<span
+				class="band"
+				style={`--band:${band.gradient}`}
+				title={`Night, blue hour, golden hour and day, midnight to midnight. Golden hour tonight ${band.golden[0]} to ${band.golden[1]}`}
+				aria-hidden="true"
+			></span>
 			<ul class="plain strip">
 				{
 					weather && (
@@ -84,13 +96,20 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 							<a class="wx" href={FORECAST} title={`${windLine(weather.now)}. The week ahead on meteoblue`}>
 								<span class="temp">{Math.round(weather.now.temperatureC)}&deg;</span>
 								{` ${weather.now.description}, ${Math.round(weather.today.maxC)}° / ${Math.round(weather.today.minC)}° · wind ${weather.now.windFrom} ${weather.now.windBeaufort}`}
-								{rainLine(weather.rainNext2h) && ` · ${rainLine(weather.rainNext2h).toLowerCase()}`}
 							</a>
+							{rain && (
+								<>
+									{" · "}
+									<a href={(weather.rainCredit ?? weather.credit).url} title={`Rain radar: ${(weather.rainCredit ?? weather.credit).name}`}>
+										{rain.toLowerCase()}
+									</a>
+								</>
+							)}
 						</li>
 					)
 				}
 				<li>
-					sun up <b>{clock(today.sun.sunrise)}</b>, down <b>{clock(today.sun.sunset)}</b>
+					sun up <b>{clock(today.sun.sunrise)}</b>, down <b>{clock(today.sun.sunset)}</b>, golden hour from <b>{band.golden[0]}</b>
 					<span class="moon">
 						<svg viewBox="0 0 18 18" width="15" height="15" aria-hidden="true">
 							<circle cx="9" cy="9" r="8.5" fill="none" stroke="currentColor" stroke-width="1" />
@@ -101,6 +120,7 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 				</li>
 				<li>{light}</li>
 			</ul>
+			</div>
 		</div>
 		<span class="sun" aria-hidden="true"></span>
 		<svg class="dune" viewBox="0 0 390 56" preserveAspectRatio="none" aria-hidden="true">
@@ -143,6 +163,17 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 				</section>
 			)
 		}
+			{
+				featured && (
+					<section class="sec feat" aria-labelledby="h-featured">
+						<Cue id="h-featured">Featured article</Cue>
+						<p>
+							<a href={featured.url}><strong>{featured.title}</strong></a>. {featured.extract}{" "}
+							<span class="src"><a href={featured.credit.url}>{featured.credit.name}</a></span>
+						</p>
+					</section>
+				)
+			}
 		<div class="reading">
 			{
 				fact && (

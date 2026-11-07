@@ -29,6 +29,7 @@ export async function buildDay(
 		picture,
 		didYouKnow: wiki.didYouKnow,
 		onThisDay: wiki.onThisDay,
+		featured: wiki.featured,
 		word,
 		quote,
 		quiz,
@@ -39,6 +40,7 @@ export async function buildDay(
 const sections = (d: Day) => [
 	d.picture,
 	d.onThisDay,
+	d.featured,
 	d.word,
 	d.quote,
 	d.quiz,
@@ -77,6 +79,7 @@ export function mergeDay(prev: Day | null, fresh: Day): Day {
 					: (prev.picture ?? fresh.picture),
 		didYouKnow: prev.didYouKnow.length > 0 ? prev.didYouKnow : fresh.didYouKnow,
 		onThisDay: prev.onThisDay ?? fresh.onThisDay,
+		featured: prev.featured ?? fresh.featured,
 		word: prev.word ?? fresh.word,
 		quote: prev.quote ?? fresh.quote,
 		quiz: prev.quiz ?? fresh.quiz,

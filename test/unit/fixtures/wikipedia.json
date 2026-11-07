@@ -1,4 +1,15 @@
 {
+	"tfa": {
+		"titles": {
+			"normalized": "Bill Madden (soldier)"
+		},
+		"extract": "Horace William Madden was an Australian Army soldier who was posthumously awarded the George Cross, the highest award for extraordinary acts of gallantry away from the field of battle that could be awarded to a member of the Australian armed forces at the time. The citation for his award highlighted his \"undaunted\" resistance and \"outstanding heroism\" while a prisoner of war of the Chinese forces during the Korean War, which was \"an inspiration to all his fellow prisoners\". It was the highest decoration awarded to an Australian during the Korean War.",
+		"content_urls": {
+			"desktop": {
+				"page": "https://en.wikipedia.org/wiki/Bill_Madden_(soldier)"
+			}
+		}
+	},
 	"dyk": [
 		{
 			"html": "... that <b id=\"mwDg\"><a rel=\"mw:WikiLink\" href=\"https://en.wikipedia.org/wiki/Cinema_'76\" title=\"Cinema '76\" id=\"mwDw\">Cinema '76</a></b> adopted three cats <i id=\"mwEA\"></i> named after <a rel=\"mw:WikiLink\" href=\"https://en.wikipedia.org/wiki/Bayaniverse\" title=\"Bayaniverse\" id=\"mwEQ\">a series of independent Philippine films</a>?",

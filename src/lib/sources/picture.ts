@@ -104,7 +104,68 @@ const fetchMet = (date: string) =>
 export const preferredPicture = (date: string): Picture["kind"] =>
 	dayOfYear(date) % 2 === 0 ? "apod" : "met";
 
-/** The day's preferred source; the other stands in. */
+/** Width and height from the header of a JPEG, PNG or GIF; null for anything else. */
+export function imageSize(
+	b: Uint8Array,
+): { width: number; height: number } | null {
+	const u16 = (i: number) => ((b[i] ?? 0) << 8) | (b[i + 1] ?? 0);
+	const u32 = (i: number) => u16(i) * 65536 + u16(i + 2);
+	if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47)
+		return { width: u32(16), height: u32(20) };
+	if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46)
+		return {
+			width: (b[6] ?? 0) | ((b[7] ?? 0) << 8),
+			height: (b[8] ?? 0) | ((b[9] ?? 0) << 8),
+		};
+	if (b[0] !== 0xff || b[1] !== 0xd8) return null;
+	// JPEG: walk the segments to the first start-of-frame marker
+	let i = 2;
+	while (i + 9 < b.length) {
+		if (b[i] !== 0xff) return null;
+		const marker = b[i + 1] ?? 0;
+		if (marker === 0xff) {
+			i++;
+			continue;
+		}
+		const sof =
+			marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker);
+		if (sof) {
+			const size = { width: u16(i + 7), height: u16(i + 5) };
+			return size.width > 0 && size.height > 0 ? size : null;
+		}
+		i += 2 + u16(i + 2);
+	}
+	return null;
+}
+
+/** The first 128 KiB of an image: enough for the header, whether or not the host honours Range. */
+async function imageHead(url: string): Promise<Uint8Array> {
+	const res = await fetch(url, {
+		headers: { range: "bytes=0-131071" },
+		signal: AbortSignal.timeout(5000),
+	});
+	if (!res.ok || !res.body)
+		throw new Error(`${new URL(url).host}: HTTP ${res.status}`);
+	const reader = res.body.getReader();
+	const parts: Uint8Array[] = [];
+	let got = 0;
+	while (got < 131072) {
+		const { done, value } = await reader.read();
+		if (done) break;
+		parts.push(value);
+		got += value.length;
+	}
+	await reader.cancel();
+	const out = new Uint8Array(got);
+	let at = 0;
+	for (const part of parts) {
+		out.set(part, at);
+		at += part.length;
+	}
+	return out;
+}
+
+/** The day's preferred source; the other stands in. Its size lets the page hold the space before it loads. */
 export async function fetchPicture(
 	date: string,
 	apiKey: string | undefined,
@@ -113,5 +174,11 @@ export async function fetchPicture(
 		fetchApod(date, apiKey),
 		fetchMet(date),
 	]);
-	return preferredPicture(date) === "apod" ? (apod ?? met) : (met ?? apod);
+	const pick =
+		preferredPicture(date) === "apod" ? (apod ?? met) : (met ?? apod);
+	if (!pick) return null;
+	const size = await safe("picture-size", async () =>
+		imageSize(await imageHead(pick.imageUrl)),
+	);
+	return size ? { ...pick, ...size } : pick;
 }

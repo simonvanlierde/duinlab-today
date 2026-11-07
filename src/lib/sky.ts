@@ -55,6 +55,10 @@ export function sunTimes(date: string): Sun {
 	};
 }
 
+/** When the sun passes `altitude` degrees on `date`, in the morning or the evening, in Amsterdam time. */
+export const sunPasses = (date: string, altitude: number, morning: boolean) =>
+	isoAmsterdam(crossing(date, 90 - altitude, morning));
+
 const SYNODIC_DAYS = 29.530588853;
 const NEW_MOON_2000 = Date.UTC(2000, 0, 6, 18, 14);
 const MOON_NAMES = [

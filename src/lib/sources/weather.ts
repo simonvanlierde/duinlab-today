@@ -1,11 +1,23 @@
-import type { Weather } from "../types";
-import { getJson, safe } from "../util";
+import type { Credit, Weather } from "../types";
+import { getJson, getText, safe } from "../util";
 
 const URL =
 	"https://api.open-meteo.com/v1/forecast?latitude=52.08&longitude=4.31" +
 	"&current=temperature_2m,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m" +
 	"&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max" +
 	"&minutely_15=precipitation&forecast_minutely_15=8&timezone=Europe/Amsterdam&forecast_days=1";
+
+// Buienradar's radar nowcast: 5-minute steps for the next two hours.
+const RADAR =
+	"https://gpsgadget.buienradar.nl/data/raintext?lat=52.08&lon=4.31";
+const BUIENRADAR: Credit = {
+	name: "Buienradar",
+	url: "https://www.buienradar.nl/",
+};
+const OPEN_METEO: Credit = {
+	name: "Open-Meteo",
+	url: "https://open-meteo.com/",
+};
 
 const WMO: Record<number, string> = {
 	0: "clear sky",
@@ -82,12 +94,37 @@ export function parseWeather(r: Raw, fetchedAt: Date): Weather {
 		},
 		rainNext2h: r.minutely_15.time.map((t, i) => ({
 			time: t.slice(11, 16),
-			mm: r.minutely_15.precipitation[i] as number,
+			// mm per quarter hour, as mm per hour like Buienradar's
+			mm: (r.minutely_15.precipitation[i] as number) * 4,
 		})),
+		rainCredit: OPEN_METEO,
 		fetchedAt: fetchedAt.toISOString(),
-		credit: { name: "Open-Meteo", url: "https://open-meteo.com/" },
+		credit: OPEN_METEO,
 	};
 }
 
-export const fetchWeather = (now: Date) =>
-	safe("open-meteo", async () => parseWeather(await getJson<Raw>(URL), now));
+/** Lines of `VVV|HH:MM`; VVV is 0-255 and mm/h = 10^((VVV-109)/32). Other lines are skipped. */
+export function parseRaintext(text: string): Weather["rainNext2h"] {
+	return text.split("\n").flatMap((line) => {
+		const m = /^(\d{1,3})\|(\d{2}:\d{2})\s*$/.exec(line);
+		if (!m) return [];
+		// rounding to 0.01 mm/h turns the scale's floor (VVV 0 is 0.0004) into a dry 0
+		const mm = Math.round(10 ** ((Number(m[1]) - 109) / 32) * 100) / 100;
+		return [{ time: m[2] as string, mm }];
+	});
+}
+
+/** Open-Meteo for the weather; the rain line from Buienradar's radar when it answers. */
+export async function fetchWeather(now: Date): Promise<Weather | null> {
+	const [weather, radar] = await Promise.all([
+		safe("open-meteo", async () => parseWeather(await getJson<Raw>(URL), now)),
+		safe("buienradar", async () => {
+			const steps = parseRaintext(await getText(RADAR, "text/plain"));
+			if (steps.length === 0) throw new Error("no rain steps");
+			return steps;
+		}),
+	]);
+	return weather && radar
+		? { ...weather, rainNext2h: radar, rainCredit: BUIENRADAR }
+		: weather;
+}

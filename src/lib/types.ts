@@ -1,6 +1,6 @@
 // The day's data, as rendered by the page and served at /today.json. When a source fails its
-// section is dropped: `didYouKnow` is [], and picture, onThisDay, word, quote, quiz and
-// weather are null. Instants are ISO strings (`generatedAt` and `fetchedAt` in UTC, `sun`
+// section is dropped: `didYouKnow` is [], and picture, onThisDay, featured, word, quote, quiz
+// and weather are null. Instants are ISO strings (`generatedAt` and `fetchedAt` in UTC, `sun`
 // with the Amsterdam offset); `rainNext2h` times are bare HH:MM on the Amsterdam clock.
 
 /** Where an item came from, shown as its credit line. */
@@ -36,6 +36,15 @@ export interface Fact {
 export interface OnThisDay {
 	year: number;
 	text: string;
+	url: string;
+	credit: Credit;
+}
+
+/** Wikipedia's featured article of the day. */
+export interface Featured {
+	title: string;
+	/** The lead, cut to at most two sentences and about 280 characters. */
+	extract: string;
 	url: string;
 	credit: Credit;
 }
@@ -85,8 +94,13 @@ export interface Weather {
 		windFrom: string;
 	};
 	today: { maxC: number; minC: number; rainChanceMax: number };
-	/** The next two hours in 15-minute steps; `time` is local "HH:MM". */
+	/**
+	 * The next two hours, from now: Buienradar's radar in 5-minute steps, or Open-Meteo's
+	 * forecast in 15-minute steps when Buienradar fails. `time` is local "HH:MM", `mm` is mm/h.
+	 */
 	rainNext2h: { time: string; mm: number }[];
+	/** Which of the two `rainNext2h` comes from. */
+	rainCredit: Credit;
 	/** ISO instant the forecast was fetched; weather is cached for 15 minutes. */
 	fetchedAt: string;
 	credit: Credit;
@@ -136,6 +150,7 @@ export interface Today {
 	picture: Picture | null;
 	didYouKnow: Fact[];
 	onThisDay: OnThisDay | null;
+	featured: Featured | null;
 	word: Word | null;
 	quote: Quote | null;
 	quiz: Quiz | null;

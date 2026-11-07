@@ -11,16 +11,25 @@ import { cached } from "../../src/lib/cache";
 import { parseTopItem } from "../../src/lib/sources/news";
 import {
 	fetchPicture,
+	imageSize,
 	parseApod,
 	parseMet,
 } from "../../src/lib/sources/picture";
 import { parseQuote } from "../../src/lib/sources/quote";
 import { parseQuiz } from "../../src/lib/sources/trivia";
-import { beaufort, compass, parseWeather } from "../../src/lib/sources/weather";
+import {
+	beaufort,
+	compass,
+	fetchWeather,
+	parseRaintext,
+	parseWeather,
+} from "../../src/lib/sources/weather";
 import {
 	fetchWikipedia,
 	parseFacts,
+	parseFeatured,
 	parseOnThisDay,
+	shortExtract,
 } from "../../src/lib/sources/wikipedia";
 import { parseWord } from "../../src/lib/sources/wiktionary";
 import {
@@ -30,6 +39,7 @@ import {
 	secondsUntilMidnight,
 } from "../../src/lib/util";
 import apod from "./fixtures/apod.json";
+import raintext from "./fixtures/buienradar.txt?raw";
 import metObject from "./fixtures/met-object.json";
 import metSearch from "./fixtures/met-search.json";
 import meteo from "./fixtures/open-meteo.json";
@@ -173,6 +183,61 @@ describe("parsers", () => {
 		).toBeNull();
 	});
 
+	it("reads the featured article, cut at a sentence or a word", () => {
+		const f = parseFeatured(wikipedia);
+		expect(f?.title).toBe("Bill Madden (soldier)");
+		expect(f?.url).toBe("https://en.wikipedia.org/wiki/Bill_Madden_(soldier)");
+		// two sentences would pass 280 characters
+		expect(f?.extract).toMatch(/^Horace William Madden .* at the time\.$/);
+		const long = shortExtract(`${"word ".repeat(80)}end.`);
+		expect(long.length).toBeLessThanOrEqual(281);
+		expect(long).toMatch(/word\u2026$/);
+		expect(shortExtract("One. Two. Three.")).toBe("One. Two.");
+		expect(shortExtract("Born in the U.S. in 1900. Died.")).toBe(
+			"Born in the U.S. in 1900. Died.",
+		);
+		const page = (p: string) => ({
+			tfa: { ...wikipedia.tfa, content_urls: { desktop: { page: p } } },
+		});
+		expect(parseFeatured(page("javascript:x"))).toBeNull();
+		expect(parseFeatured({})).toBeNull();
+	});
+
+	it("reads Buienradar's radar text as mm per hour, skipping bad lines", () => {
+		expect(parseRaintext(raintext)).toEqual([
+			{ time: "10:05", mm: 0 },
+			{ time: "10:10", mm: 0 },
+			{ time: "10:15", mm: 1 },
+			{ time: "10:20", mm: 10 },
+			{ time: "10:25", mm: 0.1 },
+		]);
+		expect(rainLine(parseRaintext(raintext))).toBe("Dry until 10:15");
+	});
+
+	it("takes the rain from Buienradar and falls back to Open-Meteo", async () => {
+		const now = new Date("2026-11-06T20:20:00Z");
+		vi.stubGlobal("fetch", async (url: string) =>
+			url.includes("buienradar")
+				? new Response(raintext)
+				: new Response(JSON.stringify(meteo)),
+		);
+		const radar = await fetchWeather(now);
+		expect(radar?.rainCredit.name).toBe("Buienradar");
+		expect(radar?.rainNext2h).toHaveLength(5);
+		expect(radar?.credit.name).toBe("Open-Meteo");
+
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		vi.stubGlobal("fetch", async (url: string) =>
+			url.includes("buienradar")
+				? new Response("", { status: 503 })
+				: new Response(JSON.stringify(meteo)),
+		);
+		const fallback = await fetchWeather(now);
+		expect(fallback?.rainCredit.name).toBe("Open-Meteo");
+		expect(fallback?.rainNext2h).toHaveLength(8);
+		warn.mockRestore();
+	});
+
 	it("maps weather to plain words, Beaufort and compass points", () => {
 		const w = parseWeather(meteo, new Date("2026-11-06T20:20:00Z"));
 		expect(w.now).toMatchObject({
@@ -257,6 +322,7 @@ describe("day assembly and cache", () => {
 		expect(Object.keys(day).sort()).toEqual([
 			"date",
 			"didYouKnow",
+			"featured",
 			"generatedAt",
 			"moon",
 			"onThisDay",
@@ -304,6 +370,7 @@ describe("hardening", () => {
 		expect(await fetchWikipedia("2026-11-06")).toEqual({
 			didYouKnow: [],
 			onThisDay: null,
+			featured: null,
 		});
 	});
 
@@ -353,6 +420,7 @@ describe("hardening", () => {
 			generatedAt: "2026-11-05T23:05:00Z",
 			picture: { kind: "met", title: "Chest" },
 			onThisDay: { year: 1 },
+			featured: { title: "A" },
 			word: null,
 			quote: { text: "old" },
 			quiz: { questions: [{ question: "first draw" }] },
@@ -413,5 +481,50 @@ describe("hardening", () => {
 			),
 		).toEqual({ n: 2 });
 		warn.mockRestore();
+	});
+});
+
+describe("imageSize", () => {
+	it("reads a PNG, a GIF and a JPEG past its other segments", () => {
+		const png = new Uint8Array(24);
+		png.set([0x89, 0x50, 0x4e, 0x47], 0);
+		png.set([0, 0, 0x07, 0x80, 0, 0, 0x04, 0x38], 16);
+		expect(imageSize(png)).toEqual({ width: 1920, height: 1080 });
+		const gif = new Uint8Array([
+			0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x20, 0x03, 0x58, 0x02,
+		]);
+		expect(imageSize(gif)).toEqual({ width: 800, height: 600 });
+		// SOI, an APP0 segment of 16 bytes, then SOF0: 8-bit, height 2000, width 3000
+		const jpeg = new Uint8Array([
+			0xff,
+			0xd8,
+			0xff,
+			0xe0,
+			0x00,
+			0x10,
+			...new Array(14).fill(0),
+			0xff,
+			0xc0,
+			0x00,
+			0x11,
+			0x08,
+			0x07,
+			0xd0,
+			0x0b,
+			0xb8,
+			0x03,
+			0,
+			0,
+			0,
+			0,
+		]);
+		expect(imageSize(jpeg)).toEqual({ width: 3000, height: 2000 });
+	});
+
+	it("gives null for other formats and cut-off headers", () => {
+		expect(imageSize(new TextEncoder().encode("RIFF....WEBPVP8 "))).toBeNull();
+		expect(
+			imageSize(new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10])),
+		).toBeNull();
 	});
 });
