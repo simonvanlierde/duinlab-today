@@ -80,7 +80,7 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 				{
 					occasion && (
 						<p class="occasion">
-							<a href={HOLIDAYS} title="Dutch holidays on Google Calendar">{occasion}</a>
+							<a href={HOLIDAYS} title="Dutch holidays on Google Calendar">{occasion}<span class="sr"> (Dutch holidays on Google Calendar)</span></a>
 						</p>
 					)
 				}
@@ -92,12 +92,14 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 							<a class="wx" href={FORECAST} title={`${windLine(weather.now)}. The week ahead on meteoblue`}>
 								<span class="temp">{Math.round(weather.now.temperatureC)}&deg;</span>
 								{` ${weather.now.description}, ${Math.round(weather.today.maxC)}° / ${Math.round(weather.today.minC)}° · wind ${weather.now.windFrom} ${weather.now.windBeaufort}`}
+								<span class="sr">. {windLine(weather.now)}. The week ahead on meteoblue</span>
 							</a>
 							{rain && (
 								<>
 									{" · "}
 									<a href={(weather.rainCredit ?? weather.credit).url} title={`Rain radar: ${(weather.rainCredit ?? weather.credit).name}`}>
 										{rain.toLowerCase()}
+										<span class="sr"> (rain radar: {(weather.rainCredit ?? weather.credit).name})</span>
 									</a>
 								</>
 							)}

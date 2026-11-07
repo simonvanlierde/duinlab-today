@@ -1,12 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { rainLine } from "../../src/components/sky";
-import {
-	allFailed,
-	buildDay,
-	incomplete,
-	mergeDay,
-	missingSections,
-} from "../../src/lib/build";
+import { allFailed, buildDay, incomplete, mergeDay } from "../../src/lib/build";
 import { cached } from "../../src/lib/cache";
 import { parseTopItem } from "../../src/lib/sources/news";
 import {
@@ -32,12 +26,7 @@ import {
 	shortExtract,
 } from "../../src/lib/sources/wikipedia";
 import { parseWord } from "../../src/lib/sources/wiktionary";
-import {
-	dayOfYear,
-	getText,
-	safe,
-	secondsUntilMidnight,
-} from "../../src/lib/util";
+import { dayOfYear, getText, safe } from "../../src/lib/util";
 import apod from "./fixtures/apod.json";
 import raintext from "./fixtures/buienradar.txt?raw";
 import metObject from "./fixtures/met-object.json";
@@ -304,6 +293,34 @@ describe("picture rule", () => {
 		vi.stubGlobal("fetch", async () => new Response("", { status: 500 }));
 		expect(await fetchPicture("2026-11-06", "k")).toBeNull();
 	});
+
+	it("asks the stand-in only when the preferred source fails or is too slow", async () => {
+		const hosts: string[] = [];
+		const json = (b: unknown) => new Response(JSON.stringify(b));
+		vi.stubGlobal("fetch", async (url: string) => {
+			const host = new URL(url).host;
+			hosts.push(host);
+			if (host === "api.nasa.gov") return json(goodApod);
+			if (url.includes("v1.1/search"))
+				return json(
+					url.includes("limit=1") ? { total: 2301, objectIDs: [1] } : metSearch,
+				);
+			return json(metObject);
+		});
+		expect((await fetchPicture("2026-11-06", "k"))?.kind).toBe("apod");
+		expect(hosts.filter((h) => h !== "img")).toEqual(["api.nasa.gov"]);
+		// APOD hangs: The Met stands in once the deadline passes
+		vi.stubGlobal("fetch", async (url: string) => {
+			if (new URL(url).host === "api.nasa.gov")
+				return new Promise<Response>(() => {});
+			if (url.includes("v1.1/search"))
+				return json(
+					url.includes("limit=1") ? { total: 2301, objectIDs: [1] } : metSearch,
+				);
+			return json(metObject);
+		});
+		expect((await fetchPicture("2026-11-06", "k", 50))?.kind).toBe("met");
+	});
 });
 
 describe("day assembly and cache", () => {
@@ -359,13 +376,6 @@ describe("day assembly and cache", () => {
 		);
 		await cached(cache, "b", build, () => null);
 		expect(store.size).toBe(1);
-	});
-
-	it("counts seconds to the next Amsterdam midnight", () => {
-		expect(secondsUntilMidnight(new Date("2026-11-06T22:30:00Z"))).toBe(
-			30 * 60,
-		); // 23:30 CET
-		expect(secondsUntilMidnight(new Date("2026-07-01T22:00:00Z"))).toBe(86400); // 00:00 CEST, a new day
 	});
 });
 

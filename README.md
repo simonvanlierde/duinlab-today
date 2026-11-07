@@ -52,7 +52,9 @@ just dev
 
 `just dev` starts the dev server in the background; `pnpm exec astro dev stop` ends it.
 `just check` runs CI's lint, types, unit tests and build. `just e2e` runs the browser tests
-against a production build, including an axe scan of the home, about and 404 pages.
+against a production build, including an axe scan of the home, about and 404 pages. The Worker
+reads every source from a local fixture server ([`e2e/fixture-server.mjs`](e2e/fixture-server.mjs))
+through the `FIXTURE_ORIGIN` variable, so the tests run offline and give the same page every time.
 
 For the NASA picture, put a line `NASA_API_KEY=<your key>` in `.dev.vars` for local runs. In
 production it is a Worker secret (`pnpm wrangler secret put NASA_API_KEY`). Without a key the

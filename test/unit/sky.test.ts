@@ -29,6 +29,42 @@ describe("sunTimes", () => {
 	});
 });
 
+describe("sunTimes across the clock changes (last Sundays of March and October 2026)", () => {
+	const offsets = (date: string) =>
+		Object.values(sunTimes(date)).map((iso) => iso.slice(-6));
+	const clockMinutes = (iso: string) =>
+		Number(iso.slice(11, 13)) * 60 + Number(iso.slice(14, 16));
+
+	it("switches to +02:00 on 29 March, and the clock times jump an hour later", () => {
+		expect(offsets("2026-03-28")).toEqual(Array(4).fill("+01:00"));
+		expect(offsets("2026-03-29")).toEqual(Array(4).fill("+02:00"));
+		const before = sunTimes("2026-03-28");
+		const after = sunTimes("2026-03-29");
+		// an hour on the clock, less the ~2 minutes earlier sunrise of a spring day
+		const shift = clockMinutes(after.sunrise) - clockMinutes(before.sunrise);
+		expect(shift).toBeGreaterThan(55);
+		expect(shift).toBeLessThan(60);
+		expect(after.sunrise).toMatch(/^2026-03-29T07:\d\d:\d\d\+02:00$/);
+	});
+
+	it("switches back to +01:00 on 25 October, and the clock times jump an hour earlier", () => {
+		expect(offsets("2026-10-24")).toEqual(Array(4).fill("+02:00"));
+		expect(offsets("2026-10-25")).toEqual(Array(4).fill("+01:00"));
+		const before = sunTimes("2026-10-24");
+		const after = sunTimes("2026-10-25");
+		const shift = clockMinutes(before.sunrise) - clockMinutes(after.sunrise);
+		expect(shift).toBeGreaterThan(55);
+		expect(shift).toBeLessThan(60);
+		expect(after.sunset).toMatch(/^2026-10-25T17:2\d:\d\d\+01:00$/);
+	});
+
+	it("keeps each instant: the ISO string parses back to the UTC crossing", () => {
+		for (const date of ["2026-03-29", "2026-10-25"])
+			for (const iso of Object.values(sunTimes(date)))
+				expect(new Date(Date.parse(iso)).toISOString().slice(0, 10)).toBe(date);
+	});
+});
+
 describe("phaseAt", () => {
 	const sun: Sun = {
 		dawn: "2026-11-06T07:10:00+01:00",

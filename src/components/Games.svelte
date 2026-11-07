@@ -26,9 +26,12 @@ let unfolded = $state(false);
 let shared = $state("");
 let unfoldBtn = $state<HTMLButtonElement>();
 let board = $state<HTMLOListElement>();
+/** The count is announced only after someone marks or un-marks a game, not when the page loads. */
+let announce = $state(false);
 
 /** Opening the last game folds the board away; keyboard focus moves to the unfold button. */
 async function open(id: string) {
+	announce = true;
 	mark(id);
 	await tick();
 	if (done && !unfolded && board && getComputedStyle(board).display === "none")
@@ -78,7 +81,7 @@ async function share() {
 
 <div class="games-head">
 	<h2 class="cue" id="h-games">Games</h2>
-	<p class="count" aria-live="polite">
+	<p class="count" aria-live={announce ? "polite" : "off"}>
 		{#if !live}
 			{games.length} daily games
 		{:else if done}
@@ -108,7 +111,7 @@ async function share() {
 			>
 				<span class="mark" class:lit={played} aria-hidden="true"></span>
 				<span class="label">{g.name}</span>
-				<span class="sr">{live ? (played ? ", played" : ", not yet") : ""} (opens in a new tab)</span>
+				<span class="sr">{live ? (played ? ", played" : ", not yet") : ""}{g.blurb ? `: ${g.blurb}` : ""} (opens in a new tab)</span>
 			</a>
 			{#if live}
 				<span class="hover-ticks" aria-hidden="true">
@@ -142,7 +145,10 @@ async function share() {
 						{/each}
 					</span>
 					{#if isPlayed(g.id)}
-						<button type="button" class="undo" onclick={() => unmark(g.id)} aria-label={`Un-mark ${g.name} as played`}>un-mark</button>
+						<button type="button" class="undo" onclick={() => {
+							announce = true;
+							unmark(g.id);
+						}} aria-label={`Un-mark ${g.name} as played`}>un-mark</button>
 					{/if}
 				</li>
 			{/each}

@@ -1,8 +1,20 @@
 const UA = "duinlab-today/1.0 (https://today.duinlab.nl)";
 const TIMEOUT_MS = 4000;
 
+// e2e only: wrangler dev sets FIXTURE_ORIGIN; outside the Worker (unit tests) the module is absent
+const fixtureOrigin = import("cloudflare:workers").then(
+	(m) => m.env.FIXTURE_ORIGIN,
+	() => undefined,
+);
+
+/** `https://host/path?q` as `${FIXTURE_ORIGIN}/host/path?q` when that var is set, else `url`. */
+export async function upstream(url: string): Promise<string> {
+	const origin = await fixtureOrigin;
+	return origin ? `${origin}/${url.replace(/^https:\/\//, "")}` : url;
+}
+
 export async function getText(url: string, accept = "*/*"): Promise<string> {
-	const res = await fetch(url, {
+	const res = await fetch(await upstream(url), {
 		headers: { "user-agent": UA, accept },
 		signal: AbortSignal.timeout(TIMEOUT_MS),
 	});
@@ -117,22 +129,6 @@ const AMS_DATE = new Intl.DateTimeFormat("en-CA", {
 /** The calendar day in Europe/Amsterdam as YYYY-MM-DD. */
 export function amsterdamDate(now: Date): string {
 	return AMS_DATE.format(now);
-}
-
-/** Seconds from `now` until the next midnight in Europe/Amsterdam (within an hour on DST days). */
-export function secondsUntilMidnight(now: Date): number {
-	const parts = new Intl.DateTimeFormat("en-GB", {
-		timeZone: "Europe/Amsterdam",
-		hour: "2-digit",
-		minute: "2-digit",
-		second: "2-digit",
-		hourCycle: "h23",
-	}).formatToParts(now);
-	const n = (t: string) => Number(parts.find((p) => p.type === t)?.value);
-	return Math.max(
-		60,
-		86400 - (n("hour") * 3600 + n("minute") * 60 + n("second")),
-	);
 }
 
 /** ISO string with the Europe/Amsterdam offset ("2026-11-06T07:46:12+01:00"). */

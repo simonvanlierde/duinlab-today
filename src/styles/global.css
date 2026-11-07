@@ -76,7 +76,9 @@
 	color-scheme: light;
 	color: var(--ink);
 	background: var(--ground);
-	transition-property: --k0, --k1, --k2, --k3, --ground;
+	/* color-scheme flips the ink half-way through the ground's ease, not before it starts */
+	transition-property: --k0, --k1, --k2, --k3, --ground, color-scheme;
+	transition-behavior: allow-discrete;
 	transition-duration: 2.4s;
 	transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 	--ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -486,6 +488,14 @@ html:not(.js) .sun {
 		grid-template-rows: auto auto 1fr;
 		align-items: start;
 	}
+	/* a failed source leaves no empty column: without a picture, its column takes the article */
+	.front:not(:has(.pic)) {
+		grid-template-areas: "feat read games" "otd quote games";
+		grid-template-rows: auto 1fr;
+	}
+	.front:not(:has(.pic, .feat)) {
+		grid-template-areas: "read otd games" "read quote games";
+	}
 }
 
 .cue {
@@ -610,7 +620,7 @@ html:not(.js) .sun {
 .verdict {
 	display: block;
 	margin-top: 2px;
-	font-size: 0.6875rem;
+	font-size: 0.8125rem;
 	color: var(--ink);
 	text-decoration: none;
 }
@@ -791,7 +801,7 @@ summary {
 	background: var(--lit);
 }
 .undo {
-	font-size: 0.6875rem;
+	font-size: 0.8125rem;
 	min-height: 32px;
 	position: relative;
 }

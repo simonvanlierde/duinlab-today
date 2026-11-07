@@ -1,5 +1,12 @@
 import type { Picture } from "../types";
-import { dayOfYear, getJson, httpsUrl, safe, seededRandom } from "../util";
+import {
+	dayOfYear,
+	getJson,
+	httpsUrl,
+	safe,
+	seededRandom,
+	upstream,
+} from "../util";
 
 interface Apod {
 	title?: string;
@@ -140,7 +147,7 @@ export function imageSize(
 
 /** The first 128 KiB of an image: enough for the header, whether or not the host honours Range. */
 async function imageHead(url: string): Promise<Uint8Array> {
-	const res = await fetch(url, {
+	const res = await fetch(await upstream(url), {
 		headers: { range: "bytes=0-131071" },
 		signal: AbortSignal.timeout(5000),
 	});
@@ -165,17 +172,32 @@ async function imageHead(url: string): Promise<Uint8Array> {
 	return out;
 }
 
+/** The Met asks for a search and then up to several objects: this caps a source, not one request. */
+const SOURCE_DEADLINE_MS = 5000;
+
+/** The source's answer, or null once `ms` have passed. */
+function deadline<T>(work: Promise<T | null>, ms: number): Promise<T | null> {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	const late = new Promise<null>((resolve) => {
+		timer = setTimeout(() => resolve(null), ms);
+	});
+	return Promise.race([work, late]).finally(() => clearTimeout(timer));
+}
+
 /** The day's preferred source; the other stands in. Its size lets the page hold the space before it loads. */
 export async function fetchPicture(
 	date: string,
 	apiKey: string | undefined,
+	deadlineMs = SOURCE_DEADLINE_MS,
 ): Promise<Picture | null> {
-	const [apod, met] = await Promise.all([
-		fetchApod(date, apiKey),
-		fetchMet(date),
-	]);
+	const apod = () => fetchApod(date, apiKey);
+	const met = () => fetchMet(date);
+	const [first, second] =
+		preferredPicture(date) === "apod" ? [apod, met] : [met, apod];
+	// the stand-in is asked only when the preferred source fails or misses its deadline
 	const pick =
-		preferredPicture(date) === "apod" ? (apod ?? met) : (met ?? apod);
+		(await deadline(first(), deadlineMs)) ??
+		(await deadline(second(), deadlineMs));
 	if (!pick) return null;
 	const size = await safe("picture-size", async () =>
 		imageSize(await imageHead(pick.imageUrl)),
