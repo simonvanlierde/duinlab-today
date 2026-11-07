@@ -1024,6 +1024,35 @@ summary {
 	}
 }
 
+/* headlines: below the paper, one top story per newspaper */
+.news {
+	padding-block: 12px 4px;
+}
+.news ul {
+	display: grid;
+	gap: 6px 32px;
+	padding-top: 10px;
+	border-top: 1px solid var(--rule);
+}
+@media (min-width: 900px) {
+	.news ul {
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+	}
+}
+.news li {
+	font-size: 0.9375rem;
+	text-wrap: pretty;
+}
+.news .paper {
+	margin-right: 4px;
+	font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+	font-weight: 600;
+	font-size: 0.75rem;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--mute);
+}
+
 /* about and 404 */
 .sky-slim .mast {
 	padding-top: 16px;

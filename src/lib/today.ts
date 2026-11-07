@@ -1,34 +1,80 @@
 import { env } from "cloudflare:workers";
-import { buildDay, dayTtl } from "./build";
+import { allFailed, buildDay, type Day, incomplete, mergeDay } from "./build";
 import { cached } from "./cache";
 import { games } from "./games";
+import { fetchNews } from "./sources/news";
 import { fetchWeather } from "./sources/weather";
 import type { Today } from "./types";
 import { amsterdamDate } from "./util";
 
 const WEATHER_TTL = 15 * 60;
-/** Failed weather is retried after a minute, not on every request. */
+const NEWS_TTL = 30 * 60;
+/** A failed fetch is retried after a minute, not on every request. */
 const FAILED_TTL = 60;
+/** A request rebuilds an incomplete day at most this often; the hourly refresh does the rest. */
+const RETRY_MS = 10 * 60 * 1000;
+/** Keep two days in KV, so a day is never dropped while it is still today somewhere. */
+const KEEP_SECONDS = 2 * 86400;
+
+// bump the version when the Day shape changes: entries outlive a deploy
+const keyFor = (date: string) => `day/v1/${date}`;
+
+const hasApodKey = () => !!env.NASA_API_KEY;
+
+/**
+ * Builds the day, keeps what an earlier build of it already had, and stores it in KV. A complete
+ * stored day is returned untouched. Called hourly by the cron and by a request that finds no day.
+ */
+export async function refreshDay(now: Date): Promise<Day> {
+	const date = amsterdamDate(now);
+	const prev = await readDay(date);
+	if (prev && !incomplete(prev, hasApodKey())) return prev;
+	const day = mergeDay(prev, await buildDay(date, now, env.NASA_API_KEY));
+	try {
+		await env.DAYS.put(keyFor(date), JSON.stringify(day), {
+			// a total outage is kept a minute only, so the next request tries again
+			expirationTtl: allFailed(day) ? FAILED_TTL : KEEP_SECONDS,
+		});
+	} catch (err) {
+		console.warn(`kv put ${date} failed: ${err}`);
+	}
+	return day;
+}
+
+async function readDay(date: string): Promise<Day | null> {
+	try {
+		return await env.DAYS.get<Day>(keyFor(date), "json");
+	} catch {
+		return null;
+	}
+}
+
+async function getDay(now: Date): Promise<Day> {
+	const stored = await readDay(amsterdamDate(now));
+	const fresh =
+		stored &&
+		(!incomplete(stored, hasApodKey()) ||
+			now.getTime() - Date.parse(stored.generatedAt) < RETRY_MS);
+	return fresh ? stored : refreshDay(now);
+}
 
 export async function getToday(now: Date = new Date()): Promise<Today> {
-	const date = amsterdamDate(now);
 	const cache = (caches as unknown as { default: Cache }).default;
-	const apiKey = env.NASA_API_KEY;
-	const [day, weather] = await Promise.all([
-		cached(
-			cache,
-			// bump the version when the Day shape changes: entries outlive a deploy
-			`day/v1/${date}`,
-			() => buildDay(date, now, apiKey),
-			(d) => dayTtl(d, now, !!apiKey),
-		),
+	const [day, weather, news] = await Promise.all([
+		getDay(now),
 		cached(
 			cache,
 			"weather",
 			() => fetchWeather(now),
 			(w) => (w ? WEATHER_TTL : FAILED_TTL),
 		),
+		cached(
+			cache,
+			"news",
+			() => fetchNews(),
+			(n) => (n.length > 0 ? NEWS_TTL : FAILED_TTL),
+		),
 	]);
 	// games are static: added here so a change to the list shows without waiting for midnight
-	return { ...day, games, weather };
+	return { ...day, games, weather, news };
 }

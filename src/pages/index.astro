@@ -30,7 +30,8 @@ const { picture, word, quote, quiz, weather, onThisDay } = today;
 const fact = today.didYouKnow[0];
 const heading = longDate(today.date);
 const hasQuiz = !!quiz && quiz.questions.length > 0;
-const BUIENRADAR = "https://www.buienradar.nl/weer/den-haag/nl/2747373";
+const FORECAST =
+	"https://www.meteoblue.com/en/weather/week/the-hague_netherlands_2747373";
 const yesterday = new Date(`${today.date}T12:00:00Z`);
 yesterday.setUTCDate(yesterday.getUTCDate() - 1);
 const light = daylight(
@@ -80,7 +81,7 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 				{
 					weather && (
 						<li>
-							<a class="wx" href={BUIENRADAR} title={`${windLine(weather.now)}. Forecast and rain radar on Buienradar`}>
+							<a class="wx" href={FORECAST} title={`${windLine(weather.now)}. The week ahead on meteoblue`}>
 								<span class="temp">{Math.round(weather.now.temperatureC)}&deg;</span>
 								{` ${weather.now.description}, ${Math.round(weather.today.maxC)}° / ${Math.round(weather.today.minC)}° · wind ${weather.now.windFrom} ${weather.now.windBeaufort}`}
 								{rainLine(weather.rainNext2h) && ` · ${rainLine(weather.rainNext2h).toLowerCase()}`}
@@ -214,6 +215,21 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 			)
 		}
 	</main>
+
+	{
+		today.news.length > 0 && (
+			<section class="wrap news" aria-labelledby="h-news">
+				<Cue id="h-news">Headlines</Cue>
+				<ul class="plain">
+					{today.news.map((h) => (
+						<li>
+							<span class="paper">{h.source}</span> <a href={h.url}>{h.title}</a>
+						</li>
+					))}
+				</ul>
+			</section>
+		)
+	}
 
 	<footer class="wrap foot">
 		<p class="mute small">

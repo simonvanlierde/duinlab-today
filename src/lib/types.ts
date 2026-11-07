@@ -118,6 +118,14 @@ export interface Game {
 	blurb: string;
 }
 
+/** A paper's top story, linked to the paper. */
+export interface Headline {
+	title: string;
+	url: string;
+	/** The paper's short name ("NOS", "BBC"). */
+	source: string;
+}
+
 export interface Today {
 	/** The day in Europe/Amsterdam, YYYY-MM-DD. */
 	date: string;
@@ -132,5 +140,7 @@ export interface Today {
 	quote: Quote | null;
 	quiz: Quiz | null;
 	weather: Weather | null;
+	/** Up to five, one per paper; [] when every feed failed. Cached for 30 minutes. */
+	news: Headline[];
 	games: Game[];
 }

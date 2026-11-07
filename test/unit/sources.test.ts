@@ -3,10 +3,12 @@ import { rainLine } from "../../src/components/sky";
 import {
 	allFailed,
 	buildDay,
-	dayTtl,
+	incomplete,
+	mergeDay,
 	missingSections,
 } from "../../src/lib/build";
 import { cached } from "../../src/lib/cache";
+import { parseTopItem } from "../../src/lib/sources/news";
 import {
 	fetchPicture,
 	parseApod,
@@ -345,38 +347,51 @@ describe("hardening", () => {
 		);
 	});
 
-	it("caches a stand-in picture until 07:00 only, a complete day until midnight", () => {
-		const day = {
+	it("rebuilds an incomplete day without losing what it had", () => {
+		const base = {
 			date: "2026-11-06", // even: APOD preferred
-			picture: { kind: "met" },
-			onThisDay: {},
-			word: {},
-			quote: {},
-			quiz: {},
-			didYouKnow: [{}],
-		} as unknown as Parameters<typeof dayTtl>[0];
-		const early = new Date("2026-11-06T04:00:00Z"); // 05:00 Amsterdam
-		const late = new Date("2026-11-06T09:00:00Z"); // 10:00 Amsterdam
-		expect(missingSections(day)).toBe(0);
-		expect(dayTtl(day, early, true)).toBe(2 * 3600);
-		expect(dayTtl(day, early, false)).toBe(19 * 3600);
-		expect(dayTtl(day, late, true)).toBe(14 * 3600);
-		expect(dayTtl({ ...day, quote: null }, late, true)).toBe(600);
+			generatedAt: "2026-11-05T23:05:00Z",
+			picture: { kind: "met", title: "Chest" },
+			onThisDay: { year: 1 },
+			word: null,
+			quote: { text: "old" },
+			quiz: { questions: [{ question: "first draw" }] },
+			didYouKnow: [{ text: "a" }],
+		} as unknown as NonNullable<Parameters<typeof mergeDay>[0]>;
+		expect(incomplete(base, true)).toBe(true); // word missing, and Met stands in
+		expect(incomplete({ ...base, word: {} as never }, false)).toBe(false);
+		const fresh = {
+			...base,
+			generatedAt: "2026-11-06T06:05:00Z",
+			picture: { kind: "apod", title: "Moon" },
+			word: { word: "dune" },
+			quote: null,
+			quiz: { questions: [{ question: "second draw" }] },
+		} as unknown as typeof base;
+		const merged = mergeDay(base, fresh);
+		expect(merged.quiz?.questions[0].question).toBe("first draw");
+		expect(merged.picture?.kind).toBe("apod");
+		expect(merged.word?.word).toBe("dune");
+		expect(merged.quote?.text).toBe("old");
+		expect(merged.generatedAt).toBe("2026-11-06T06:05:00Z");
+		expect(incomplete(merged, true)).toBe(false);
+		expect(mergeDay({ ...base, date: "2026-11-05" }, fresh)).toBe(fresh);
+	});
+
+	it("takes the top headline of an RSS feed, CDATA or not", () => {
+		const rss = `<rss><channel><title>Feed</title><item><title><![CDATA[Dykes &amp; dunes <b>hold</b>]]></title><link>https://nos.nl/a/1</link></item><item><title>Second</title><link>https://nos.nl/a/2</link></item></channel></rss>`;
+		expect(parseTopItem(rss, "NOS")).toEqual({
+			title: "Dykes & dunes hold",
+			url: "https://nos.nl/a/1",
+			source: "NOS",
+		});
 		expect(
-			dayTtl(
-				{
-					...day,
-					picture: null,
-					onThisDay: null,
-					word: null,
-					quote: null,
-					quiz: null,
-					didYouKnow: [],
-				},
-				late,
-				true,
+			parseTopItem(
+				"<item><title>x</title><link>javascript:alert(1)</link></item>",
+				"X",
 			),
-		).toBe(60);
+		).toBeNull();
+		expect(parseTopItem("<rss></rss>", "X")).toBeNull();
 	});
 
 	it("builds and serves the value when the cache throws", async () => {

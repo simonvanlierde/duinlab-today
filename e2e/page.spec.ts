@@ -42,8 +42,10 @@ test("the desktop page fits one screen", async ({ page }) => {
 	]) {
 		await page.setViewportSize({ width, height });
 		await page.goto("/");
+		// the paper itself; the headlines and the footer follow below the fold
 		const tall = await page.evaluate(
-			() => document.documentElement.scrollHeight,
+			() =>
+				document.querySelector("#paper")?.getBoundingClientRect().bottom ?? 0,
 		);
 		expect(tall).toBeLessThanOrEqual(height);
 	}
@@ -201,7 +203,7 @@ test("the about page says what is kept and links the source", async ({
 	page,
 }) => {
 	await page.goto("/");
-	await expect(page.locator(".wx")).toHaveAttribute("href", /buienradar\.nl/);
+	await expect(page.locator(".wx")).toHaveAttribute("href", /meteoblue\.com/);
 	await page.getByRole("link", { name: "About", exact: true }).click();
 	await expect(page.locator("h1")).toHaveText("About this page");
 	await expect(

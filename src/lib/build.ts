@@ -5,10 +5,9 @@ import { fetchQuiz } from "./sources/trivia";
 import { fetchWikipedia } from "./sources/wikipedia";
 import { fetchWord } from "./sources/wiktionary";
 import type { Today } from "./types";
-import { secondsUntilMidnight } from "./util";
 
-/** The day's sources, fetched in parallel, each failing on its own. Weather and games are added on read. */
-export type Day = Omit<Today, "weather" | "games">;
+/** The day's sources, fetched in parallel, each failing on its own. Weather, news and games are added on read. */
+export type Day = Omit<Today, "weather" | "news" | "games">;
 
 export async function buildDay(
 	date: string,
@@ -51,25 +50,35 @@ export const missingSections = (d: Day) =>
 
 export const allFailed = (d: Day) => sections(d).every((s) => s === null);
 
-/** A failed source is retried after a minute, not on every request. */
-const FAILED_TTL = 60;
-/** A day with a source missing is rebuilt soon, so a passing outage does not last until midnight. */
-const PARTIAL_TTL = 10 * 60;
-/** From 07:00 Amsterdam to midnight. */
-const AFTER_SEVEN = 17 * 3600;
+/** Not final yet: a source is missing, or The Met stands in for APOD, which publishes at 06:00. */
+export function incomplete(d: Day, hasApodKey: boolean): boolean {
+	return (
+		missingSections(d) > 0 ||
+		(hasApodKey &&
+			preferredPicture(d.date) === "apod" &&
+			d.picture?.kind === "met")
+	);
+}
 
 /**
- * Seconds to cache a built day. Each rebuild draws new quiz questions, so a complete day is
- * kept until midnight. The one exception is The Met standing in for APOD before 07:00: APOD
- * publishes at US Eastern midnight, so the day is rebuilt once at 07:00 to get it.
+ * A rebuild keeps every section the earlier build already had, so the quiz never changes under
+ * someone halfway through it. The picture switches only to the day's preferred source.
  */
-export function dayTtl(d: Day, now: Date, hasApodKey: boolean): number {
-	if (allFailed(d)) return FAILED_TTL;
-	if (missingSections(d) > 0) return PARTIAL_TTL;
-	const left = secondsUntilMidnight(now);
-	const standIn =
-		hasApodKey &&
-		preferredPicture(d.date) === "apod" &&
-		d.picture?.kind === "met";
-	return standIn && left > AFTER_SEVEN ? left - AFTER_SEVEN : left;
+export function mergeDay(prev: Day | null, fresh: Day): Day {
+	if (!prev || prev.date !== fresh.date) return fresh;
+	const preferred = preferredPicture(fresh.date);
+	return {
+		...fresh,
+		picture:
+			prev.picture?.kind === preferred
+				? prev.picture
+				: fresh.picture?.kind === preferred
+					? fresh.picture
+					: (prev.picture ?? fresh.picture),
+		didYouKnow: prev.didYouKnow.length > 0 ? prev.didYouKnow : fresh.didYouKnow,
+		onThisDay: prev.onThisDay ?? fresh.onThisDay,
+		word: prev.word ?? fresh.word,
+		quote: prev.quote ?? fresh.quote,
+		quiz: prev.quiz ?? fresh.quiz,
+	};
 }
