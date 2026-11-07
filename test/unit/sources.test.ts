@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { rainLine } from "../../src/components/sky";
 import { allFailed, buildDay, incomplete, mergeDay } from "../../src/lib/build";
 import { cached } from "../../src/lib/cache";
+import { dayOfYear } from "../../src/lib/day";
+import { rainLine } from "../../src/lib/format";
 import { parseTopItem } from "../../src/lib/sources/news";
 import {
 	fetchPicture,
@@ -26,7 +27,7 @@ import {
 	shortExtract,
 } from "../../src/lib/sources/wikipedia";
 import { parseWord } from "../../src/lib/sources/wiktionary";
-import { dayOfYear, getText, safe } from "../../src/lib/util";
+import { getText, safe } from "../../src/lib/util";
 import apod from "./fixtures/apod.json";
 import raintext from "./fixtures/buienradar.txt?raw";
 import metObject from "./fixtures/met-object.json";

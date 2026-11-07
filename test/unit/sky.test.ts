@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { phaseAt } from "../../src/components/sky";
-import { moonAt, sunTimes } from "../../src/lib/sky";
+import { moonAt, phaseAt, sunTimes } from "../../src/lib/sun";
 import type { Sun } from "../../src/lib/types";
 import meteo from "./fixtures/open-meteo.json";
 

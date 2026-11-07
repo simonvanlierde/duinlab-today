@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { SKY, skyAt, sunAltitude } from "../../src/components/sky";
+import { SKY, skyAt } from "../../src/components/sky";
+import { sunAltitude } from "../../src/lib/sun";
 
 describe("sunAltitude", () => {
 	it("puts the sun near the horizon at The Hague's sunrise and highest near noon", () => {

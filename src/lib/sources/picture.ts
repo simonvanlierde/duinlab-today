@@ -1,12 +1,6 @@
+import { dayOfYear } from "../day";
 import type { Picture } from "../types";
-import {
-	dayOfYear,
-	getJson,
-	httpsUrl,
-	safe,
-	seededRandom,
-	upstream,
-} from "../util";
+import { getJson, httpsUrl, safe, seededRandom, upstream } from "../util";
 
 interface Apod {
 	title?: string;

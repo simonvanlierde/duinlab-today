@@ -3,7 +3,6 @@ import { onMount, tick } from "svelte";
 import type { Game } from "../lib/types";
 import {
 	allPlayed,
-	amsterdamDay,
 	anyHistory,
 	init,
 	isPlayed,
@@ -14,6 +13,7 @@ import {
 	ticks,
 	unmark,
 } from "./games.svelte";
+import { sharedScore } from "./quiz";
 
 let { games }: { games: Game[] } = $props();
 
@@ -46,14 +46,7 @@ async function unfold() {
 
 /** One line to paste to each other: the quiz score and the games played today. */
 async function share() {
-	let quiz = "";
-	try {
-		const q = JSON.parse(localStorage.getItem("today.quiz.v1") ?? "null");
-		if (q?.day === amsterdamDay() && typeof q.score === "number")
-			quiz = ` · quiz ${q.score}/${q.picks.length}`;
-	} catch {
-		// no quiz score then
-	}
+	const quiz = sharedScore();
 	const day = new Intl.DateTimeFormat("en-GB", {
 		timeZone: "Europe/Amsterdam",
 		weekday: "short",
@@ -160,3 +153,250 @@ async function share() {
 	</div>
 	<p class="shared" aria-live="polite">{shared}</p>
 {/if}
+
+<style>
+	.games-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 12px;
+	}
+	.games-head .cue {
+		margin-bottom: 4px;
+	}
+	.count {
+		font-size: 1rem;
+		letter-spacing: 0.02em;
+	}
+	.count .figure {
+		font-size: 1.5rem;
+	}
+	.count .some {
+		color: var(--lit-text);
+	}
+	.first-visit {
+		margin-top: 10px;
+		font-size: 0.9375rem;
+		font-style: italic;
+		color: var(--mute);
+	}
+	.games {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		column-gap: 16px;
+		list-style: none;
+		padding: 0;
+		margin-top: 4px;
+	}
+	@media (min-width: 700px) and (max-width: 1099px) {
+		.games {
+			grid-template-columns: repeat(5, minmax(0, 1fr));
+		}
+	}
+	@media (min-width: 1100px) {
+		.games {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+	.game {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-height: 45px;
+		border-bottom: 1px solid var(--rule);
+	}
+	.name {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		min-height: 44px;
+		padding-block: 6px;
+		line-height: 1.2;
+		font-weight: 500;
+		text-decoration: none;
+	}
+	.name:hover .label {
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+	}
+	.mark {
+		flex: none;
+		width: 14px;
+		height: 14px;
+		border-radius: 50%;
+		border: 2px solid var(--mute);
+		transition:
+			background-color 0.4s,
+			border-color 0.4s,
+			box-shadow 0.4s;
+	}
+	.games.off .mark {
+		border-style: dotted;
+	}
+	.mark.lit {
+		background: var(--lit);
+		border-color: var(--lit);
+		box-shadow: 0 1px 6px color-mix(in oklab, var(--lit) 50%, transparent);
+	}
+	.played .label {
+		color: var(--mute);
+		font-weight: 400;
+	}
+	.streak {
+		flex: none;
+		min-width: 1.5ch;
+		text-align: right;
+		font-size: 1.0625rem;
+		color: var(--mute);
+	}
+	.played .streak {
+		color: var(--lit-text);
+	}
+	.streaks {
+		margin-top: 2px;
+	}
+	.streak-row {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto 52px;
+		align-items: center;
+		gap: 12px;
+		min-height: 32px;
+		font-size: 0.875rem;
+	}
+	.ticks {
+		display: inline-flex;
+		align-items: center;
+		gap: 3px;
+	}
+	.tick {
+		width: 5px;
+		height: 4px;
+		border-radius: 1px;
+		background: color-mix(in oklab, var(--ink) 30%, transparent);
+	}
+	.tick.on {
+		height: 12px;
+		background: var(--lit);
+	}
+	.undo {
+		min-height: 44px;
+		padding: 0 4px;
+		background: none;
+		border: 0;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+		text-decoration: underline;
+		text-underline-offset: 0.25em;
+		cursor: pointer;
+	}
+	.undo {
+		font-size: 0.8125rem;
+		min-height: 32px;
+		position: relative;
+	}
+	.undo::after {
+		/* 44px hit area on a 32px row */
+		content: "";
+		position: absolute;
+		inset: -6px 0;
+	}
+	/* the last two weeks, under a game's name on hover */
+	.game {
+		position: relative;
+	}
+	.hover-ticks {
+		position: absolute;
+		left: 24px;
+		bottom: 4px;
+		display: flex;
+		align-items: flex-end;
+		gap: 2px;
+		opacity: 0;
+		translate: 0 3px;
+		transition:
+			opacity 0.2s,
+			translate 0.3s var(--ease-out);
+		pointer-events: none;
+	}
+	.hover-ticks .tick {
+		width: 4px;
+		height: 2px;
+	}
+	.hover-ticks .tick.on {
+		height: 6px;
+	}
+	@media (hover: hover) {
+		.game:hover .hover-ticks,
+		.game:focus-within .hover-ticks {
+			opacity: 1;
+			translate: 0 0;
+		}
+	}
+
+	/* a mark lights with a short swell when a game is opened */
+	@media (prefers-reduced-motion: no-preference) {
+		.mark.lit {
+			animation: light 0.6s var(--ease-out);
+		}
+	}
+	@keyframes light {
+		from {
+			scale: 1.6;
+			box-shadow: 0 1px 14px color-mix(in oklab, var(--lit) 80%, transparent);
+		}
+	}
+	/* the count rolls to its new number */
+	@property --n {
+		syntax: "<integer>";
+		inherits: false;
+		initial-value: 0;
+	}
+	.roll {
+		counter-reset: n var(--n);
+		transition: --n 0.8s var(--ease-out);
+	}
+	.roll::after {
+		content: counter(n);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.roll {
+			transition: none;
+		}
+	}
+	/* the board folds on phones once all ten are played */
+	@media (max-width: 1099px) {
+		.games.folded {
+			display: none;
+		}
+	}
+	@media (min-width: 1100px) {
+		.unfold {
+			display: none;
+		}
+	}
+	.unfold,
+	.share {
+		min-height: 44px;
+		font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+		font-weight: 600;
+		font-size: 0.9375rem;
+		letter-spacing: 0.04em;
+		color: var(--mute);
+	}
+	.games-foot {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: start;
+		justify-content: space-between;
+		gap: 0 16px;
+	}
+	.games-foot .streaks {
+		flex: 1 1 auto;
+	}
+	.shared {
+		font-size: 0.875rem;
+		color: var(--mute);
+		overflow-wrap: anywhere;
+	}
+</style>

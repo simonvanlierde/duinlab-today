@@ -1,11 +1,10 @@
 <script lang="ts">
 import { onMount, tick } from "svelte";
 import type { Quiz } from "../lib/types";
-import { amsterdamDay, shift } from "./games.svelte";
+import { loadQuiz, quizStreak, saveQuiz } from "./quiz";
 
 let { quiz }: { quiz: Quiz } = $props();
 
-const KEY = "today.quiz.v1";
 const LINES = [
 	"Still dark, then.",
 	"A glimmer.",
@@ -20,28 +19,11 @@ let picks = $state<(number | null)[]>([]);
 let at = $state(0);
 /** Days on which every question was answered, for the streak. */
 let done = $state<string[]>([]);
-/** Saved picks belong to these questions; a rebuilt day can bring new ones. */
-const sig = $derived(quiz.questions.map((q) => q.question).join("\n"));
 let nextBtn = $state<HTMLButtonElement>();
 let top = $state<HTMLElement>();
 
 onMount(() => {
-	picks = quiz.questions.map(() => null);
-	try {
-		const saved = JSON.parse(localStorage.getItem(KEY) ?? "null");
-		if (Array.isArray(saved?.done))
-			done = saved.done.filter((d: unknown) => typeof d === "string");
-		if (
-			saved?.day === amsterdamDay() &&
-			saved.sig === sig &&
-			Array.isArray(saved.picks)
-		)
-			picks = picks.map((_, i) =>
-				typeof saved.picks[i] === "number" ? saved.picks[i] : null,
-			);
-	} catch {
-		// private window: the quiz still works for this visit
-	}
+	({ picks, done } = loadQuiz(quiz));
 	const open = picks.indexOf(null);
 	at = open === -1 ? total : open;
 });
@@ -49,17 +31,7 @@ onMount(() => {
 async function pick(i: number) {
 	if (picks[at] !== null && picks[at] !== undefined) return;
 	picks[at] = i;
-	const day = amsterdamDay();
-	if (picks.every((p) => p !== null) && !done.includes(day))
-		done = [...done, day].slice(-60);
-	try {
-		const score = picks.filter(
-			(p, j) => p === quiz.questions[j].correct,
-		).length;
-		localStorage.setItem(KEY, JSON.stringify({ day, sig, picks, done, score }));
-	} catch {
-		// nothing to keep then
-	}
+	done = saveQuiz(quiz, picks, done);
 	await tick();
 	nextBtn?.focus();
 }
@@ -71,17 +43,7 @@ async function next() {
 	top?.focus();
 }
 
-/** Consecutive days with the whole quiz answered, ending today or yesterday. */
-const streak = $derived.by(() => {
-	let day = amsterdamDay();
-	if (!done.includes(day)) day = shift(day, -1);
-	let n = 0;
-	while (done.includes(day)) {
-		n++;
-		day = shift(day, -1);
-	}
-	return n;
-});
+const streak = $derived(quizStreak(done));
 const answered = $derived(picks.filter((p) => p !== null).length);
 
 // the page's end line needs to know the quiz is finished
@@ -143,3 +105,120 @@ const score = $derived(
 		</p>
 	{/if}
 </div>
+
+<style>
+	.qn {
+		margin-left: auto;
+		font-variant-numeric: tabular-nums;
+		letter-spacing: 0.08em;
+	}
+	.q {
+		font-weight: 500;
+		text-wrap: pretty;
+	}
+	.answers {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 6px;
+		margin-top: 10px;
+	}
+	.answer {
+		position: relative;
+		width: 100%;
+		min-height: 44px;
+		padding: 8px 12px;
+		text-align: left;
+		font-size: 0.9375rem;
+		line-height: 1.3;
+		background: var(--ground-2);
+		border: 1px solid var(--rule);
+		border-radius: 6px;
+		cursor: pointer;
+		transition:
+			background-color 0.2s,
+			border-color 0.2s;
+	}
+	.answer:hover:not([aria-disabled="true"]) {
+		border-color: var(--ink);
+	}
+	.answer[aria-disabled="true"] {
+		cursor: default;
+		color: var(--mute);
+	}
+	/* orange means played; the quiz marks with ink */
+	.answer.right {
+		color: var(--ink);
+		border-color: var(--ink);
+		box-shadow: inset 0 0 0 1px var(--ink);
+		background: var(--ground);
+	}
+	.answer.wrong {
+		color: var(--ink);
+		text-decoration: line-through;
+		text-decoration-color: var(--mute);
+	}
+	.verdict {
+		display: block;
+		margin-top: 2px;
+		font-size: 0.8125rem;
+		color: var(--ink);
+		text-decoration: none;
+	}
+	.wrong .verdict {
+		color: var(--mute);
+	}
+	.quiz-foot {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 4px 16px;
+		min-height: 44px;
+		margin-top: 4px;
+	}
+	.next {
+		min-height: 44px;
+		padding: 0 4px;
+		background: none;
+		border: 0;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+		text-decoration: underline;
+		text-underline-offset: 0.25em;
+		cursor: pointer;
+	}
+	.score {
+		font-size: 1.25rem;
+		margin-top: 4px;
+	}
+	.score .figure {
+		font-size: 2rem;
+	}
+	/* the static quiz (noscript) stands in without script */
+	:global(html:not(.js)) .quiz-live {
+		display: none;
+	}
+	/* the quiz lifts its own small horizon: a dawn glow that rises with each answer */
+	.quiz-live {
+		position: relative;
+		isolation: isolate;
+	}
+	.lift {
+		position: absolute;
+		inset: auto -12px 0;
+		z-index: -1;
+		height: calc(var(--lift, 0) * 100%);
+		background: radial-gradient(
+			ellipse 50% 100% at 50% 100%,
+			color-mix(in oklab, var(--K3) 40%, transparent),
+			transparent 75%
+		);
+		transition: height 1.2s var(--ease-out);
+		pointer-events: none;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.lift {
+			transition: none;
+		}
+	}
+</style>

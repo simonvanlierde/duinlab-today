@@ -1,5 +1,5 @@
+import { isoAmsterdam } from "./day";
 import type { Moon, Sun } from "./types";
-import { isoAmsterdam } from "./util";
 
 const LAT = 52.08;
 const LON = 4.31;
@@ -77,4 +77,51 @@ export function moonAt(at: Date): Moon {
 	const cycles = (at.getTime() - NEW_MOON_2000) / 86400000 / SYNODIC_DAYS;
 	const phase = cycles - Math.floor(cycles);
 	return { phase, name: MOON_NAMES[Math.floor(phase * 8 + 0.5) % 8] as string };
+}
+
+export const PHASES = ["night", "first-light", "dawn", "day", "dusk"] as const;
+export type SkyPhase = (typeof PHASES)[number];
+
+/**
+ * Phase at an instant. Self-contained on purpose: the layout inlines this function's source
+ * into the page so the server and the browser clock agree.
+ */
+export function phaseAt(
+	sun: { dawn: string; sunrise: string; sunset: string; dusk: string },
+	now: number,
+): SkyPhase {
+	const dawn = Date.parse(sun.dawn);
+	const rise = Date.parse(sun.sunrise);
+	const set = Date.parse(sun.sunset);
+	const dusk = Date.parse(sun.dusk);
+	const half = 30 * 60 * 1000;
+	if (now < dawn || now >= dusk) return "night";
+	if (now < (dawn + rise) / 2) return "first-light";
+	if (now < rise + half) return "dawn";
+	if (now < set - half) return "day";
+	return "dusk";
+}
+
+/**
+ * Sun altitude in degrees over The Hague (low-precision almanac formula, good to a few
+ * tenths of a degree). Self-contained: the layout inlines it into the page.
+ */
+export function sunAltitude(now: number): number {
+	const r = Math.PI / 180;
+	const d = now / 86400000 - 10957.5; // days since J2000.0
+	const g = (357.529 + 0.98560028 * d) * r;
+	const q = 280.459 + 0.98564736 * d;
+	const lon = (q + 1.915 * Math.sin(g) + 0.02 * Math.sin(2 * g)) * r;
+	const tilt = (23.439 - 0.00000036 * d) * r;
+	const dec = Math.asin(Math.sin(tilt) * Math.sin(lon));
+	const ra = Math.atan2(Math.cos(tilt) * Math.sin(lon), Math.cos(lon));
+	const gmst = (18.697374558 + 24.06570982441908 * d) * 15 * r;
+	const ha = gmst + 4.31 * r - ra;
+	const lat = 52.08 * r;
+	return (
+		Math.asin(
+			Math.sin(lat) * Math.sin(dec) +
+				Math.cos(lat) * Math.cos(dec) * Math.cos(ha),
+		) / r
+	);
 }

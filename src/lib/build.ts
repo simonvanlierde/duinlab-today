@@ -1,9 +1,9 @@
-import { moonAt, sunTimes } from "./sky";
 import { fetchPicture, preferredPicture } from "./sources/picture";
 import { fetchQuote } from "./sources/quote";
 import { fetchQuiz } from "./sources/trivia";
 import { fetchWikipedia } from "./sources/wikipedia";
 import { fetchWord } from "./sources/wiktionary";
+import { moonAt, sunTimes } from "./sun";
 import type { Today } from "./types";
 
 /** The day's sources, fetched in parallel, each failing on its own. Weather, news and games are added on read. */

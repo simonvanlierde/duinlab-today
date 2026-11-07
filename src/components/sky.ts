@@ -1,7 +1,5 @@
-import type { Moon, Sun, Weather } from "../lib/types";
-
-export const PHASES = ["night", "first-light", "dawn", "day", "dusk"] as const;
-export type SkyPhase = (typeof PHASES)[number];
+import type { SkyPhase } from "../lib/sun";
+import type { Moon, Weather } from "../lib/types";
 
 export const PHASE_LABEL: Record<SkyPhase, string> = {
 	night: "night",
@@ -19,98 +17,11 @@ export const PHASE_LINE: Record<SkyPhase, string> = {
 	dusk: "The light is going.",
 };
 
-/**
- * Phase at an instant. Self-contained on purpose: the layout inlines this function's source
- * into the page so the server and the browser clock agree.
- */
-export function phaseAt(
-	sun: { dawn: string; sunrise: string; sunset: string; dusk: string },
-	now: number,
-): SkyPhase {
-	const dawn = Date.parse(sun.dawn);
-	const rise = Date.parse(sun.sunrise);
-	const set = Date.parse(sun.sunset);
-	const dusk = Date.parse(sun.dusk);
-	const half = 30 * 60 * 1000;
-	if (now < dawn || now >= dusk) return "night";
-	if (now < (dawn + rise) / 2) return "first-light";
-	if (now < rise + half) return "dawn";
-	if (now < set - half) return "day";
-	return "dusk";
-}
-
-const TZ = "Europe/Amsterdam";
-
-/** "HH:MM" on the Amsterdam clock, from an ISO instant or a Date. */
-export function clock(at: string | Date): string {
-	const d = typeof at === "string" ? new Date(at) : at;
-	return new Intl.DateTimeFormat("en-GB", {
-		timeZone: TZ,
-		hour: "2-digit",
-		minute: "2-digit",
-		hour12: false,
-	}).format(d);
-}
-
-/** "Friday 6 November 2026" from a YYYY-MM-DD day. */
-export function longDate(day: string): string {
-	return new Intl.DateTimeFormat("en-GB", {
-		timeZone: "UTC",
-		weekday: "long",
-		day: "numeric",
-		month: "long",
-		year: "numeric",
-	})
-		.format(new Date(`${day}T12:00:00Z`))
-		.replace(",", "");
-}
-
 /** Chroma multiplier for the sky: full colour when clear, a greyer sky (not a grey one) when overcast. */
 export function saturation(weather: Weather | null): number {
 	if (!weather) return 1;
 	const cover = Math.min(100, Math.max(0, weather.now.cloudCover)) / 100;
 	return Number((1 - 0.35 * cover).toFixed(2));
-}
-
-const BEAUFORT = [
-	"calm",
-	"light air",
-	"light breeze",
-	"gentle breeze",
-	"moderate breeze",
-	"fresh breeze",
-	"strong breeze",
-	"near gale",
-	"gale",
-	"strong gale",
-	"storm",
-	"violent storm",
-	"hurricane",
-];
-
-const COMPASS: Record<string, string> = {
-	N: "north",
-	NE: "north-east",
-	E: "east",
-	SE: "south-east",
-	S: "south",
-	SW: "south-west",
-	W: "west",
-	NW: "north-west",
-};
-
-export function windLine(w: Weather["now"]): string {
-	const from = COMPASS[w.windFrom] ?? w.windFrom;
-	const name = BEAUFORT[Math.min(12, Math.max(0, w.windBeaufort))];
-	return `Wind from the ${from}, force ${w.windBeaufort} (${name}), ${Math.round(w.windKmh)} km/h`;
-}
-
-export function rainLine(steps: Weather["rainNext2h"]): string {
-	if (steps.length === 0) return "";
-	// the first step is the current one: 5 minutes from Buienradar, 15 from Open-Meteo
-	if ((steps[0]?.mm ?? 0) > 0) return "Rain now";
-	const wet = steps.find((s) => s.mm > 0);
-	return wet ? `Dry until ${wet.time}` : "Dry for 2 hours";
 }
 
 /** SVG path for the lit part of the moon disc; `r` is the radius, centred on (r, r). */
@@ -256,30 +167,6 @@ export const PHASE_SUN: Record<SkyPhase, { alt: number; rising: boolean }> = {
 };
 
 /**
- * Sun altitude in degrees over The Hague (low-precision almanac formula, good to a few
- * tenths of a degree). Self-contained: the layout inlines it into the page.
- */
-export function sunAltitude(now: number): number {
-	const r = Math.PI / 180;
-	const d = now / 86400000 - 10957.5; // days since J2000.0
-	const g = (357.529 + 0.98560028 * d) * r;
-	const q = 280.459 + 0.98564736 * d;
-	const lon = (q + 1.915 * Math.sin(g) + 0.02 * Math.sin(2 * g)) * r;
-	const tilt = (23.439 - 0.00000036 * d) * r;
-	const dec = Math.asin(Math.sin(tilt) * Math.sin(lon));
-	const ra = Math.atan2(Math.cos(tilt) * Math.sin(lon), Math.cos(lon));
-	const gmst = (18.697374558 + 24.06570982441908 * d) * 15 * r;
-	const ha = gmst + 4.31 * r - ra;
-	const lat = 52.08 * r;
-	return (
-		Math.asin(
-			Math.sin(lat) * Math.sin(dec) +
-				Math.cos(lat) * Math.cos(dec) * Math.cos(ha),
-		) / r
-	);
-}
-
-/**
  * CSS custom properties for a sun altitude: neighbouring stops blended in Oklab by the
  * browser (`color-mix`), so the sky moves a little every minute instead of in five steps.
  * Self-contained: the layout inlines it into the page.
@@ -309,14 +196,4 @@ export function skyAt(
 		},
 		dark: t < 0.5 ? a.dark : b.dark,
 	};
-}
-
-/** "9 h 18 min of daylight, −3 min": the day's length and its change since yesterday. */
-export function daylight(today: Sun, yesterday: Sun): string {
-	const len = (s: Sun) => Date.parse(s.sunset) - Date.parse(s.sunrise);
-	const mins = Math.round(len(today) / 60000);
-	const delta = Math.round((len(today) - len(yesterday)) / 60000);
-	const change =
-		delta === 0 ? "" : `, ${delta < 0 ? "\u2212" : "+"}${Math.abs(delta)} min`;
-	return `${Math.floor(mins / 60)} h ${mins % 60} min of daylight${change}`;
 }

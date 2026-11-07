@@ -118,38 +118,3 @@ export function shuffled<T>(items: readonly T[], rand: () => number): T[] {
 	}
 	return a;
 }
-
-const AMS_DATE = new Intl.DateTimeFormat("en-CA", {
-	timeZone: "Europe/Amsterdam",
-	year: "numeric",
-	month: "2-digit",
-	day: "2-digit",
-});
-
-/** The calendar day in Europe/Amsterdam as YYYY-MM-DD. */
-export function amsterdamDate(now: Date): string {
-	return AMS_DATE.format(now);
-}
-
-/** ISO string with the Europe/Amsterdam offset ("2026-11-06T07:46:12+01:00"). */
-export function isoAmsterdam(at: Date): string {
-	const f = new Intl.DateTimeFormat("en-CA", {
-		timeZone: "Europe/Amsterdam",
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-		hour: "2-digit",
-		minute: "2-digit",
-		second: "2-digit",
-		hourCycle: "h23",
-		timeZoneName: "longOffset",
-	}).formatToParts(at);
-	const p = (t: string) => f.find((x) => x.type === t)?.value ?? "";
-	const offset = p("timeZoneName").replace("GMT", "") || "+00:00";
-	return `${p("year")}-${p("month")}-${p("day")}T${p("hour")}:${p("minute")}:${p("second")}${offset}`;
-}
-
-export function dayOfYear(date: string): number {
-	const [y, m, d] = date.split("-").map(Number) as [number, number, number];
-	return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 0)) / 86400000);
-}

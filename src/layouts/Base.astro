@@ -1,15 +1,8 @@
 ---
 import "../styles/global.css";
-import {
-	PHASE_LABEL,
-	PHASE_LINE,
-	PHASE_SUN,
-	phaseAt,
-	SKY,
-	type SkyPhase,
-	skyAt,
-	sunAltitude,
-} from "../components/sky";
+import { skyBootScript } from "../components/boot";
+import { PHASE_SUN, SKY, skyAt } from "../components/sky";
+import { type SkyPhase, sunAltitude } from "../lib/sun";
 import type { Today } from "../lib/types";
 
 interface Props {
@@ -35,160 +28,11 @@ const style = Object.entries({ ...first.vars, "--sat": String(saturation) })
 	.map(([k, v]) => `${k}:${v}`)
 	.join(";");
 
-// Same rules as the server: the sky follows the sun's altitude on the browser clock, and
-// the all-played white-out is applied before first paint so a reload does not flash night.
-const boot = `(${(
-	(cfg: {
-		sun: Today["sun"];
-		forced: string | null;
-		labels: Record<string, string>;
-		lines: Record<string, string>;
-		ids: string[];
-		key: string;
-		table: Parameters<typeof skyAt>[2];
-		phaseSun: typeof PHASE_SUN;
-		phaseAt: typeof phaseAt;
-		sunAltitude: typeof sunAltitude;
-		skyAt: typeof skyAt;
-	}) => {
-		const root = document.documentElement;
-		root.classList.add("js");
-		const today = () =>
-			new Intl.DateTimeFormat("en-CA", {
-				timeZone: "Europe/Amsterdam",
-			}).format(new Date());
-		// compared with the load day, not the server's: a wrong device clock must not loop
-		const loaded = today();
-		const fmt = new Intl.DateTimeFormat("en-GB", {
-			timeZone: "Europe/Amsterdam",
-			hour: "2-digit",
-			minute: "2-digit",
-			hour12: false,
-		});
-		const rise = Date.parse(cfg.sun.sunrise);
-		const set = Date.parse(cfg.sun.sunset);
-		const favicon = document.querySelector<HTMLLinkElement>(
-			"link[rel=icon][type='image/svg+xml']",
-		);
-		const themeColor = document.querySelector<HTMLMetaElement>(
-			"meta[name=theme-color]",
-		);
-		let lastIcon = "";
-		/** The tab icon and the browser bar take the sky's colours. */
-		const tint = () => {
-			const cs = getComputedStyle(root);
-			const c = (n: string) => cs.getPropertyValue(n).trim();
-			const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><defs><linearGradient id="g" x2="0" y2="1"><stop offset="0" stop-color="${c("--k0")}"/><stop offset=".6" stop-color="${c("--k2")}"/><stop offset="1" stop-color="${c("--k3")}"/></linearGradient></defs><rect width="32" height="32" rx="7" fill="url(#g)"/><path d="M0 25C8 21 14 20 20 23S28 24 32 22V32H0Z" fill="${c("--ground")}"/></svg>`;
-			if (svg === lastIcon) return;
-			lastIcon = svg;
-			if (favicon)
-				favicon.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
-			if (themeColor) themeColor.content = c("--k0");
-		};
-		const paint = (at?: number) => {
-			// a tab left open past midnight shows yesterday's paper: fetch today's
-			if (today() !== loaded) {
-				location.reload();
-				return;
-			}
-			const now = Date.now();
-			const skyNow = at ?? now;
-			const hhmm = fmt.format(now);
-			for (const el of document.querySelectorAll("[data-clock]"))
-				el.textContent = hhmm;
-			let played = "";
-			try {
-				const saved = JSON.parse(localStorage.getItem(cfg.key) ?? "{}");
-				const n = cfg.ids.filter((id) => saved[id]?.includes(loaded)).length;
-				if (cfg.ids.length > 0)
-					played = ` \u00b7 ${n}/${cfg.ids.length} played`;
-			} catch {
-				// no storage: no count
-			}
-			for (const el of document.querySelectorAll("[data-progress]"))
-				el.textContent = played;
-			const p = (cfg.forced ?? cfg.phaseAt(cfg.sun, now)) as SkyPhase;
-			root.dataset.phase = p;
-			for (const el of document.querySelectorAll("[data-phase-label]"))
-				el.textContent = cfg.labels[p];
-			for (const el of document.querySelectorAll("[data-phase-line]"))
-				el.textContent = cfg.lines[p];
-			const sun = root.hasAttribute("data-whiteout")
-				? cfg.phaseSun.day
-				: cfg.forced
-					? cfg.phaseSun[p]
-					: {
-							alt: cfg.sunAltitude(skyNow),
-							rising:
-								cfg.sunAltitude(skyNow + 600000) > cfg.sunAltitude(skyNow),
-						};
-			const sky = cfg.skyAt(sun.alt, sun.rising, cfg.table);
-			for (const [k, v] of Object.entries(sky.vars))
-				root.style.setProperty(k, v);
-			root.dataset.ground = sky.dark ? "dark" : "light";
-			// the sun disc: across the masthead from sunrise to sunset, up by altitude
-			const x = Math.min(1, Math.max(0, (skyNow - rise) / (set - rise)));
-			root.style.setProperty("--sun-x", x.toFixed(4));
-			root.style.setProperty("--sun-alt", sun.alt.toFixed(2));
-		};
-		try {
-			const day = today();
-			const saved = JSON.parse(localStorage.getItem(cfg.key) ?? "{}");
-			if (
-				cfg.ids.length > 0 &&
-				cfg.ids.every((id) => saved[id]?.includes(day))
-			) {
-				root.setAttribute("data-whiteout", "");
-			}
-		} catch {
-			// no storage: no white-out
-		}
-		// the first visit of the day replays the last 45 minutes of sky in one transition
-		let replay = false;
-		try {
-			const day = today();
-			replay =
-				!cfg.forced &&
-				localStorage.getItem("today.sunrise.v1") !== day &&
-				!matchMedia("(prefers-reduced-motion: reduce)").matches;
-			localStorage.setItem("today.sunrise.v1", day);
-		} catch {
-			// no storage: no replay
-		}
-		const repaint = () => {
-			if (!document.hidden) paint();
-		};
-		if (replay) {
-			paint(Date.now() - 45 * 60000);
-			addEventListener("load", () =>
-				requestAnimationFrame(() => requestAnimationFrame(repaint)),
-			);
-		} else {
-			paint();
-			document.addEventListener("DOMContentLoaded", repaint);
-		}
-		document.addEventListener("sky", repaint);
-		document.addEventListener("visibilitychange", repaint);
-		setInterval(repaint, 30000);
-		addEventListener("load", () => setTimeout(tint, 3000));
-		setInterval(() => document.hidden || tint(), 60000);
-	}
-).toString()})(${JSON.stringify({
+const boot = skyBootScript({
 	sun: today.sun,
 	forced: forced ? phase : null,
-	labels: PHASE_LABEL,
-	lines: PHASE_LINE,
 	ids: today.games.map((g) => g.id),
-	key: "today.games.v1",
-	table: SKY,
-	phaseSun: PHASE_SUN,
-	phaseAt: "__PHASE_AT__",
-	sunAltitude: "__SUN_ALT__",
-	skyAt: "__SKY_AT__",
-})
-	.replace('"__PHASE_AT__"', () => phaseAt.toString())
-	.replace('"__SUN_ALT__"', () => sunAltitude.toString())
-	.replace('"__SKY_AT__"', () => skyAt.toString())})`;
+});
 
 // the inline script is allowed by its hash, not by 'unsafe-inline'
 const digest = new Uint8Array(

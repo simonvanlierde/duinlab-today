@@ -1,20 +1,13 @@
 // Played-today state, kept in this browser only: the games island reads and writes it.
+import {
+	allPlayed as allPlayedOn,
+	amsterdamDay,
+	streak as run,
+	shift,
+} from "../lib/day";
+
 export const KEY = "today.games.v1";
 const KEEP_DAYS = 60;
-
-/** The Europe/Amsterdam day, YYYY-MM-DD: the day turns over at Amsterdam midnight. */
-export function amsterdamDay(d = new Date()): string {
-	return new Intl.DateTimeFormat("en-CA", {
-		timeZone: "Europe/Amsterdam",
-	}).format(d);
-}
-
-/** The YYYY-MM-DD day `by` days after `day`. */
-export function shift(day: string, by: number): string {
-	const d = new Date(`${day}T12:00:00Z`);
-	d.setUTCDate(d.getUTCDate() + by);
-	return d.toISOString().slice(0, 10);
-}
 
 export const store = $state({
 	/** localStorage was read; before that (server, no script) rows are plain links. */
@@ -59,7 +52,7 @@ function load() {
 }
 
 export function allPlayed(): boolean {
-	return store.ids.length > 0 && store.ids.every((id) => isPlayed(id));
+	return allPlayedOn(store.ids, store.played, store.day);
 }
 
 /** Every game played: the sky rises to full day for the rest of the day. */
@@ -113,13 +106,7 @@ export function ticks(id: string): boolean[] {
 
 /** Consecutive days played. Today not yet played does not break a run that reaches yesterday. */
 export function streak(id: string): number {
-	let day = isPlayed(id) ? store.day : shift(store.day, -1);
-	let n = 0;
-	while (isPlayed(id, day)) {
-		n++;
-		day = shift(day, -1);
-	}
-	return n;
+	return run((day) => isPlayed(id, day), store.day);
 }
 
 export function anyHistory(): boolean {

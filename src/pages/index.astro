@@ -1,24 +1,19 @@
 ---
 import Cue from "../components/Cue.astro";
+import Dune from "../components/Dune.astro";
+import Foot from "../components/Foot.astro";
 import Games from "../components/Games.svelte";
 import Quiz from "../components/Quiz.svelte";
 import {
-	clock,
-	daylight,
-	longDate,
 	moonPath,
 	PHASE_LABEL,
 	PHASE_LINE,
-	PHASES,
-	phaseAt,
-	rainLine,
-	type SkyPhase,
 	saturation,
-	windLine,
 } from "../components/sky";
 import Base from "../layouts/Base.astro";
+import { clock, longDate, rainLine, sunLines, windLine } from "../lib/format";
 import { occasionLine } from "../lib/occasions";
-import { sunPasses, sunTimes } from "../lib/sky";
+import { PHASES, phaseAt, type SkyPhase } from "../lib/sun";
 import { getToday } from "../lib/today";
 
 const now = new Date();
@@ -35,23 +30,8 @@ const heading = longDate(today.date);
 const hasQuiz = !!quiz && quiz.questions.length > 0;
 const FORECAST =
 	"https://www.meteoblue.com/en/weather/week/the-hague_netherlands_2747373";
-const yesterday = new Date(`${today.date}T12:00:00Z`);
-yesterday.setUTCDate(yesterday.getUTCDate() - 1);
-const light = daylight(
-	today.sun,
-	sunTimes(yesterday.toISOString().slice(0, 10)),
-);
-const tomorrow = new Date(`${today.date}T12:00:00Z`);
-tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-const nextSunrise = clock(
-	sunTimes(tomorrow.toISOString().slice(0, 10)).sunrise,
-);
+const almanac = sunLines(today);
 const occasion = occasionLine(today.date);
-const golden = clock(sunPasses(today.date, 6, false));
-const lit = Math.round(
-	((1 - Math.cos(2 * Math.PI * today.moon.phase)) / 2) * 100,
-);
-const cap = (s: string) => s[0]?.toUpperCase() + s.slice(1);
 const HOLIDAYS =
 	"https://calendar.google.com/calendar/embed?src=en.dutch%23holiday%40group.v.calendar.google.com&ctz=Europe%2FAmsterdam";
 const what = `A small daily page: one picture, a few sourced facts, a word, a quiz and ${today.games.length} daily games.`;
@@ -108,23 +88,20 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 				)
 			}
 		</div>
-		<button class="moon" type="button" popovertarget="almanac" aria-label={`${cap(today.moon.name)}: sun and moon times`}>
+		<button class="moon" type="button" popovertarget="almanac" aria-label={`${almanac.moonName}: sun and moon times`}>
 			<svg viewBox="0 0 18 18" width="26" height="26" aria-hidden="true">
 				<circle cx="9" cy="9" r="8.6" fill="currentColor" opacity=".16" />
 				<path d={moonPath(today.moon, 9)} fill="currentColor" />
 			</svg>
 		</button>
 		<div id="almanac" class="almanac" popover>
-			<p>Sun up <b>{clock(today.sun.sunrise)}</b>, down <b>{clock(today.sun.sunset)}</b></p>
-			<p>Golden hour from <b>{golden}</b></p>
-			<p>{light}</p>
-			<p>{cap(today.moon.name)}, {lit}% lit</p>
+			<p>Sun up <b>{almanac.sunrise}</b>, down <b>{almanac.sunset}</b></p>
+			<p>Golden hour from <b>{almanac.golden}</b></p>
+			<p>{almanac.daylight}</p>
+			<p>{almanac.moon}</p>
 		</div>
 		<span class="sun" aria-hidden="true"></span>
-		<svg class="dune" viewBox="0 0 390 56" preserveAspectRatio="none" aria-hidden="true">
-			<path d="M0 36 C50 26 90 16 150 24 S250 38 310 22 S370 14 390 20 V56 H0Z" opacity=".3" />
-			<path d="M0 46 C60 38 120 36 190 42 S320 46 390 36 V56 H0Z" />
-		</svg>
+		<Dune />
 	</header>
 
 	<main class="wrap front" id="paper">
@@ -133,7 +110,7 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 				<section class="rail" aria-labelledby="h-games">
 					<Games client:load games={today.games} />
 					<p class="the-end" aria-live="polite">
-						That's the paper. The sun is back at {nextSunrise} tomorrow.
+						That's the paper. The sun is back at {almanac.nextSunrise} tomorrow.
 					</p>
 				</section>
 			)
@@ -260,11 +237,5 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 		)
 	}
 
-	<footer class="wrap foot">
-		<p class="mute small">
-			New every midnight. <a href="/about">About</a> &middot;{" "}
-			<a href="https://github.com/simonvanlierde/duinlab-today">Source</a> (MIT) &middot; Simon van Lierde &middot;{" "}
-			<a href="https://duinlab.nl">duinlab.nl</a>
-		</p>
-	</footer>
+	<Foot>New every midnight. <a href="/about">About</a> &middot;</Foot>
 </Base>

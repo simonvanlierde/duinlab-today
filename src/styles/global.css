@@ -422,15 +422,6 @@ h1 {
 html:not(.js) .sun {
 	display: none;
 }
-.dune {
-	position: absolute;
-	left: 0;
-	right: 0;
-	bottom: -1px;
-	width: 100%;
-	height: 40px;
-	fill: var(--ground);
-}
 @media (min-width: 900px) {
 	.mast {
 		grid-template-columns: minmax(0, 1fr) auto;
@@ -505,9 +496,6 @@ html:not(.js) .sun {
 	margin-bottom: 8px;
 	color: var(--mute);
 }
-.cue.sr {
-	position: absolute;
-}
 
 /* picture */
 .pic {
@@ -566,98 +554,6 @@ html:not(.js) .sun {
 	margin-right: 4px;
 }
 
-/* quiz */
-.qn {
-	margin-left: auto;
-	font-variant-numeric: tabular-nums;
-	letter-spacing: 0.08em;
-}
-.q {
-	font-weight: 500;
-	text-wrap: pretty;
-}
-.answers {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 6px;
-	margin-top: 10px;
-}
-.answer {
-	position: relative;
-	width: 100%;
-	min-height: 44px;
-	padding: 8px 12px;
-	text-align: left;
-	font-size: 0.9375rem;
-	line-height: 1.3;
-	background: var(--ground-2);
-	border: 1px solid var(--rule);
-	border-radius: 6px;
-	cursor: pointer;
-	transition:
-		background-color 0.2s,
-		border-color 0.2s;
-}
-.answer:hover:not([aria-disabled="true"]) {
-	border-color: var(--ink);
-}
-.answer[aria-disabled="true"] {
-	cursor: default;
-	color: var(--mute);
-}
-/* orange means played; the quiz marks with ink */
-.answer.right {
-	color: var(--ink);
-	border-color: var(--ink);
-	box-shadow: inset 0 0 0 1px var(--ink);
-	background: var(--ground);
-}
-.answer.wrong {
-	color: var(--ink);
-	text-decoration: line-through;
-	text-decoration-color: var(--mute);
-}
-.verdict {
-	display: block;
-	margin-top: 2px;
-	font-size: 0.8125rem;
-	color: var(--ink);
-	text-decoration: none;
-}
-.wrong .verdict {
-	color: var(--mute);
-}
-.quiz-foot {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: space-between;
-	gap: 4px 16px;
-	min-height: 44px;
-	margin-top: 4px;
-}
-.next,
-.undo {
-	min-height: 44px;
-	padding: 0 4px;
-	background: none;
-	border: 0;
-	font-weight: 600;
-	letter-spacing: 0.06em;
-	text-decoration: underline;
-	text-underline-offset: 0.25em;
-	cursor: pointer;
-}
-.score {
-	font-size: 1.25rem;
-	margin-top: 4px;
-}
-.score .figure {
-	font-size: 2rem;
-}
-html:not(.js) .quiz-live {
-	display: none;
-}
 .quiz-static li + li {
 	margin-top: 10px;
 }
@@ -676,154 +572,6 @@ summary {
 .rail {
 	padding-block: 12px 4px;
 }
-.games-head {
-	display: flex;
-	align-items: baseline;
-	justify-content: space-between;
-	gap: 12px;
-}
-.games-head .cue {
-	margin-bottom: 4px;
-}
-.count {
-	font-size: 1rem;
-	letter-spacing: 0.02em;
-}
-.count .figure {
-	font-size: 1.5rem;
-}
-.count .some {
-	color: var(--lit-text);
-}
-.first-visit {
-	margin-top: 10px;
-	font-size: 0.9375rem;
-	font-style: italic;
-	color: var(--mute);
-}
-.games {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	column-gap: 16px;
-	list-style: none;
-	padding: 0;
-	margin-top: 4px;
-}
-@media (min-width: 700px) and (max-width: 1099px) {
-	.games {
-		grid-template-columns: repeat(5, minmax(0, 1fr));
-	}
-}
-@media (min-width: 1100px) {
-	.games {
-		grid-template-columns: minmax(0, 1fr);
-	}
-}
-.game {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	min-height: 45px;
-	border-bottom: 1px solid var(--rule);
-}
-.name {
-	flex: 1;
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	min-height: 44px;
-	padding-block: 6px;
-	line-height: 1.2;
-	font-weight: 500;
-	text-decoration: none;
-}
-.name:hover .label {
-	text-decoration: underline;
-	text-underline-offset: 0.2em;
-}
-.mark {
-	flex: none;
-	width: 14px;
-	height: 14px;
-	border-radius: 50%;
-	border: 2px solid var(--mute);
-	transition:
-		background-color 0.4s,
-		border-color 0.4s,
-		box-shadow 0.4s;
-}
-.games.off .mark {
-	border-style: dotted;
-}
-.mark.lit {
-	background: var(--lit);
-	border-color: var(--lit);
-	box-shadow: 0 1px 6px color-mix(in oklab, var(--lit) 50%, transparent);
-}
-.played .label {
-	color: var(--mute);
-	font-weight: 400;
-}
-.streak {
-	flex: none;
-	min-width: 1.5ch;
-	text-align: right;
-	font-size: 1.0625rem;
-	color: var(--mute);
-}
-.played .streak {
-	color: var(--lit-text);
-}
-.streaks {
-	margin-top: 2px;
-}
-.streak-row {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto 52px;
-	align-items: center;
-	gap: 12px;
-	min-height: 32px;
-	font-size: 0.875rem;
-}
-.ticks {
-	display: inline-flex;
-	align-items: center;
-	gap: 3px;
-}
-.tick {
-	width: 5px;
-	height: 4px;
-	border-radius: 1px;
-	background: color-mix(in oklab, var(--ink) 30%, transparent);
-}
-.tick.on {
-	height: 12px;
-	background: var(--lit);
-}
-.undo {
-	font-size: 0.8125rem;
-	min-height: 32px;
-	position: relative;
-}
-.undo::after {
-	/* 44px hit area on a 32px row */
-	content: "";
-	position: absolute;
-	inset: -6px 0;
-}
-
-/* footer: the quote and the small print in one band */
-.small {
-	font-size: 0.8125rem;
-}
-.foot {
-	display: grid;
-	gap: 6px;
-	margin-top: 12px;
-	padding-block: 8px 10px;
-	border-top: 1px solid var(--rule);
-	font-size: 0.875rem;
-}
 .quote {
 	grid-area: quote;
 	max-width: 52ch;
@@ -838,71 +586,6 @@ summary {
 	margin-top: 2px;
 	font-size: 0.9375rem;
 	color: var(--mute);
-}
-
-/* the quiz lifts its own small horizon: a dawn glow that rises with each answer */
-.quiz-live {
-	position: relative;
-	isolation: isolate;
-}
-.lift {
-	position: absolute;
-	inset: auto -12px 0;
-	z-index: -1;
-	height: calc(var(--lift, 0) * 100%);
-	background: radial-gradient(
-		ellipse 50% 100% at 50% 100%,
-		color-mix(in oklab, var(--K3) 40%, transparent),
-		transparent 75%
-	);
-	transition: height 1.2s var(--ease-out);
-	pointer-events: none;
-}
-
-/* the last two weeks, under a game's name on hover */
-.game {
-	position: relative;
-}
-.hover-ticks {
-	position: absolute;
-	left: 24px;
-	bottom: 4px;
-	display: flex;
-	align-items: flex-end;
-	gap: 2px;
-	opacity: 0;
-	translate: 0 3px;
-	transition:
-		opacity 0.2s,
-		translate 0.3s var(--ease-out);
-	pointer-events: none;
-}
-.hover-ticks .tick {
-	width: 4px;
-	height: 2px;
-}
-.hover-ticks .tick.on {
-	height: 6px;
-}
-@media (hover: hover) {
-	.game:hover .hover-ticks,
-	.game:focus-within .hover-ticks {
-		opacity: 1;
-		translate: 0 0;
-	}
-}
-
-/* a mark lights with a short swell when a game is opened */
-@media (prefers-reduced-motion: no-preference) {
-	.mark.lit {
-		animation: light 0.6s var(--ease-out);
-	}
-}
-@keyframes light {
-	from {
-		scale: 1.6;
-		box-shadow: 0 1px 14px color-mix(in oklab, var(--lit) 80%, transparent);
-	}
 }
 
 /* the weather line: the whole line is the link */
@@ -927,12 +610,6 @@ summary {
 	text-decoration-color: color-mix(in oklab, currentColor 45%, transparent);
 	cursor: pointer;
 }
-.foot .link,
-.foot a {
-	/* a taller hit area without a taller line */
-	padding-block: 10px;
-	margin-block: -10px;
-}
 /* skip link: out of sight until focused */
 .skip {
 	position: absolute;
@@ -954,61 +631,10 @@ summary {
 	color: #f4dcc8;
 }
 
-/* the count rolls to its new number */
-@property --n {
-	syntax: "<integer>";
-	inherits: false;
-	initial-value: 0;
-}
-.roll {
-	counter-reset: n var(--n);
-	transition: --n 0.8s var(--ease-out);
-}
-.roll::after {
-	content: counter(n);
-}
 @media (prefers-reduced-motion: reduce) {
-	.roll,
-	.sun,
-	.lift {
+	.sun {
 		transition: none;
 	}
-}
-
-/* the board folds on phones once all ten are played */
-@media (max-width: 1099px) {
-	.games.folded {
-		display: none;
-	}
-}
-@media (min-width: 1100px) {
-	.unfold {
-		display: none;
-	}
-}
-.unfold,
-.share {
-	min-height: 44px;
-	font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
-	font-weight: 600;
-	font-size: 0.9375rem;
-	letter-spacing: 0.04em;
-	color: var(--mute);
-}
-.games-foot {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: start;
-	justify-content: space-between;
-	gap: 0 16px;
-}
-.games-foot .streaks {
-	flex: 1 1 auto;
-}
-.shared {
-	font-size: 0.875rem;
-	color: var(--mute);
-	overflow-wrap: anywhere;
 }
 
 /* the end of the paper: every game played and the quiz done (or no quiz today) */
@@ -1020,18 +646,6 @@ summary {
 }
 :root[data-whiteout]:is([data-quiz-done], :not(:has(.quiz-live))) .the-end {
 	display: block;
-}
-
-/* the back dune drifts, slowly */
-@media (prefers-reduced-motion: no-preference) {
-	.dune path:first-child {
-		animation: drift 48s ease-in-out infinite alternate;
-	}
-}
-@keyframes drift {
-	to {
-		d: path("M0 30 C60 22 100 24 160 30 S260 34 320 24 S372 20 390 26 V56 H0Z");
-	}
 }
 
 /* the picture develops like a print */
@@ -1051,9 +665,6 @@ summary {
 @media (min-width: 1100px) and (max-height: 940px) {
 	.sky {
 		--hz: 28px;
-	}
-	.dune {
-		height: 22px;
 	}
 	h1 {
 		font-size: 2rem;
@@ -1155,7 +766,6 @@ code {
 	.bar,
 	.skip,
 	.sun,
-	.dune,
 	.rail,
 	.quiz,
 	.the-end,

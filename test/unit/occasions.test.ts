@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { daylight } from "../../src/components/sky";
+import { daylight } from "../../src/lib/format";
 import { easter, occasionLine } from "../../src/lib/occasions";
-import { sunTimes } from "../../src/lib/sky";
+import { sunTimes } from "../../src/lib/sun";
 
 describe("occasions", () => {
 	it("computes Easter", () => {

@@ -1,9 +1,9 @@
 import type { APIRoute } from "astro";
-import { amsterdamDate } from "../lib/util";
+import { amsterdamDay } from "../lib/day";
 
 /** Two pages; the front page changes every day, so its lastmod is today. */
 export const GET: APIRoute = () => {
-	const today = amsterdamDate(new Date());
+	const today = amsterdamDay();
 	const url = (path: string, lastmod?: string) =>
 		`<url><loc>https://today.duinlab.nl${path}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}</url>`;
 	const body = `<?xml version="1.0" encoding="UTF-8"?>

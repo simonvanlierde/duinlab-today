@@ -1,11 +1,11 @@
 import { env } from "cloudflare:workers";
 import { allFailed, buildDay, type Day, incomplete, mergeDay } from "./build";
 import { cached } from "./cache";
+import { amsterdamDay } from "./day";
 import { games } from "./games";
 import { fetchNews } from "./sources/news";
 import { fetchWeather } from "./sources/weather";
 import type { Today } from "./types";
-import { amsterdamDate } from "./util";
 
 const WEATHER_TTL = 15 * 60;
 const NEWS_TTL = 30 * 60;
@@ -26,7 +26,7 @@ const hasApodKey = () => !!env.NASA_API_KEY;
  * stored day is returned untouched. Called hourly by the cron and by a request that finds no day.
  */
 export async function refreshDay(now: Date): Promise<Day> {
-	const date = amsterdamDate(now);
+	const date = amsterdamDay(now);
 	const prev = await readDay(date);
 	if (prev && !incomplete(prev, hasApodKey())) return prev;
 	const day = mergeDay(prev, await buildDay(date, now, env.NASA_API_KEY));
@@ -50,7 +50,7 @@ async function readDay(date: string): Promise<Day | null> {
 }
 
 async function getDay(now: Date): Promise<Day> {
-	const stored = await readDay(amsterdamDate(now));
+	const stored = await readDay(amsterdamDay(now));
 	const fresh =
 		stored &&
 		(!incomplete(stored, hasApodKey()) ||
