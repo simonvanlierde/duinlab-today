@@ -125,9 +125,12 @@ const boot = (cfg: Cfg) => {
 		for (const el of document.querySelectorAll("[data-moon-line]"))
 			el.textContent = m.line;
 		for (const el of document.querySelectorAll("[data-moon-label]"))
-			el.setAttribute("aria-label", `${m.label}: sun and moon times`);
+			el.setAttribute("aria-label", `${m.label}: sun, moon and tide times`);
 		for (const el of document.querySelectorAll("[data-star-label]"))
-			el.setAttribute("aria-label", `${sky2.star.name}: sun and moon times`);
+			el.setAttribute(
+				"aria-label",
+				`${sky2.star.name}: sun, moon and tide times`,
+			);
 	};
 	try {
 		const saved = JSON.parse(localStorage.getItem(cfg.key) ?? "{}");

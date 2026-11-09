@@ -116,14 +116,14 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 				)
 			}
 		</div>
-		<button class="orb sun" type="button" popovertarget="almanac" data-orb="sun" hidden={!bodies.sun.show} style={orb(bodies.sun)} aria-label="Sun: sun and moon times"></button>
-		<button class="orb moon" type="button" popovertarget="almanac" data-orb="moon" data-moon-label hidden={!bodies.moon.show} style={orb(bodies.moon)} aria-label={`${bodies.moon.label}: sun and moon times`}>
+		<button class="orb sun" type="button" popovertarget="almanac" data-orb="sun" hidden={!bodies.sun.show} style={orb(bodies.sun)} aria-label="Sun: sun, moon and tide times"></button>
+		<button class="orb moon" type="button" popovertarget="almanac" data-orb="moon" data-moon-label hidden={!bodies.moon.show} style={orb(bodies.moon)} aria-label={`${bodies.moon.label}: sun, moon and tide times`}>
 			<svg viewBox="0 0 18 18" width="26" height="26" aria-hidden="true">
 				<circle cx="9" cy="9" r="8.6" fill="currentColor" opacity=".16" />
 				<path data-moon-path d={moonPath(bodies.moon, 9)} fill="currentColor" />
 			</svg>
 		</button>
-		<button class="orb star" type="button" popovertarget="almanac" data-orb="star" data-star-label hidden={!bodies.star.show} style={orb(bodies.star)} aria-label={`${bodies.star.name}: sun and moon times`}></button>
+		<button class="orb star" type="button" popovertarget="almanac" data-orb="star" data-star-label hidden={!bodies.star.show} style={orb(bodies.star)} aria-label={`${bodies.star.name}: sun, moon and tide times`}></button>
 		<div id="almanac" class="almanac" popover>
 			<p>Sun up <b>{almanac.sunrise}</b>, down <b>{almanac.sunset}</b></p>
 			<p>Golden hour from <b>{almanac.golden}</b></p>

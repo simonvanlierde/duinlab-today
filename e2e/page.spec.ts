@@ -92,7 +92,7 @@ test("renders the sky, every section from the fixtures, and the ten games", asyn
 // whichever of sun, moon and star is up right now
 const orbs = (page: Page) => page.locator("[data-orb]:not([hidden])");
 
-test("the sky's bright body opens the sun and moon times, and Escape closes them", async ({
+test("the sky's bright body opens the sun, moon and tide times, and Escape closes them", async ({
 	page,
 }) => {
 	await page.goto("/");
@@ -113,7 +113,9 @@ test("by day the sun is a named, focusable button that opens the times", async (
 	page,
 }) => {
 	await page.goto("/?phase=day");
-	const sun = page.getByRole("button", { name: "Sun: sun and moon times" });
+	const sun = page.getByRole("button", {
+		name: "Sun: sun, moon and tide times",
+	});
 	await expect(sun).toBeVisible();
 	await sun.focus();
 	await expect(sun).toBeFocused();
