@@ -11,7 +11,14 @@ import {
 	saturation,
 } from "../components/sky";
 import Base from "../layouts/Base.astro";
-import { clock, longDate, rainLine, sunLines, windLine } from "../lib/format";
+import {
+	clock,
+	longDate,
+	rainLine,
+	sunLines,
+	weekday,
+	windLine,
+} from "../lib/format";
 import { occasionLine } from "../lib/occasions";
 import { PHASES, phaseAt, type SkyPhase } from "../lib/sun";
 import { getToday } from "../lib/today";
@@ -24,6 +31,14 @@ const phase = forced ? (asked as SkyPhase) : phaseAt(today.sun, now.getTime());
 const { picture, word, quote, quiz, weather, onThisDay } = today;
 // days stored before the featured article existed have no such key
 const featured = today.featured ?? null;
+const tides = today.tides ?? null;
+const nearYou = today.nearYou ?? null;
+const events = today.events ?? null;
+const tideTimes = (kind: "high" | "low") =>
+	(tides?.events ?? [])
+		.filter((e) => e.kind === kind)
+		.map((e) => e.at)
+		.join(" and ");
 const rain = weather ? rainLine(weather.rainNext2h) : "";
 const fact = today.didYouKnow[0];
 const heading = longDate(today.date);
@@ -99,6 +114,14 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 			<p>Golden hour from <b>{almanac.golden}</b></p>
 			<p>{almanac.daylight}</p>
 			<p>{almanac.moon}</p>
+			{
+				tides && (
+					<p>
+						High water <b>{tideTimes("high")}</b>, low <b>{tideTimes("low")}</b> at{" "}
+						<a href={tides.url}>Scheveningen</a>
+					</p>
+				)
+			}
 		</div>
 		<span class="sun" aria-hidden="true"></span>
 		<Dune />
@@ -221,6 +244,41 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 			)
 		}
 	</main>
+
+	{
+		(nearYou || events) && (
+			<div class="wrap local">
+				{nearYou && (
+					<section aria-labelledby="h-near">
+						<Cue id="h-near">Out near you this week</Cue>
+						<ul class="plain">
+							{nearYou.species.map((s) => (
+								<li>
+									<a href={s.url}>{s.name}</a>{" "}
+									<span class="mute">{s.count === 1 ? "1 sighting" : `${s.count} sightings`}</span>
+								</li>
+							))}
+						</ul>
+						<p class="src"><a href={nearYou.url}>{nearYou.credit.name}</a>, within 15 km</p>
+					</section>
+				)}
+				{events && (
+					<section aria-labelledby="h-events">
+						<Cue id="h-events">This week at {events.credit.name}</Cue>
+						<ul class="plain">
+							{events.items.map((e) => (
+								<li>
+									<span class="when">{weekday(e.day, today.date)}{e.time && ` ${e.time}`}</span>{" "}
+									<a href={e.url}>{e.name}</a>
+								</li>
+							))}
+						</ul>
+						<p class="src"><a href={events.url}>{events.credit.name}</a></p>
+					</section>
+				)}
+			</div>
+		)
+	}
 
 	{
 		today.news.length > 0 && (

@@ -15,7 +15,7 @@ flowchart LR
     build["refreshDay<br/>fetch the sources,<br/>keep what the day had"]
     page["Astro page<br/>and /today.json"]
   end
-  sources[("Wikipedia, Wiktionary,<br/>APOD, The Met,<br/>Open Trivia DB, ZenQuotes")] --> build
+  sources[("Wikipedia, Wiktionary,<br/>APOD, The Met,<br/>Open Trivia DB, ZenQuotes,<br/>Rijkswaterstaat, iNaturalist, Paard")] --> build
   build -- "day/v1/date" --> kv[("Workers KV")]
   kv --> page
   live[("Open-Meteo, Buienradar,<br/>news feeds")] -- "Cache API,<br/>15 and 30 min" --> page
@@ -25,8 +25,8 @@ flowchart LR
 
 One Worker serves everything ([`src/worker.ts`](src/worker.ts)).
 
-- **The day** (picture, facts, featured article, word, quote, quiz) is built by a cron run at five past every
-  hour and stored in Workers KV, the same for every Cloudflare location. The run after
+- **The day** (picture, facts, featured article, word, quote, quiz, tides, wildlife and
+  events) is built by a cron run at five past every hour and stored in Workers KV, the same for every Cloudflare location. The run after
   midnight builds the new day. Later runs only touch a day that is incomplete: they retry a
   failed source and pick up APOD once it publishes at 06:00 Amsterdam time. A rebuild keeps
   every section the day already had, so the quiz never changes under you. A request that finds
@@ -72,7 +72,7 @@ are:
 | `generatedAt` | ISO instant (UTC) the day was built | always present |
 | `sun`, `moon` | worked out locally | always present |
 | `games` | the daily games | always present |
-| `picture`, `onThisDay`, `featured`, `word`, `quote`, `quiz`, `weather` | objects | `null` |
+| `picture`, `onThisDay`, `featured`, `word`, `quote`, `quiz`, `tides`, `nearYou`, `events`, `weather` | objects | `null` |
 | `didYouKnow` | a list of facts | `[]` |
 | `news` | up to five headlines, one per paper | `[]` |
 
@@ -87,7 +87,9 @@ Worker itself fails, it answers 503 with `{"error": ...}`.
 
 Wikipedia (On this day, Did you know, the featured article), Wiktionary (word of the day),
 NASA APOD, The Metropolitan Museum of Art (public-domain works), Open Trivia DB (CC BY-SA 4.0),
-ZenQuotes, Open-Meteo, Buienradar (the rain radar), and the front-page RSS feeds of NOS, NRC,
+ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), iNaturalist (species seen within
+15 km this week), Paard (this week's shows), Open-Meteo, Buienradar (the rain radar), and the
+front-page RSS feeds of NOS, NRC,
 the BBC, the Guardian and the New York Times. Each item on the page links to its source.
 
 ## Licence

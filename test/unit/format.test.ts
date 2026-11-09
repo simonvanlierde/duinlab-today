@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sunLines } from "../../src/lib/format";
+import { sunLines, weekday } from "../../src/lib/format";
 import { moonAt, sunTimes } from "../../src/lib/sun";
 
 describe("sunLines", () => {
@@ -31,5 +31,13 @@ describe("sunLines", () => {
 		expect(
 			sunLines({ date, sun, moon: { phase: 0, name: "new moon" } }).moon,
 		).toBe("New moon, 0% lit");
+	});
+});
+
+describe("weekday", () => {
+	it("names today and tomorrow, then the short weekday", () => {
+		expect(weekday("2026-11-09", "2026-11-09")).toBe("Today");
+		expect(weekday("2026-11-10", "2026-11-09")).toBe("Tomorrow");
+		expect(weekday("2026-11-12", "2026-11-09")).toBe("Thu");
 	});
 });

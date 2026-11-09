@@ -1,0 +1,159 @@
+{
+	"Succesvol": true,
+	"WaarnemingenLijst": [
+		{
+			"AquoMetadata": {
+				"BemonsteringsApparaat": { "Code": "8000", "Omschrijving": "NVT" },
+				"BemonsteringsMethode": { "Code": "NVT", "Omschrijving": "NVT" },
+				"BemonsteringsSoort": { "Code": "NVT", "Omschrijving": "NVT" },
+				"BioTaxon": { "Code": "NVT", "Omschrijving": "NVT" },
+				"BioTaxonType": { "Code": "", "Omschrijving": "" },
+				"Compartiment": { "Code": "OW", "Omschrijving": "Oppervlaktewater" },
+				"Eenheid": { "Code": "cm", "Omschrijving": "centimeter" },
+				"Groepering": {
+					"Code": "GETETBRKD2",
+					"Omschrijving": "Getijextreem berekend"
+				},
+				"Grootheid": { "Code": "WATHTE", "Omschrijving": "Waterhoogte" },
+				"Hoedanigheid": {
+					"Code": "NAP",
+					"Omschrijving": "t.o.v. Normaal Amsterdams Peil"
+				},
+				"MeetApparaat": { "Code": "8000", "Omschrijving": "NVT" },
+				"Orgaan": { "Code": "NVT", "Omschrijving": "NVT" },
+				"Parameter": { "Code": "NVT", "Omschrijving": "NVT" },
+				"Parameter_Wat_Omschrijving": "Waterhoogte astronomisch in Oppervlaktewater t.o.v. Normaal Amsterdams Peil in cm",
+				"ProcesType": "astronomisch",
+				"Typering": { "Code": "NVT", "Omschrijving": "NVT" },
+				"WaardeBepalingsMethode": {
+					"Code": "other:F012",
+					"Omschrijving": "Astronomische waterhoogte mbv harmonische analyse"
+				},
+				"WaardeBepalingsTechniek": { "Code": "NVT", "Omschrijving": "NVT" },
+				"WaardeBewerkingsMethode": { "Code": "NVT", "Omschrijving": "NVT" }
+			},
+			"Locatie": {
+				"Code": "scheveningen",
+				"Coordinatenstelsel": "ETRS89",
+				"Lat": 52.099035,
+				"Lon": 4.263563,
+				"Naam": "Scheveningen",
+				"Omschrijving": "Scheveningen"
+			},
+			"MetingenLijst": [
+				{
+					"Meetwaarde": {
+						"Waarde_Alfanumeriek": "111",
+						"Waarde_Numeriek": 111.0
+					},
+					"Tijdstip": "2026-11-08T14:28:00.000+01:00",
+					"WaarnemingMetadata": {
+						"Bemonsteringshoogte": "-999999999",
+						"Kwaliteitswaardecode": "00",
+						"OpdrachtgevendeInstantie": "RIKZMON_WAT",
+						"Referentievlak": "NVT",
+						"Statuswaarde": "Ongecontroleerd"
+					}
+				},
+				{
+					"Meetwaarde": {
+						"Waarde_Alfanumeriek": "-60",
+						"Waarde_Numeriek": -60.0
+					},
+					"Tijdstip": "2026-11-08T22:12:00.000+01:00",
+					"WaarnemingMetadata": {
+						"Bemonsteringshoogte": "-999999999",
+						"Kwaliteitswaardecode": "00",
+						"OpdrachtgevendeInstantie": "RIKZMON_WAT",
+						"Referentievlak": "NVT",
+						"Statuswaarde": "Ongecontroleerd"
+					}
+				},
+				{
+					"Meetwaarde": {
+						"Waarde_Alfanumeriek": "121",
+						"Waarde_Numeriek": 121.0
+					},
+					"Tijdstip": "2026-11-09T02:48:00.000+01:00",
+					"WaarnemingMetadata": {
+						"Bemonsteringshoogte": "-999999999",
+						"Kwaliteitswaardecode": "00",
+						"OpdrachtgevendeInstantie": "RIKZMON_WAT",
+						"Referentievlak": "NVT",
+						"Statuswaarde": "Ongecontroleerd"
+					}
+				},
+				{
+					"Meetwaarde": {
+						"Waarde_Alfanumeriek": "-43",
+						"Waarde_Numeriek": -43.0
+					},
+					"Tijdstip": "2026-11-09T10:39:00.000+01:00",
+					"WaarnemingMetadata": {
+						"Bemonsteringshoogte": "-999999999",
+						"Kwaliteitswaardecode": "00",
+						"OpdrachtgevendeInstantie": "RIKZMON_WAT",
+						"Referentievlak": "NVT",
+						"Statuswaarde": "Ongecontroleerd"
+					}
+				},
+				{
+					"Meetwaarde": {
+						"Waarde_Alfanumeriek": "118",
+						"Waarde_Numeriek": 118.0
+					},
+					"Tijdstip": "2026-11-09T15:05:00.000+01:00",
+					"WaarnemingMetadata": {
+						"Bemonsteringshoogte": "-999999999",
+						"Kwaliteitswaardecode": "00",
+						"OpdrachtgevendeInstantie": "RIKZMON_WAT",
+						"Referentievlak": "NVT",
+						"Statuswaarde": "Ongecontroleerd"
+					}
+				},
+				{
+					"Meetwaarde": {
+						"Waarde_Alfanumeriek": "-56",
+						"Waarde_Numeriek": -56.0
+					},
+					"Tijdstip": "2026-11-09T22:43:00.000+01:00",
+					"WaarnemingMetadata": {
+						"Bemonsteringshoogte": "-999999999",
+						"Kwaliteitswaardecode": "00",
+						"OpdrachtgevendeInstantie": "RIKZMON_WAT",
+						"Referentievlak": "NVT",
+						"Statuswaarde": "Ongecontroleerd"
+					}
+				},
+				{
+					"Meetwaarde": {
+						"Waarde_Alfanumeriek": "118",
+						"Waarde_Numeriek": 118.0
+					},
+					"Tijdstip": "2026-11-10T03:26:00.000+01:00",
+					"WaarnemingMetadata": {
+						"Bemonsteringshoogte": "-999999999",
+						"Kwaliteitswaardecode": "00",
+						"OpdrachtgevendeInstantie": "RIKZMON_WAT",
+						"Referentievlak": "NVT",
+						"Statuswaarde": "Ongecontroleerd"
+					}
+				},
+				{
+					"Meetwaarde": {
+						"Waarde_Alfanumeriek": "-48",
+						"Waarde_Numeriek": -48.0
+					},
+					"Tijdstip": "2026-11-10T11:17:00.000+01:00",
+					"WaarnemingMetadata": {
+						"Bemonsteringshoogte": "-999999999",
+						"Kwaliteitswaardecode": "00",
+						"OpdrachtgevendeInstantie": "RIKZMON_WAT",
+						"Referentievlak": "NVT",
+						"Statuswaarde": "Ongecontroleerd"
+					}
+				}
+			]
+		}
+	]
+}

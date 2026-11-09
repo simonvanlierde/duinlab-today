@@ -1,5 +1,8 @@
+import { fetchEvents } from "./sources/events";
+import { fetchNearYou } from "./sources/nature";
 import { fetchPicture, preferredPicture } from "./sources/picture";
 import { fetchQuote } from "./sources/quote";
+import { fetchTides } from "./sources/tides";
 import { fetchQuiz } from "./sources/trivia";
 import { fetchWikipedia } from "./sources/wikipedia";
 import { fetchWord } from "./sources/wiktionary";
@@ -14,13 +17,17 @@ export async function buildDay(
 	now: Date,
 	apiKey: string | undefined,
 ): Promise<Day> {
-	const [wiki, picture, word, quote, quiz] = await Promise.all([
-		fetchWikipedia(date),
-		fetchPicture(date, apiKey),
-		fetchWord(date),
-		fetchQuote(),
-		fetchQuiz(date),
-	]);
+	const [wiki, picture, word, quote, quiz, tides, nearYou, events] =
+		await Promise.all([
+			fetchWikipedia(date),
+			fetchPicture(date, apiKey),
+			fetchWord(date),
+			fetchQuote(),
+			fetchQuiz(date),
+			fetchTides(date),
+			fetchNearYou(date),
+			fetchEvents(date),
+		]);
 	return {
 		date,
 		generatedAt: now.toISOString(),
@@ -33,10 +40,16 @@ export async function buildDay(
 		word,
 		quote,
 		quiz,
+		tides,
+		nearYou,
+		events,
 	};
 }
 
-/** Sections a source supplies; `sun` and `moon` are computed and always present. */
+/**
+ * Sections a source supplies; `sun` and `moon` are computed and always present. A section a
+ * day stored before it existed is undefined: missing, so the next run fills it in.
+ */
 const sections = (d: Day) => [
 	d.picture,
 	d.onThisDay,
@@ -44,13 +57,15 @@ const sections = (d: Day) => [
 	d.word,
 	d.quote,
 	d.quiz,
+	d.tides,
+	d.nearYou,
+	d.events,
 	d.didYouKnow.length > 0 ? d.didYouKnow : null,
 ];
 
-export const missingSections = (d: Day) =>
-	sections(d).filter((s) => s === null).length;
+export const missingSections = (d: Day) => sections(d).filter((s) => !s).length;
 
-export const allFailed = (d: Day) => sections(d).every((s) => s === null);
+export const allFailed = (d: Day) => sections(d).every((s) => !s);
 
 /** Not final yet: a source is missing, or The Met stands in for APOD, which publishes at 06:00. */
 export function incomplete(d: Day, hasApodKey: boolean): boolean {
@@ -83,5 +98,8 @@ export function mergeDay(prev: Day | null, fresh: Day): Day {
 		word: prev.word ?? fresh.word,
 		quote: prev.quote ?? fresh.quote,
 		quiz: prev.quiz ?? fresh.quiz,
+		tides: prev.tides ?? fresh.tides,
+		nearYou: prev.nearYou ?? fresh.nearYou,
+		events: prev.events ?? fresh.events,
 	};
 }

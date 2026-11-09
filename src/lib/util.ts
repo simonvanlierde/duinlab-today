@@ -13,9 +13,21 @@ export async function upstream(url: string): Promise<string> {
 	return origin ? `${origin}/${url.replace(/^https:\/\//, "")}` : url;
 }
 
-export async function getText(url: string, accept = "*/*"): Promise<string> {
+/** `post` sends that body as JSON with a POST. */
+export async function getText(
+	url: string,
+	accept = "*/*",
+	post?: unknown,
+): Promise<string> {
 	const res = await fetch(await upstream(url), {
-		headers: { "user-agent": UA, accept },
+		headers: {
+			"user-agent": UA,
+			accept,
+			...(post === undefined ? {} : { "content-type": "application/json" }),
+		},
+		...(post === undefined
+			? {}
+			: { method: "POST", body: JSON.stringify(post) }),
 		signal: AbortSignal.timeout(TIMEOUT_MS),
 	});
 	// host and path only: a query string can carry an API key into the logs

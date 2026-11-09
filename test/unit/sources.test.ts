@@ -360,14 +360,17 @@ describe("day assembly and cache", () => {
 		expect(Object.keys(day).sort()).toEqual([
 			"date",
 			"didYouKnow",
+			"events",
 			"featured",
 			"generatedAt",
 			"moon",
+			"nearYou",
 			"onThisDay",
 			"picture",
 			"quiz",
 			"quote",
 			"sun",
+			"tides",
 			"word",
 		]);
 
@@ -455,6 +458,9 @@ describe("hardening", () => {
 			word: null,
 			quote: { text: "old" },
 			quiz: { questions: [{ question: "first draw" }] },
+			tides: { events: [] },
+			nearYou: { species: [] },
+			events: { items: [] },
 			didYouKnow: [{ text: "a" }],
 		} as unknown as NonNullable<Parameters<typeof mergeDay>[0]>;
 		expect(incomplete(base, true)).toBe(true); // word missing, and Met stands in
@@ -475,6 +481,12 @@ describe("hardening", () => {
 		expect(merged.generatedAt).toBe("2026-11-06T06:05:00Z");
 		expect(incomplete(merged, true)).toBe(false);
 		expect(mergeDay({ ...base, date: "2026-11-05" }, fresh)).toBe(fresh);
+
+		// a day stored before tides existed has no such key: the next run fills it in
+		const { tides: _, ...older } = { ...base, word: {} as never };
+		const stored = older as unknown as typeof base;
+		expect(incomplete(stored, false)).toBe(true);
+		expect(mergeDay(stored, fresh).tides).toEqual(fresh.tides);
 	});
 
 	it("takes the top headline of an RSS feed, CDATA or not", () => {
