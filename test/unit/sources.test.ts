@@ -340,6 +340,39 @@ describe("picture rule", () => {
 });
 
 describe("day assembly and cache", () => {
+	it("asks only the sources whose section the stored day lacks", async () => {
+		const hosts: string[] = [];
+		vi.stubGlobal("fetch", async (url: string) => {
+			hosts.push(new URL(url).host);
+			return new Response("", { status: 503 });
+		});
+		const prev = {
+			date: "2026-11-06",
+			picture: { kind: "apod" },
+			didYouKnow: [{ text: "a" }],
+			onThisDay: { year: 1 },
+			featured: { title: "A" },
+			word: { word: "dune" },
+			quote: { text: "q" },
+			quiz: { questions: [] },
+			tides: { events: [] },
+			nearYou: null,
+			events: { items: [] },
+		} as unknown as Parameters<typeof buildDay>[3];
+		const day = await buildDay("2026-11-06", new Date(), "k", prev);
+		expect(hosts).toEqual(["api.inaturalist.org"]);
+		expect(day.quiz).toBe(prev?.quiz);
+		// The Met standing in for APOD is asked again
+		hosts.length = 0;
+		await buildDay("2026-11-06", new Date(), "k", {
+			...prev,
+			nearYou: { species: [] },
+			picture: { kind: "met" },
+		} as unknown as typeof prev);
+		expect(hosts).toContain("api.nasa.gov");
+		expect(hosts).not.toContain("api.inaturalist.org");
+	});
+
 	it("drops a failing section without throwing, and flags a total failure", async () => {
 		vi.stubGlobal("fetch", async (url: string) =>
 			url.includes("zenquotes")
