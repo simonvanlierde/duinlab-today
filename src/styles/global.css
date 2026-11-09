@@ -307,22 +307,41 @@ h1 {
 .temp {
 	font-size: 1.25rem;
 }
-/* the moon: its real phase, high in the sky; it opens the sun and moon times */
-.moon {
+/* sun, moon and a bright star: real positions in the sky, each one a button for the almanac */
+.orb {
 	position: absolute;
 	z-index: 2;
-	top: 14px;
-	right: max(8px, calc((100% - 1320px) / 2 + 20px));
-	padding: 8px;
+	left: clamp(32px, calc(6% + var(--x, 0.5) * 88%), calc(100% - 32px));
+	bottom: clamp(
+		-24px,
+		calc(16px + var(--alt, 10) * 3px),
+		calc(var(--hz) - var(--top, 14px))
+	);
+	translate: -50% 50%;
+	padding: 0;
 	border: 0;
 	border-radius: 50%;
 	background: none;
 	color: #f6f1dc;
 	cursor: pointer;
-	filter: drop-shadow(0 0 6px rgb(246 241 220 / 0.45));
 	transition:
+		left 2.4s var(--ease-out),
+		bottom 2.4s var(--ease-out),
+		opacity 2.4s,
 		filter 0.3s,
 		scale 0.3s var(--ease-out);
+}
+.orb[hidden] {
+	display: none;
+}
+.orb:focus-visible {
+	outline: 2px solid #fff;
+	outline-offset: 2px;
+}
+.moon {
+	--top: 16px;
+	padding: 8px;
+	filter: drop-shadow(0 0 6px rgb(246 241 220 / 0.45));
 }
 .moon:hover,
 .moon:focus-visible {
@@ -398,12 +417,20 @@ h1 {
 }
 /* the sun: crosses the horizon band from sunrise to sunset, up by its altitude */
 .sun {
+	--top: 14px; /* how far the centre may rise short of the text above the horizon band */
+	width: 44px;
+	height: 44px;
+	opacity: clamp(0, (var(--alt, 10) + 4) / 4, 1);
+}
+/* the glow is wider than the button, so it never covers the text under it */
+.sun::before {
+	content: "";
 	position: absolute;
-	left: calc(6% + var(--sun-x, 0.5) * 88%);
-	bottom: calc(16px + clamp(-40px, var(--sun-alt, 10) * 3px, var(--hz) - 22px));
+	top: 50%;
+	left: 50%;
 	width: 64px;
 	height: 64px;
-	translate: -50% 50%;
+	translate: -50% -50%;
 	border-radius: 50%;
 	background: radial-gradient(
 		circle,
@@ -412,15 +439,22 @@ h1 {
 		color-mix(in oklab, #ffc7a0 25%, transparent) 45%,
 		transparent 70%
 	);
-	opacity: clamp(0, (var(--sun-alt, 10) + 4) / 4, 1);
-	transition:
-		left 2.4s var(--ease-out),
-		bottom 2.4s var(--ease-out),
-		opacity 2.4s;
 	pointer-events: none;
 }
-html:not(.js) .sun {
-	display: none;
+/* a star: a pinpoint with a soft halo inside a hit area big enough for a finger */
+.star {
+	--top: 12px;
+	width: 32px;
+	height: 32px;
+	background: radial-gradient(
+		circle,
+		#fff 0 9%,
+		rgb(255 255 255 / 0.55) 16%,
+		transparent 55%
+	);
+}
+.star:hover {
+	scale: 1.15;
 }
 @media (min-width: 900px) {
 	.mast {
@@ -625,6 +659,10 @@ summary {
 	top: 8px;
 }
 
+.occasion a {
+	display: inline-block;
+	min-height: 24px; /* a target the sun, moon or a star may overlap */
+}
 .occasion {
 	margin-top: 4px;
 	font-size: 0.9375rem;
@@ -632,7 +670,7 @@ summary {
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.sun {
+	.orb {
 		transition: none;
 	}
 }
@@ -690,12 +728,6 @@ summary {
 	}
 	.strip {
 		justify-self: end;
-	}
-	/* the weather now sits at the top right too: the moon moves to the open sky mid-way */
-	.moon {
-		top: 2px;
-		right: auto;
-		left: 50%;
 	}
 	/* lines break between items, not inside one */
 	.strip li {
@@ -786,7 +818,7 @@ code {
 	}
 	.bar,
 	.skip,
-	.sun,
+	.orb,
 	.rail,
 	.quiz,
 	.the-end,

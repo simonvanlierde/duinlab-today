@@ -24,7 +24,7 @@ export function saturation(weather: Weather | null): number {
 	return Number((1 - 0.35 * cover).toFixed(2));
 }
 
-/** SVG path for the lit part of the moon disc; `r` is the radius, centred on (r, r). */
+/** SVG path for the lit part of the moon disc; `r` is the radius, centred on (r, r). Self-contained: the layout inlines it. */
 export function moonPath(m: Moon, r = 9): string {
 	const p = ((m.phase % 1) + 1) % 1;
 	const waxing = p < 0.5;
@@ -34,6 +34,46 @@ export function moonPath(m: Moon, r = 9): string {
 	// the terminator bulges toward the dark side while crescent, toward the lit side while gibbous
 	const term = (waxing ? 1 : 0) ^ (k > 0 ? 1 : 0) ? 1 : 0;
 	return `M ${r} 0 A ${r} ${r} 0 0 ${limb} ${r} ${2 * r} A ${rx.toFixed(2)} ${r} 0 0 ${term} ${r} 0 Z`;
+}
+
+/**
+ * Where the sun, the moon and a bright star sit in the masthead, and which of them show.
+ * All three share the sun's mapping: across by hour angle (the sun's own sunrise-to-sunset
+ * fraction, so the moon on the meridian is where the sun is at noon) and up by altitude.
+ * The sun shows while it is nearly up, the moon while it is above the horizon, the star only
+ * when neither does, so the masthead always has one way into the almanac.
+ * Self-contained: the layout inlines it into the page; the sky functions come in as arguments.
+ */
+export function bodiesAt<
+	M extends { alt: number; h: number },
+	S extends { alt: number; h: number },
+>(
+	sun: { sunrise: string; sunset: string },
+	now: number,
+	sunAlt: number,
+	moonNow: (now: number) => M,
+	starNow: (now: number) => S,
+) {
+	const rise = Date.parse(sun.sunrise);
+	const set = Date.parse(sun.sunset);
+	const across = (h: number) =>
+		Math.min(1, Math.max(0, 0.5 + h / (((set - rise) / 86400000) * 360)));
+	const moon = moonNow(now);
+	const star = starNow(now);
+	const sunShow = sunAlt > -3;
+	const moonShow = moon.alt > -0.5;
+	return {
+		sun: {
+			show: sunShow,
+			alt: sunAlt,
+			x: Math.min(1, Math.max(0, (now - rise) / (set - rise))),
+		},
+		moon: Object.assign({}, moon, { show: moonShow, x: across(moon.h) }),
+		star: Object.assign({}, star, {
+			show: !sunShow && !moonShow,
+			x: across(star.h),
+		}),
+	};
 }
 
 /**

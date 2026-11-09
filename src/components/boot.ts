@@ -1,10 +1,29 @@
 import { allPlayed, amsterdamDay } from "../lib/day";
+import { moonNow, starNow } from "../lib/moon";
 import { phaseAt, type SkyPhase, sunAltitude } from "../lib/sun";
 import type { Sun } from "../lib/types";
-import { PHASE_LABEL, PHASE_LINE, PHASE_SUN, SKY, skyAt } from "./sky";
+import {
+	bodiesAt,
+	moonPath,
+	PHASE_LABEL,
+	PHASE_LINE,
+	PHASE_SUN,
+	SKY,
+	skyAt,
+} from "./sky";
 
 /** The functions the page runs, inlined by their source: each must be self-contained. */
-const INLINED = { phaseAt, sunAltitude, skyAt, amsterdamDay, allPlayed };
+const INLINED = {
+	phaseAt,
+	sunAltitude,
+	skyAt,
+	bodiesAt,
+	moonNow,
+	starNow,
+	moonPath,
+	amsterdamDay,
+	allPlayed,
+};
 
 type Cfg = {
 	sun: Sun;
@@ -31,8 +50,6 @@ const boot = (cfg: Cfg) => {
 		minute: "2-digit",
 		hour12: false,
 	});
-	const rise = Date.parse(cfg.sun.sunrise);
-	const set = Date.parse(cfg.sun.sunset);
 	const favicon = document.querySelector<HTMLLinkElement>(
 		"link[rel=icon][type='image/svg+xml']",
 	);
@@ -88,10 +105,29 @@ const boot = (cfg: Cfg) => {
 		const sky = cfg.skyAt(sun.alt, sun.rising, cfg.table);
 		for (const [k, v] of Object.entries(sky.vars)) root.style.setProperty(k, v);
 		root.dataset.ground = sky.dark ? "dark" : "light";
-		// the sun disc: across the masthead from sunrise to sunset, up by altitude
-		const x = Math.min(1, Math.max(0, (skyNow - rise) / (set - rise)));
-		root.style.setProperty("--sun-x", x.toFixed(4));
-		root.style.setProperty("--sun-alt", sun.alt.toFixed(2));
+		// sun, moon and star: across by hour angle, up by altitude; see `bodiesAt`
+		const sky2 = cfg.bodiesAt(
+			cfg.sun,
+			skyNow,
+			sun.alt,
+			cfg.moonNow,
+			cfg.starNow,
+		);
+		for (const el of document.querySelectorAll<HTMLElement>("[data-orb]")) {
+			const b = sky2[el.dataset.orb as "sun" | "moon" | "star"];
+			el.hidden = !b.show;
+			el.style.setProperty("--x", b.x.toFixed(4));
+			el.style.setProperty("--alt", b.alt.toFixed(2));
+		}
+		const m = sky2.moon;
+		for (const el of document.querySelectorAll("[data-moon-path]"))
+			el.setAttribute("d", cfg.moonPath(m, 9));
+		for (const el of document.querySelectorAll("[data-moon-line]"))
+			el.textContent = m.line;
+		for (const el of document.querySelectorAll("[data-moon-label]"))
+			el.setAttribute("aria-label", `${m.label}: sun and moon times`);
+		for (const el of document.querySelectorAll("[data-star-label]"))
+			el.setAttribute("aria-label", `${sky2.star.name}: sun and moon times`);
 	};
 	try {
 		const saved = JSON.parse(localStorage.getItem(cfg.key) ?? "{}");
