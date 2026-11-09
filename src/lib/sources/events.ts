@@ -37,10 +37,14 @@ function amsterdamStart(
 	return m ? { day: m[1] as string, time: m[2] ?? null } : null;
 }
 
-/** The next week of shows (`date` through date+6) from the page's JSON-LD; null when none. */
+/**
+ * The next week of shows (`date` through date+6) from the page's JSON-LD: `items` is [] in a
+ * week without shows, and the result is null when the page lists no shows at all.
+ */
 export function parseEvents(html: string, date: string): Events | null {
 	const last = shift(date, 6);
 	const found: (Happening & { start: string })[] = [];
+	let shows = 0;
 	for (const m of html.matchAll(BLOCK)) {
 		let nodes: Node[];
 		try {
@@ -51,6 +55,7 @@ export function parseEvents(html: string, date: string): Events | null {
 		for (const n of nodes) {
 			if (typeof n.name !== "string" || typeof n.startDate !== "string")
 				continue;
+			shows++;
 			if (String(n.eventStatus ?? "").endsWith("EventCancelled")) continue;
 			const start = amsterdamStart(n.startDate);
 			const url = httpsUrl(typeof n.url === "string" ? n.url : undefined);
@@ -67,7 +72,8 @@ export function parseEvents(html: string, date: string): Events | null {
 			});
 		}
 	}
-	if (!found.length) return null;
+	// no shows at all means the page changed; none this week (a summer break) is a real answer
+	if (shows === 0) return null;
 	found.sort((a, b) => a.start.localeCompare(b.start));
 	return {
 		items: found.slice(0, MAX).map(({ start: _, ...h }) => h),

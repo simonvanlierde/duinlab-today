@@ -36,9 +36,10 @@ describe("parseNearYou", () => {
 		expect(n?.species.map((s) => s.name)).toEqual(["Bellis perennis"]);
 	});
 
-	it("returns null on a bad shape or no results", () => {
+	it("returns null on a bad shape, and no species for a quiet week", () => {
 		expect(parseNearYou(null, "2026-11-09")).toBeNull();
 		expect(parseNearYou({ results: "x" }, "2026-11-09")).toBeNull();
-		expect(parseNearYou({ results: [] }, "2026-11-09")).toBeNull();
+		expect(parseNearYou({ results: [{ count: 1 }] }, "2026-11-09")).toBeNull();
+		expect(parseNearYou({ results: [] }, "2026-11-09")?.species).toEqual([]);
 	});
 });
