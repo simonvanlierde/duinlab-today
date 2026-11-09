@@ -51,7 +51,8 @@ export function parseNearYou(body: unknown, date: string): NearYou | null {
 			url: `https://www.inaturalist.org/taxa/${t.id}`,
 		});
 	}
-	if (species.length === 0) return null;
+	// [] is a quiet week, not a failure: null would rebuild the day all day long
+	if (species.length === 0 && results.length > 0) return null;
 	return {
 		species: species.slice(0, TOP),
 		url: `https://www.inaturalist.org/observations?${area(date)}&view=species`,

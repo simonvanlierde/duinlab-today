@@ -32,11 +32,11 @@ describe("parseEvents", () => {
 		const wide = parseEvents(paard, "2026-11-12");
 		expect(wide?.items.every((i) => !i.name.includes("&#"))).toBe(true);
 		expect(
-			parseEvents(page(ev("Late", "2026-11-17T20:00")), "2026-11-10"),
-		).toBeNull();
+			parseEvents(page(ev("Late", "2026-11-17T20:00")), "2026-11-10")?.items,
+		).toEqual([]);
 		expect(
-			parseEvents(page(ev("Past", "2026-11-09T20:00")), "2026-11-10"),
-		).toBeNull();
+			parseEvents(page(ev("Past", "2026-11-09T20:00")), "2026-11-10")?.items,
+		).toEqual([]);
 	});
 
 	it("handles @graph, arrays and single objects, and https urls only", () => {
@@ -66,8 +66,9 @@ describe("parseEvents", () => {
 		expect(r?.items.map((i) => i.name)).toEqual(["Ok"]);
 	});
 
-	it("returns null when there are no events", () => {
+	it("returns null when the page lists no shows, and no items for a week without any", () => {
 		expect(parseEvents("<html></html>", "2026-11-10")).toBeNull();
 		expect(parseEvents(page('{"@type":"WebPage"}'), "2026-11-10")).toBeNull();
+		expect(parseEvents(paard, "2027-07-01")?.items).toEqual([]);
 	});
 });

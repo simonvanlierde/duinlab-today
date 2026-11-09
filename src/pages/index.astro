@@ -32,8 +32,8 @@ const { picture, word, quote, quiz, weather, onThisDay } = today;
 // days stored before the featured article existed have no such key
 const featured = today.featured ?? null;
 const tides = today.tides ?? null;
-const nearYou = today.nearYou ?? null;
-const events = today.events ?? null;
+const nearYou = today.nearYou?.species.length ? today.nearYou : null;
+const events = today.events?.items.length ? today.events : null;
 const tideTimes = (kind: "high" | "low") =>
 	(tides?.events ?? [])
 		.filter((e) => e.kind === kind)
