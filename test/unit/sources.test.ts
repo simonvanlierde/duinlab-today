@@ -51,6 +51,21 @@ describe("parsers", () => {
 		expect(facts[1]?.text.startsWith("when Martin Lehmann")).toBe(true);
 	});
 
+	it("skips a did-you-know item that is not a hook", () => {
+		const notice = {
+			text: "File:Example.jpg is not protected; either 1) Upload the file to en.wiki (see instructions), or 2) protect the file at Commons",
+			html: '<a href="https://en.wikipedia.org/wiki/File:Example.jpg">File:Example.jpg</a> is not protected',
+		};
+		const fourDots = {
+			text: ".... that the film All of Tokyo! was based on interviews?",
+			html: '.... that the film <b><a href="https://en.wikipedia.org/wiki/All_of_Tokyo!">All of Tokyo!</a></b>',
+		};
+		const facts = parseFacts({ dyk: [notice, fourDots] });
+		expect(facts.map((f) => f.text)).toEqual([
+			"the film All of Tokyo! was based on interviews?",
+		]);
+	});
+
 	it("prefers an on-this-day item that is not about war or death", () => {
 		const item = parseOnThisDay(wikipedia);
 		expect(item?.year).toBe(2012);

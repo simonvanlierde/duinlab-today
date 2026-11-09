@@ -24,11 +24,14 @@ interface Feed {
 export function parseFacts(feed: Feed, count = 2): Fact[] {
 	const out: Fact[] = [];
 	for (const item of feed.dyk ?? []) {
+		// A hook starts "... that"; the feed sometimes carries a maintenance notice instead.
+		const hook = /^\.{3,4}\s*that\b,?\s*/.exec(item.text);
+		if (!hook) continue;
 		// The bold link is the article the hook is about; fall back to any link.
 		const url =
 			/<b[^>]*>\s*<a[^>]*href="(https:[^"]+)"/.exec(item.html)?.[1] ??
 			/href="(https:[^"]+)"/.exec(item.html)?.[1];
-		const text = item.text.replace(/^\.\.\. that,?\s*/, "").trim();
+		const text = item.text.slice(hook[0].length).trim();
 		if (url && text) out.push({ text, url, credit: CREDIT });
 		if (out.length === count) break;
 	}
