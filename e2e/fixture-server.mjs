@@ -47,6 +47,20 @@ const rss = (host) =>
 	`<item><title><![CDATA[${PAPERS[host]} fixture headline: sand dunes grow a metre]]></title>` +
 	`<link>https://${host}/fixture-story</link></item></channel></rss>`;
 
+const RECIPE_HOSTS = {
+	"www.theguardian.com": "The Guardian",
+	"www.bbcgoodfood.com": "Good Food",
+	"www.loveandlemons.com": "Love and Lemons",
+};
+const recipeRss = (host) =>
+	`<?xml version="1.0"?><rss version="2.0"><channel><title>${RECIPE_HOSTS[host]}</title>` +
+	// Good Food's feed mixes in reviews, which the parser skips
+	(host === "www.bbcgoodfood.com"
+		? `<item><title>Good Food fixture review</title><link>https://${host}/review/fixture-pan</link></item>`
+		: "") +
+	`<item><title>${RECIPE_HOSTS[host]} fixture recipe: dune bread</title>` +
+	`<link>https://${host}/recipes/fixture-bread</link></item></channel></rss>`;
+
 const metObject = () => text("met-object.json");
 
 /** host -> (path) -> [content type, body] */
@@ -73,7 +87,19 @@ const HOSTS = {
 	],
 	"api.inaturalist.org": () => ["application/json", text("inaturalist.json")],
 	...Object.fromEntries(
-		Object.keys(PAPERS).map((h) => [h, () => ["application/rss+xml", rss(h)]]),
+		Object.keys(PAPERS).map((h) => [
+			h,
+			// the Guardian serves both the world feed and the recipes feed
+			(path) => [
+				"application/rss+xml",
+				path.includes("/recipes/") ? recipeRss(h) : rss(h),
+			],
+		]),
+	),
+	...Object.fromEntries(
+		Object.keys(RECIPE_HOSTS)
+			.filter((h) => !(h in PAPERS))
+			.map((h) => [h, () => ["application/rss+xml", recipeRss(h)]]),
 	),
 };
 

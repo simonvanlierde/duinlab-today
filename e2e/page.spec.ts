@@ -87,6 +87,16 @@ test("renders the sky, every section from the fixtures, and the ten games", asyn
 	await expect(section("h-news").locator("li").first()).toContainText(
 		"NOS fixture headline: sand dunes grow a metre",
 	);
+	await expect(section("h-recipes").locator(".paper")).toHaveText([
+		"The Guardian",
+		"Good Food",
+		"Love and Lemons",
+	]);
+	await expect(section("h-recipes").locator("li")).toHaveText([
+		/The Guardian fixture recipe: dune bread/,
+		/Good Food fixture recipe: dune bread/,
+		/Love and Lemons fixture recipe: dune bread/,
+	]);
 });
 
 test("the moon opens the sun and moon times, and Escape closes them", async ({

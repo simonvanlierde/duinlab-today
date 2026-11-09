@@ -13,27 +13,58 @@ const FEEDS = [
 	},
 ];
 
+/** One recipe from each of these, in this order: the newest recipe item of each site's feed. */
+const RECIPE_FEEDS = [
+	{
+		name: "The Guardian",
+		url: "https://www.theguardian.com/tone/recipes/rss",
+	},
+	// a mixed feed of reviews, news and paywalled premium items: only /recipes/ links count
+	{
+		name: "Good Food",
+		url: "https://www.bbcgoodfood.com/feed",
+		only: /\/recipes\//,
+	},
+	{ name: "Love and Lemons", url: "https://www.loveandlemons.com/feed/" },
+];
+
 const tag = (xml: string, name: string) =>
 	new RegExp(
 		`<${name}[^>]*>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</${name}>`,
 	).exec(xml)?.[1];
 
-/** The first item of an RSS feed, or null. */
-export function parseTopItem(rss: string, source: string): Headline | null {
-	const item = /<item[\s>][\s\S]*?<\/item>/.exec(rss)?.[0];
-	if (!item) return null;
-	const title = stripTags(tag(item, "title") ?? "");
-	const url = httpsUrl(tag(item, "link")?.trim());
-	return title && url ? { title, url, source } : null;
+/** The first item of an RSS feed (the first whose link matches `only`, if given), or null. */
+export function parseTopItem(
+	rss: string,
+	source: string,
+	only?: RegExp,
+): Headline | null {
+	for (const [item] of rss.matchAll(/<item[\s>][\s\S]*?<\/item>/g)) {
+		const title = stripTags(tag(item, "title") ?? "");
+		const url = httpsUrl(tag(item, "link")?.trim());
+		if (title && url && (!only || only.test(url)))
+			return { title, url, source };
+	}
+	return null;
 }
 
-export async function fetchNews(): Promise<Headline[]> {
+async function fetchTop(
+	kind: string,
+	feeds: { name: string; url: string; only?: RegExp }[],
+): Promise<Headline[]> {
 	const items = await Promise.all(
-		FEEDS.map((f) =>
-			safe(`news ${f.name}`, async () =>
-				parseTopItem(await getText(f.url, "application/rss+xml"), f.name),
+		feeds.map((f) =>
+			safe(`${kind} ${f.name}`, async () =>
+				parseTopItem(
+					await getText(f.url, "application/rss+xml"),
+					f.name,
+					f.only,
+				),
 			),
 		),
 	);
 	return items.filter((h): h is Headline => h !== null);
 }
+
+export const fetchNews = () => fetchTop("news", FEEDS);
+export const fetchRecipes = () => fetchTop("recipes", RECIPE_FEEDS);

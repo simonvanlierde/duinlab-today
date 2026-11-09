@@ -44,6 +44,8 @@ Met), never generated text. The same `/today.json` feeds the household's email d
   steps), with Open-Meteo as the fallback.
 - Headlines: the top story from NOS, NRC, the BBC, the Guardian and the New York Times,
   below the paper. Five lines, not a news section.
+- Recipes: the newest recipe from the Guardian, BBC Good Food and Love and Lemons, title and
+  link only, beside the headlines. NYT Cooking is left out: it has no public feed.
 - Sources: Wikipedia featured feed (On this day, Did you know, the featured article), Wiktionary word of the day,
   Open Trivia DB (five questions per day, CC BY-SA 4.0, credited), NASA APOD (API key), The
   Met collection API (public-domain highlights, and the picture when APOD has none),

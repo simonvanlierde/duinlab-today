@@ -3,12 +3,13 @@ import { allFailed, buildDay, type Day, incomplete, mergeDay } from "./build";
 import { cached } from "./cache";
 import { amsterdamDay } from "./day";
 import { games } from "./games";
-import { fetchNews } from "./sources/news";
+import { fetchNews, fetchRecipes } from "./sources/news";
 import { fetchWeather } from "./sources/weather";
 import type { Today } from "./types";
 
 const WEATHER_TTL = 15 * 60;
 const NEWS_TTL = 30 * 60;
+const RECIPES_TTL = 3 * 60 * 60;
 /** A failed fetch is retried after a minute, not on every request. */
 const FAILED_TTL = 60;
 /** A request rebuilds an incomplete day at most this often; the hourly refresh does the rest. */
@@ -60,7 +61,7 @@ async function getDay(now: Date): Promise<Day> {
 
 export async function getToday(now: Date = new Date()): Promise<Today> {
 	const cache = (caches as unknown as { default: Cache }).default;
-	const [day, weather, news] = await Promise.all([
+	const [day, weather, news, recipes] = await Promise.all([
 		getDay(now),
 		cached(
 			cache,
@@ -74,7 +75,13 @@ export async function getToday(now: Date = new Date()): Promise<Today> {
 			() => fetchNews(),
 			(n) => (n.length > 0 ? NEWS_TTL : FAILED_TTL),
 		),
+		cached(
+			cache,
+			"recipes",
+			() => fetchRecipes(),
+			(r) => (r.length > 0 ? RECIPES_TTL : FAILED_TTL),
+		),
 	]);
 	// games are static: added here so a change to the list shows without waiting for midnight
-	return { ...day, games, weather, news };
+	return { ...day, games, weather, news, recipes };
 }
