@@ -63,8 +63,11 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 	<a class="skip" href="#paper">Skip to the paper</a>
 	<p class="bar">
 		<span class="wrap bar-in">
-			<span>today.duinlab.nl</span>
 			<span><span data-clock>{clock(now)}</span> &middot; <span data-phase-label>{PHASE_LABEL[phase]}</span><span data-progress></span></span>
+			<span class="mode" role="group" aria-label="How much of the paper">
+				<button type="button" data-mode-set="coffee" aria-pressed="true" title="The whole paper">Coffee</button>
+				<button type="button" data-mode-set="train" aria-pressed="false" title="The weather, one fact and the games">Train</button>
+			</span>
 		</span>
 	</p>
 	<header class="sky">

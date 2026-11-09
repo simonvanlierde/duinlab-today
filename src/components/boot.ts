@@ -112,6 +112,37 @@ const boot = (cfg: Cfg) => {
 	} catch {
 		// no storage: no replay
 	}
+	// coffee is the whole paper, train the short one (weather, one fact, the games), per browser
+	const MODE = "today.mode.v1";
+	const setMode = (mode: string | null) => {
+		if (mode === "train") root.dataset.mode = "train";
+		else delete root.dataset.mode;
+		for (const el of document.querySelectorAll("[data-mode-set]"))
+			el.setAttribute(
+				"aria-pressed",
+				String(el.getAttribute("data-mode-set") === (mode ?? "coffee")),
+			);
+	};
+	try {
+		setMode(localStorage.getItem(MODE));
+	} catch {
+		// no storage: the whole paper
+	}
+	document.addEventListener("DOMContentLoaded", () =>
+		setMode(root.dataset.mode ?? null),
+	);
+	document.addEventListener("click", (e) => {
+		const mode = (e.target as Element | null)
+			?.closest?.("[data-mode-set]")
+			?.getAttribute("data-mode-set");
+		if (!mode) return;
+		setMode(mode);
+		try {
+			localStorage.setItem(MODE, mode);
+		} catch {
+			// no storage: the choice lasts until reload
+		}
+	});
 	const repaint = () => {
 		if (!document.hidden) paint();
 	};

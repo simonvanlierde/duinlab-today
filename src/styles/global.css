@@ -210,7 +210,8 @@ summary,
 	z-index: 2;
 	background: var(--bar);
 	/* white on a dark sky, ink on a light one */
-	color: oklch(from var(--bar) clamp(0.2, (0.6 - l) * 1000, 0.97) 0.02 280);
+	--bar-ink: oklch(from var(--bar) clamp(0.2, (0.6 - l) * 1000, 0.97) 0.02 280);
+	color: var(--bar-ink);
 }
 .bar-in {
 	display: flex;
@@ -219,6 +220,41 @@ summary,
 	gap: 16px;
 	min-height: 40px;
 	font-variant-numeric: tabular-nums;
+}
+/* the toggle needs the boot script, so a page without JavaScript has none */
+html:not(.js) .mode {
+	display: none;
+}
+.mode {
+	display: inline-flex;
+	gap: 4px;
+}
+.mode button {
+	min-height: 28px;
+	padding: 0 10px;
+	border: 1px solid currentColor;
+	border-radius: 999px;
+	background: none;
+	color: inherit;
+	font: inherit;
+	cursor: pointer;
+}
+/* the pressed pill is filled with the bar's ink, its label in the bar's colour */
+.mode button[aria-pressed="true"] {
+	background: var(--bar-ink);
+	color: var(--bar);
+}
+/* train: the weather (in the masthead), one fact and the games */
+[data-mode="train"] :is(.pic, .feat, .otd, .quote, .quiz, .local, .news),
+[data-mode="train"] .sec:has(#h-word) {
+	display: none;
+}
+@media (min-width: 1100px) {
+	[data-mode="train"] .front {
+		grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+		grid-template-areas: "read games";
+		grid-template-rows: auto;
+	}
 }
 @media (max-width: 699px) {
 	/* keyboard focus never lands under the sticky bar */
