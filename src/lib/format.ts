@@ -97,3 +97,13 @@ export function sunLines(day: Pick<Today, "date" | "sun" | "moon">) {
 		moon: `${cap(day.moon.name)}, ${lit}% lit`,
 	};
 }
+
+/** "Today", "Tomorrow" or the short weekday ("Thu") of `day`, seen from `today` (both YYYY-MM-DD). */
+export function weekday(day: string, today: string): string {
+	if (day === today) return "Today";
+	if (day === shift(today, 1)) return "Tomorrow";
+	return new Intl.DateTimeFormat("en-GB", {
+		timeZone: "UTC",
+		weekday: "short",
+	}).format(new Date(`${day}T12:00:00Z`));
+}

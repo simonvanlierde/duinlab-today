@@ -1,6 +1,6 @@
 // The day's data, as rendered by the page and served at /today.json. When a source fails its
-// section is dropped: `didYouKnow` is [], and picture, onThisDay, featured, word, quote, quiz
-// and weather are null. Instants are ISO strings (`generatedAt` and `fetchedAt` in UTC, `sun`
+// section is dropped: `didYouKnow` is [], and picture, onThisDay, featured, word, quote, quiz,
+// tides, nearYou, events and weather are null. Instants are ISO strings (`generatedAt` and `fetchedAt` in UTC, `sun`
 // with the Amsterdam offset); `rainNext2h` times are bare HH:MM on the Amsterdam clock.
 
 /** Where an item came from, shown as its credit line. */
@@ -140,6 +140,44 @@ export interface Headline {
 	source: string;
 }
 
+/** High and low water at Scheveningen for one Amsterdam day. `at` is HH:MM on the Amsterdam clock. */
+export interface Tides {
+	events: { kind: "high" | "low"; at: string; heightCm: number | null }[];
+	credit: Credit;
+	/** Human page for the Scheveningen tides. */
+	url: string;
+}
+
+export interface Sighting {
+	/** English common name, else the scientific name. */
+	name: string;
+	scientific: string;
+	count: number;
+	url: string;
+}
+
+export interface NearYou {
+	species: Sighting[];
+	url: string;
+	credit: Credit;
+}
+
+export interface Happening {
+	name: string;
+	/** YYYY-MM-DD, Europe/Amsterdam */
+	day: string;
+	/** HH:MM, Europe/Amsterdam; null when the event has no clock time */
+	time: string | null;
+	venue: string;
+	url: string;
+}
+
+export interface Events {
+	items: Happening[];
+	url: string;
+	credit: Credit;
+}
+
 export interface Today {
 	/** The day in Europe/Amsterdam, YYYY-MM-DD. */
 	date: string;
@@ -154,6 +192,9 @@ export interface Today {
 	word: Word | null;
 	quote: Quote | null;
 	quiz: Quiz | null;
+	tides: Tides | null;
+	nearYou: NearYou | null;
+	events: Events | null;
 	weather: Weather | null;
 	/** Up to five, one per paper; [] when every feed failed. Cached for 30 minutes. */
 	news: Headline[];

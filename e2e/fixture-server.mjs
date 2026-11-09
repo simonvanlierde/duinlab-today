@@ -26,6 +26,15 @@ function wordFeed() {
 	return `${head}<entry>${dated}</feed>`;
 }
 
+/** `body` with every YYYY-MM-DD moved by the days from `base` to today, so "this week" stays this week. */
+function redated(body, base) {
+	const ms = (d) => Date.parse(`${d}T12:00:00Z`);
+	const by = ms(today()) - ms(base);
+	return body.replace(/\b(20\d\d-\d\d-\d\d)(?=T)/g, (d) =>
+		new Date(ms(d) + by).toISOString().slice(0, 10),
+	);
+}
+
 const PAPERS = {
 	"feeds.nos.nl": "NOS",
 	"www.nrc.nl": "NRC",
@@ -53,6 +62,16 @@ const HOSTS = {
 	"zenquotes.io": () => ["application/json", text("zenquotes.json")],
 	"api.open-meteo.com": () => ["application/json", text("open-meteo.json")],
 	"gpsgadget.buienradar.nl": () => ["text/plain", text("buienradar.txt")],
+	// both recorded on 2026-11-09
+	"ddapi20-waterwebservices.rijkswaterstaat.nl": () => [
+		"application/json",
+		redated(text("tides.json"), "2026-11-09"),
+	],
+	"www.paard.nl": () => [
+		"text/html",
+		redated(text("paard.html"), "2026-11-09"),
+	],
+	"api.inaturalist.org": () => ["application/json", text("inaturalist.json")],
 	...Object.fromEntries(
 		Object.keys(PAPERS).map((h) => [h, () => ["application/rss+xml", rss(h)]]),
 	),
