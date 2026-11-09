@@ -68,7 +68,7 @@ const lists = (
 		["h-recipes", "Recipes", today.recipes],
 	] as const
 ).filter(([, , items]) => items.length > 0);
-const what = `A small daily page: one picture, a few sourced facts, a word, a quiz and ${today.games.length} daily games.`;
+const what = `A daily page from The Hague: the weather, one picture, a few sourced facts, a word, a quiz and ${today.games.length} daily games.`;
 ---
 
 <Base

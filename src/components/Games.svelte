@@ -125,7 +125,7 @@ async function share() {
 {:else if live}
 	<div class="games-foot">
 	<details class="streaks">
-		<summary>Past 14 days, un-mark</summary>
+		<summary>Un-mark a game from the last 14 days</summary>
 		<ol class="plain">
 			{#each games as g (g.id)}
 				{@const n = streak(g.id)}
@@ -148,7 +148,7 @@ async function share() {
 		</ol>
 	</details>
 	{#if playedCount() > 0}
-		<button type="button" class="link share" onclick={share}>Share today</button>
+		<button type="button" class="link share" onclick={share}>Share today's score</button>
 	{/if}
 	</div>
 	<p class="shared" aria-live="polite">{shared}</p>
