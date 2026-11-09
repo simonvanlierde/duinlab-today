@@ -246,37 +246,19 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 	</main>
 
 	{
-		(nearYou || events) && (
-			<div class="wrap local">
-				{nearYou && (
-					<section aria-labelledby="h-near">
-						<Cue id="h-near">Out near you this week</Cue>
-						<ul class="plain">
-							{nearYou.species.map((s) => (
-								<li>
-									<a href={s.url}>{s.name}</a>{" "}
-									<span class="mute">{s.count === 1 ? "1 sighting" : `${s.count} sightings`}</span>
-								</li>
-							))}
-						</ul>
-						<p class="src"><a href={nearYou.url}>{nearYou.credit.name}</a>, within 15 km</p>
-					</section>
-				)}
-				{events && (
-					<section aria-labelledby="h-events">
-						<Cue id="h-events">This week at {events.credit.name}</Cue>
-						<ul class="plain">
-							{events.items.map((e) => (
-								<li>
-									<span class="when">{weekday(e.day, today.date)}{e.time && ` ${e.time}`}</span>{" "}
-									<a href={e.url}>{e.name}</a>
-								</li>
-							))}
-						</ul>
-						<p class="src"><a href={events.url}>{events.credit.name}</a></p>
-					</section>
-				)}
-			</div>
+		nearYou && (
+			<section class="wrap local" aria-labelledby="h-near">
+				<Cue id="h-near">Out near you this week</Cue>
+				<ul class="plain">
+					{nearYou.species.map((s) => (
+						<li>
+							<a href={s.url}>{s.name}</a>{" "}
+							<span class="mute">{s.count === 1 ? "1 sighting" : `${s.count} sightings`}</span>
+						</li>
+					))}
+				</ul>
+				<p class="src"><a href={nearYou.url}>{nearYou.credit.name}</a>, within 15 km</p>
+			</section>
 		)
 	}
 
@@ -291,6 +273,23 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 						</li>
 					))}
 				</ul>
+			</section>
+		)
+	}
+
+	{
+		events && (
+			<section class="wrap local" aria-labelledby="h-events">
+				<Cue id="h-events">This week at {events.credit.name}</Cue>
+				<ul class="plain">
+					{events.items.map((e) => (
+						<li>
+							<span class="when">{weekday(e.day, today.date)}{e.time && ` ${e.time}`}</span>{" "}
+							<a href={e.url}>{e.name}</a>
+						</li>
+					))}
+				</ul>
+				<p class="src"><a href={events.url}>{events.credit.name}</a></p>
 			</section>
 		)
 	}

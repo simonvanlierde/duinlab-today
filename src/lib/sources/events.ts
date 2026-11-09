@@ -11,6 +11,20 @@ const LOCAL = /^(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2}))?/;
 
 type Node = Record<string, unknown>;
 
+/**
+ * Paard writes most show names in capitals: those become title case ("MACY GRAY" to "Macy
+ * Gray"). Names with any lower case are the venue's own styling and stay as they are.
+ */
+export function titleCase(name: string): string {
+	if (name !== name.toUpperCase()) return name;
+	return name
+		.toLowerCase()
+		.replace(
+			/(^|[\s\-/(&+])(\p{L})/gu,
+			(_, sep: string, c: string) => sep + c.toUpperCase(),
+		);
+}
+
 /** Every Event node in one JSON-LD value: a single object, an array, or an @graph. */
 function eventNodes(v: unknown): Node[] {
 	if (Array.isArray(v)) return v.flatMap(eventNodes);
@@ -59,7 +73,7 @@ export function parseEvents(html: string, date: string): Events | null {
 			if (String(n.eventStatus ?? "").endsWith("EventCancelled")) continue;
 			const start = amsterdamStart(n.startDate);
 			const url = httpsUrl(typeof n.url === "string" ? n.url : undefined);
-			const name = decodeEntities(n.name).trim();
+			const name = titleCase(decodeEntities(n.name).trim());
 			if (!start || !url || !name || start.day < date || start.day > last)
 				continue;
 			found.push({
