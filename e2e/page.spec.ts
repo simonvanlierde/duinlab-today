@@ -4,6 +4,8 @@ import { expect, type Page, test } from "@playwright/test";
 const KEY = "today.games.v1";
 
 async function play(page: Page, name: string) {
+	// a click before the island hydrates opens the game without marking it
+	await page.locator("astro-island:not([ssr]) .games:not(.off)").waitFor();
 	await page.locator(".games .name", { hasText: name }).click();
 }
 
