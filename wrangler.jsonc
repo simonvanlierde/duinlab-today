@@ -10,5 +10,7 @@
 	"kv_namespaces": [
 		{ "binding": "DAYS", "id": "300b6192395a4909abf0b46357156964" }
 	],
-	"routes": [{ "pattern": "today.duinlab.nl", "custom_domain": true }]
+	"routes": [{ "pattern": "today.duinlab.nl", "custom_domain": true }],
+	// the deploy check reads this URL: the zone's bot challenge answers datacenter IPs with 403
+	"workers_dev": true
 }
