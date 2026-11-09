@@ -1,5 +1,5 @@
 import { shift } from "../day";
-import type { Credit, NearYou, Sighting } from "../types";
+import type { NearYou, Sighting } from "../types";
 import { getJson, safe } from "../util";
 
 const LAT = 52.08;

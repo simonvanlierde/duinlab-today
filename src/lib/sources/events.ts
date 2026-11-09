@@ -1,5 +1,5 @@
 import { isoAmsterdam, shift } from "../day";
-import type { Credit, Events, Happening } from "../types";
+import type { Events, Happening } from "../types";
 import { decodeEntities, getText, httpsUrl, safe } from "../util";
 
 // The /event/ archive lists every upcoming show with its JSON-LD in one GET; the home and
