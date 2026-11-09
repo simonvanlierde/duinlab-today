@@ -116,5 +116,13 @@ jobs:
           fi
       - if: steps.gate.outputs.run == 'true'
         run: |
-          test "$(curl -sS -o /dev/null -w '%{http_code}' --retry 5 --retry-delay 10 --retry-all-errors https://today.duinlab.nl/today.json)" = 200
+          # a just-created custom domain can take minutes to resolve, and an HTTP error is not a
+          # curl error, so --retry would not retry it: loop, and print what came back
+          for _ in $(seq 1 12); do
+            code=$(curl -sS -o today.out -w '%{http_code}' https://today.duinlab.nl/today.json || true)
+            [ "$code" = 200 ] && break
+            echo "today.json answered ${code:-nothing}: $(head -c 200 today.out 2>/dev/null)"
+            sleep 15
+          done
+          test "$code" = 200
           curl -fsS --retry 3 https://today.duinlab.nl/ | grep -q '<h1'
