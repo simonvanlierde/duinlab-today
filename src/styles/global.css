@@ -617,6 +617,122 @@ html.js .slides {
 	font-size: 0.9375rem;
 	max-width: 62ch;
 }
+.picture-open {
+	position: relative;
+	display: block;
+	cursor: zoom-in;
+}
+.picture-hint {
+	position: absolute;
+	top: 8px;
+	left: 8px;
+	padding: 4px 10px;
+	background: var(--ground);
+	color: var(--ink);
+	font-family: "Barlow Semi Condensed", sans-serif;
+	font-size: 0.875rem;
+}
+html:has(.picture-viewer[open]) {
+	overflow: hidden;
+}
+.picture-viewer {
+	width: min(96vw, 1600px);
+	height: 94svh;
+	max-width: none;
+	max-height: none;
+	margin: auto;
+	padding: 16px;
+	border: 0;
+	background: var(--ground);
+	color: var(--ink);
+}
+.picture-viewer::backdrop {
+	background: color-mix(in oklab, var(--bar) 92%, transparent);
+}
+.picture-viewer[open] {
+	display: grid;
+	grid-template-rows: auto minmax(0, 1fr) auto;
+	gap: 12px;
+}
+.viewer-tools,
+.viewer-nav {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-family: "Barlow Semi Condensed", sans-serif;
+}
+.viewer-count {
+	margin-right: auto;
+	color: var(--mute);
+	font-variant-numeric: tabular-nums;
+}
+.viewer-nav {
+	justify-content: space-between;
+}
+.picture-viewer button {
+	min-height: 44px;
+	padding: 8px 14px;
+	border: 1px solid var(--rule);
+	background: transparent;
+	cursor: pointer;
+}
+.picture-viewer button:hover:not(:disabled),
+.picture-viewer button[aria-pressed="true"] {
+	background: var(--ground-2);
+}
+.picture-viewer button:active:not(:disabled) {
+	scale: 0.97;
+}
+.picture-viewer button:disabled {
+	opacity: 0.4;
+	cursor: default;
+}
+.viewer-figure {
+	display: grid;
+	grid-template-rows: minmax(0, 1fr) auto;
+	min-height: 0;
+	gap: 12px;
+}
+.viewer-stage {
+	min-height: 0;
+	overflow: auto;
+	overscroll-behavior: contain;
+	touch-action: pan-y pinch-zoom;
+	background: var(--ground-2);
+}
+.viewer-stage img {
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	object-fit: contain;
+}
+.viewer-stage.zoomed {
+	touch-action: auto;
+}
+.viewer-stage.zoomed img {
+	width: 200%;
+	height: 200%;
+}
+.viewer-stage img[hidden] {
+	display: none;
+}
+.viewer-error {
+	padding: 24px;
+}
+.viewer-figure figcaption {
+	max-height: 22svh;
+	overflow-y: auto;
+	max-width: 65ch;
+	justify-self: center;
+	font-size: 0.9375rem;
+}
+@media (max-width: 600px) {
+	.picture-viewer {
+		width: 100%;
+		height: 100svh;
+		padding: 12px;
+	}
+}
 /* arrows and dots sit on the picture in the page's own ground colour, so they hold contrast in
    every sky */
 .arrow,
@@ -942,6 +1058,9 @@ code {
 
 /* Print every picture with its caption, in black on white. */
 @media print {
+	html:has(.picture-viewer[open]) {
+		overflow: visible;
+	}
 	:root {
 		--ground: #fff;
 		color-scheme: light;
@@ -950,6 +1069,10 @@ code {
 	.skip,
 	.arrow,
 	.dots,
+	.picture-hint,
+	.picture-viewer,
+	.picture-viewer[open],
+	.picture-viewer::backdrop,
 	.more,
 	.orb,
 	.rail,
