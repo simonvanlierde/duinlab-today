@@ -72,6 +72,13 @@ const HOSTS = {
 			? ["application/json", '{"total":1,"objectIDs":[436535]}']
 			: ["application/json", metObject()],
 	"images.metmuseum.org": () => ["image/png", png],
+	"iiif.micr.io": () => ["image/png", png],
+	"api.artic.edu": () => ["application/json", text("aic-search.json")],
+	"data.rijksmuseum.nl": () => [
+		"application/ld+json",
+		text("rijks-search.json"),
+	],
+	"id.rijksmuseum.nl": () => ["application/ld+json", text("rijks-object.json")],
 	"opentdb.com": () => ["application/json", text("opentdb.json")],
 	"zenquotes.io": () => ["application/json", text("zenquotes.json")],
 	"api.open-meteo.com": () => ["application/json", text("open-meteo.json")],

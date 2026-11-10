@@ -244,5 +244,25 @@
 				}
 			]
 		}
-	]
+	],
+	"image": {
+		"title": "File:Verdun – Cathédrale Notre-Dame – Crypte 2025 08 16.jpg",
+		"thumbnail": {
+			"source": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/56/Verdun_%E2%80%93_Cath%C3%A9drale_Notre-Dame_%E2%80%93_Crypte_2025_08_16.jpg/960px-Verdun_%E2%80%93_Cath%C3%A9drale_Notre-Dame_%E2%80%93_Crypte_2025_08_16.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+			"width": 640,
+			"height": 427
+		},
+		"file_page": "https://commons.wikimedia.org/wiki/File:Verdun_%E2%80%93_Cath%C3%A9drale_Notre-Dame_%E2%80%93_Crypte_2025_08_16.jpg",
+		"artist": {
+			"text": "Andreas F. Borchert"
+		},
+		"license": {
+			"type": "CC BY-SA 4.0",
+			"code": "cc-by-sa-4.0",
+			"url": "https://creativecommons.org/licenses/by-sa/4.0"
+		},
+		"description": {
+			"text": "12th-century crypt of Verdun Cathedral, France, rediscovered after the Great War during the restoration works. When the reconstruction of the crypt was completed, the cathedral was reconsecrated on 10 November 1935."
+		}
+	}
 }

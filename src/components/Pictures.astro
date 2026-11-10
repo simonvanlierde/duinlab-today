@@ -1,0 +1,98 @@
+---
+import type { Picture } from "../lib/types";
+import Cue from "./Cue.astro";
+
+interface Props {
+	pictures: Picture[];
+}
+const { pictures } = Astro.props;
+---
+
+<section class="pic" aria-labelledby="h-picture">
+	<Cue id="h-picture" sr>Pictures</Cue>
+	<div class="reel">
+		<div
+			class="slides"
+			role="region"
+			aria-label={`Pictures of the day, ${pictures.length}`}
+			tabindex="0"
+			data-slides
+		>
+			{
+				pictures.map((p, i) => (
+					<figure class="slide" role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${pictures.length}`}>
+						<img
+							src={p.imageUrl}
+							alt={p.alt}
+							width={p.width ?? undefined}
+							height={p.height ?? undefined}
+							loading={i === 0 ? "eager" : "lazy"}
+							fetchpriority={i === 0 ? "high" : undefined}
+							decoding="async"
+						/>
+						<figcaption>
+							<a href={p.pageUrl}><em>{p.title}</em></a>
+							{p.by && <>, {p.by}</>}
+							{p.date && <>, {p.date}</>}.{" "}
+							<span class="src"><a href={p.credit.url}>{p.credit.name}</a></span>
+						</figcaption>
+					</figure>
+				))
+			}
+		</div>
+	</div>
+</section>
+
+<script>
+	// Arrows and dots are built here, so a page without JavaScript has no dead buttons.
+	const strip = document.querySelector<HTMLElement>("[data-slides]");
+	const slides = strip ? [...strip.querySelectorAll<HTMLElement>(".slide")] : [];
+	if (strip && slides.length > 1) {
+		const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+		const last = slides.length - 1;
+		// every slide is one strip wide
+		const current = () => Math.round(strip.scrollLeft / strip.clientWidth);
+		const go = (i: number) =>
+			strip.scrollTo({
+				left: Math.max(0, Math.min(last, i)) * strip.clientWidth,
+				behavior: reduce.matches ? "auto" : "smooth",
+			});
+		const button = (cls: string, label: string, text: string) => {
+			const b = document.createElement("button");
+			b.type = "button";
+			b.className = cls;
+			b.setAttribute("aria-label", label);
+			b.textContent = text;
+			return b;
+		};
+		const prev = button("arrow prev", "Previous picture", "‹");
+		const next = button("arrow next", "Next picture", "›");
+		const dots = document.createElement("div");
+		dots.className = "dots";
+		const dot = slides.map((_, i) => {
+			const d = button("dot", `Picture ${i + 1} of ${slides.length}`, "");
+			d.addEventListener("click", () => go(i));
+			dots.append(d);
+			return d;
+		});
+		const sync = () => {
+			const at = current();
+			dot.forEach((d, i) => {
+				if (i === at) d.setAttribute("aria-current", "true");
+				else d.removeAttribute("aria-current");
+			});
+			prev.disabled = at === 0;
+			next.disabled = at === last;
+		};
+		prev.addEventListener("click", () => go(current() - 1));
+		next.addEventListener("click", () => go(current() + 1));
+		strip.addEventListener("scroll", sync, { passive: true });
+		strip.addEventListener("keydown", (e) => {
+			if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+			e.preventDefault();
+			go(current() + (e.key === "ArrowRight" ? 1 : -1));
+		});
+		strip.parentElement?.append(prev, next, dots);
+		sync();
+	}
+</script>

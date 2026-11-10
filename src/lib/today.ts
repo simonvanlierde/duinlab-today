@@ -18,7 +18,7 @@ const RETRY_MS = 10 * 60 * 1000;
 const KEEP_SECONDS = 2 * 86400;
 
 // bump the version when the Day shape changes: entries outlive a deploy
-const keyFor = (date: string) => `day/v1/${date}`;
+const keyFor = (date: string) => `day/v2/${date}`;
 
 const hasApodKey = () => !!env.NASA_API_KEY;
 

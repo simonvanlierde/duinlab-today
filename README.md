@@ -1,6 +1,6 @@
 # duinlab-today
 
-A small daily page at <https://today.duinlab.nl>: the day's picture, a few sourced facts, the
+A small daily page at <https://today.duinlab.nl>: up to five pictures in a swipe strip, a few sourced facts, the
 weather in The Hague, a five-question quiz, five headlines and a short list of daily web
 games with played-today marks and streaks. The sky at the top follows the sun's position over
 The Hague, minute by minute. Checkmarks and streaks stay in your browser; the server keeps
@@ -15,8 +15,8 @@ flowchart LR
     build["refreshDay<br/>fetch the sources,<br/>keep what the day had"]
     page["Astro page<br/>and /today.json"]
   end
-  sources[("Wikipedia, Wiktionary,<br/>APOD, The Met,<br/>Open Trivia DB, ZenQuotes,<br/>Rijkswaterstaat, iNaturalist, Paard")] --> build
-  build -- "day/v1/date" --> kv[("Workers KV")]
+  sources[("Wikipedia, Wiktionary,<br/>APOD, The Met, Art Institute,<br/>Rijksmuseum, Open Trivia DB, ZenQuotes,<br/>Rijkswaterstaat, iNaturalist, Paard")] --> build
+  build -- "day/v2/date" --> kv[("Workers KV")]
   kv --> page
   live[("Open-Meteo, Buienradar,<br/>news and recipe feeds")] -- "Cache API,<br/>15 min to 3 h" --> page
   page -- "HTML with the data in it" --> browser["Browser: sky script,<br/>games and quiz islands"]
@@ -25,11 +25,12 @@ flowchart LR
 
 One Worker serves everything ([`src/worker.ts`](src/worker.ts)).
 
-- **The day** (picture, facts, featured article, word, quote, quiz, tides, wildlife and
+- **The day** (pictures, facts, featured article, word, quote, quiz, tides, wildlife and
   events) is built by a cron run at five past every hour and stored in Workers KV, the same for every Cloudflare location. The run after
   midnight builds the new day. Later runs only touch a day that is incomplete: they retry a
   failed source and pick up APOD once it publishes at 06:00 Amsterdam time. A rebuild keeps
-  every section the day already had, so the quiz never changes under you. A request that finds
+  every section the day already had, so the quiz never changes under you, and every picture it
+  already has (each source picks its artwork from the date). A request that finds
   no day builds it itself ([`src/lib/today.ts`](src/lib/today.ts)).
 - **Weather, headlines and recipes** change during the day, so each request reads them through the
   Workers cache: 15 minutes for the weather, 30 for the news, 3 hours for the recipes.
@@ -56,9 +57,9 @@ against a production build, including an axe scan of the home, about and 404 pag
 reads every source from a local fixture server ([`e2e/fixture-server.mjs`](e2e/fixture-server.mjs))
 through the `FIXTURE_ORIGIN` variable, so the tests run offline and give the same page every time.
 
-For the NASA picture, put a line `NASA_API_KEY=<your key>` in `.dev.vars` for local runs. In
+For the NASA slide, put a line `NASA_API_KEY=<your key>` in `.dev.vars` for local runs. In
 production it is a Worker secret (`pnpm wrangler secret put NASA_API_KEY`). Without a key the
-picture comes from The Met. The tests don't need it.
+strip simply has no NASA slide. The tests don't need it.
 
 ## Data
 
@@ -72,8 +73,9 @@ are:
 | `generatedAt` | ISO instant (UTC) the day was built | always present |
 | `sun`, `moon` | worked out locally | always present |
 | `games` | the daily games | always present |
-| `picture`, `onThisDay`, `featured`, `word`, `quote`, `quiz`, `tides`, `nearYou`, `events`, `weather` | objects | `null` |
+| `onThisDay`, `featured`, `word`, `quote`, `quiz`, `tides`, `nearYou`, `events`, `weather` | objects | `null` |
 | `didYouKnow` | a list of facts | `[]` |
+| `pictures` | up to five, in this order: APOD, The Met, Wikipedia picture of the day, Art Institute of Chicago, Rijksmuseum; one per source | `[]` |
 | `news` | up to five headlines, one per paper | `[]` |
 | `recipes` | up to three recipes (`title`, `url`, `source`), one per site | `[]` |
 
@@ -87,7 +89,7 @@ Worker itself fails, it answers 503 with `{"error": ...}`.
 ## Sources
 
 Wikipedia (On this day, Did you know, the featured article), Wiktionary (word of the day),
-NASA APOD, The Metropolitan Museum of Art (public-domain works), Open Trivia DB (CC BY-SA 4.0),
+NASA APOD, The Metropolitan Museum of Art, the Art Institute of Chicago and the Rijksmuseum (public-domain works), the Wikipedia picture of the day (credited with its licence), Open Trivia DB (CC BY-SA 4.0),
 ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), iNaturalist (species seen within
 15 km this week), Paard (this week's shows), Open-Meteo, Buienradar (the rain radar), and the
 front-page RSS feeds of NOS, NRC,

@@ -1,14 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { allFailed, buildDay, incomplete, mergeDay } from "../../src/lib/build";
 import { cached } from "../../src/lib/cache";
-import { dayOfYear } from "../../src/lib/day";
 import { rainLine } from "../../src/lib/format";
 import { parseTopItem } from "../../src/lib/sources/news";
 import {
-	fetchPicture,
+	fetchPictures,
 	imageSize,
+	mergePictures,
+	parseAic,
 	parseApod,
 	parseMet,
+	parseRijks,
 } from "../../src/lib/sources/picture";
 import { parseQuote } from "../../src/lib/sources/quote";
 import { parseQuiz } from "../../src/lib/sources/trivia";
@@ -23,17 +25,20 @@ import {
 	fetchWikipedia,
 	parseFacts,
 	parseFeatured,
+	parseImage,
 	parseOnThisDay,
 	shortExtract,
 } from "../../src/lib/sources/wikipedia";
 import { parseWord } from "../../src/lib/sources/wiktionary";
 import { getText, safe } from "../../src/lib/util";
+import aic from "./fixtures/aic-search.json";
 import apod from "./fixtures/apod.json";
 import raintext from "./fixtures/buienradar.txt?raw";
 import metObject from "./fixtures/met-object.json";
 import metSearch from "./fixtures/met-search.json";
 import meteo from "./fixtures/open-meteo.json";
 import opentdb from "./fixtures/opentdb.json";
+import rijksObject from "./fixtures/rijks-object.json";
 import wikipedia from "./fixtures/wikipedia.json";
 import wiktionary from "./fixtures/wiktionary.atom?raw";
 import zen from "./fixtures/zenquotes.json";
@@ -151,6 +156,63 @@ describe("parsers", () => {
 		});
 		expect(parseMet({ ...metObject, isPublicDomain: false })).toBeNull();
 		expect(parseMet({ ...metObject, primaryImageSmall: "" })).toBeNull();
+	});
+
+	it("takes the Art Institute's public-domain artworks with an image", () => {
+		const p = parseAic(aic.data[0] as never);
+		expect(p).toMatchObject({
+			kind: "aic",
+			by: "Vincent van Gogh (Dutch, 1853\u20131890)",
+			pageUrl: "https://www.artic.edu/artworks/28560",
+			width: 12614,
+			height: 9875,
+		});
+		expect(p?.imageUrl).toBe(
+			"https://www.artic.edu/iiif/2/6644829f-f292-c5c4-a73c-0356a6fdbf0d/full/843,/0/default.jpg",
+		);
+		const a = aic.data[0] as never;
+		expect(parseAic({ ...(a as object), is_public_domain: false })).toBeNull();
+		expect(parseAic({ ...(a as object), image_id: undefined })).toBeNull();
+		// only the artist's first line is a name
+		expect(
+			parseAic({ ...(a as object), artist_display: "Name\nBorn here" })?.by,
+		).toBe("Name");
+	});
+
+	it("takes a public-domain Rijksmuseum object and sizes its IIIF image", () => {
+		const p = parseRijks(rijksObject);
+		expect(p).toMatchObject({
+			kind: "rijks",
+			title: "Misty Sea",
+			by: "Jan Toorop",
+			date: "1899",
+		});
+		expect(p?.imageUrl).toBe(
+			"https://iiif.micr.io/mPymb/full/960,/0/default.jpg",
+		);
+		expect(p?.pageUrl).toMatch(/^https:\/\/www\.rijksmuseum\.nl\//);
+		const noLicence = structuredClone(rijksObject);
+		for (const c of noLicence.subject_of[0]?.digitally_carried_by ?? [])
+			c.referred_to_by = [];
+		expect(parseRijks(noLicence)).toBeNull();
+		expect(parseRijks({})).toBeNull();
+	});
+
+	it("takes the Wikipedia picture of the day with its file page and licence", () => {
+		const p = parseImage(wikipedia);
+		expect(p?.kind).toBe("wikipedia");
+		expect(p?.pageUrl).toMatch(
+			/^https:\/\/commons\.wikimedia\.org\/wiki\/File:/,
+		);
+		expect(p?.title).not.toMatch(/^File:|\.jpg$/);
+		expect(p?.credit.name).toMatch(/^Wikimedia Commons \(CC /);
+		expect(p?.width).toBeGreaterThan(0);
+		expect(parseImage({})).toBeNull();
+		expect(
+			parseImage({
+				image: { ...wikipedia.image, file_page: "javascript:x" },
+			}),
+		).toBeNull();
 	});
 
 	it("decodes and shuffles the quiz the same way every time", () => {
@@ -273,69 +335,92 @@ describe("parsers", () => {
 	});
 });
 
-describe("picture rule", () => {
+describe("pictures", () => {
 	const goodApod = {
 		title: "Moon",
 		media_type: "image",
 		url: "https://img/m.jpg",
 		date: "2026-11-06",
 	};
-	function stubFetch(apodOk: boolean) {
+	const json = (b: unknown) => new Response(JSON.stringify(b));
+	/** Every picture source answers from its fixture; `apodOk` false makes APOD fail. */
+	function stubFetch(apodOk = true, hosts: string[] = []) {
 		vi.stubGlobal("fetch", async (url: string) => {
-			const json = (b: unknown) => new Response(JSON.stringify(b));
-			if (new URL(url).host === "api.nasa.gov")
+			const u = new URL(url);
+			hosts.push(u.host);
+			if (u.host === "api.nasa.gov")
 				return apodOk ? json(goodApod) : new Response("", { status: 500 });
-			if (url.includes("v1.1/search"))
-				return json(
-					url.includes("limit=1&") || url.endsWith("limit=1")
-						? { total: 2301, objectIDs: [1] }
-						: metSearch,
-				);
-			return json(metObject);
+			if (u.host === "api.artic.edu") return json(aic);
+			if (u.host === "data.rijksmuseum.nl")
+				return json({ orderedItems: [{ id: "https://id.rijksmuseum.nl/1" }] });
+			if (u.host === "id.rijksmuseum.nl") return json(rijksObject);
+			if (u.host === "collectionapi.metmuseum.org")
+				return u.pathname.includes("/search")
+					? json(
+							u.search.includes("limit=1&") || u.search.endsWith("limit=1")
+								? { total: 2301, objectIDs: [1] }
+								: metSearch,
+						)
+					: json(metObject);
+			return new Response("", { status: 404 }); // image size lookups
 		});
 	}
 
-	it("uses APOD on even days and The Met on odd days", async () => {
-		expect(dayOfYear("2026-11-06") % 2).toBe(0); // day 310
-		stubFetch(true);
-		expect((await fetchPicture("2026-11-06", "k"))?.kind).toBe("apod");
-		expect((await fetchPicture("2026-11-07", "k"))?.kind).toBe("met");
+	it("asks every source and returns what answered, one per source", async () => {
+		stubFetch();
+		const got = await fetchPictures("2026-11-06", "k");
+		expect(got.map((p) => p.kind).sort()).toEqual([
+			"aic",
+			"apod",
+			"met",
+			"rijks",
+		]);
 	});
 
-	it("falls back to the other source, and to null when both fail", async () => {
-		stubFetch(false);
-		expect((await fetchPicture("2026-11-06", "k"))?.kind).toBe("met");
-		expect((await fetchPicture("2026-11-06", undefined))?.kind).toBe("met");
-		vi.stubGlobal("fetch", async () => new Response("", { status: 500 }));
-		expect(await fetchPicture("2026-11-06", "k")).toBeNull();
-	});
-
-	it("asks the stand-in only when the preferred source fails or is too slow", async () => {
+	it("picks the same artwork for the same date and skips sources already held", async () => {
 		const hosts: string[] = [];
-		const json = (b: unknown) => new Response(JSON.stringify(b));
-		vi.stubGlobal("fetch", async (url: string) => {
-			const host = new URL(url).host;
-			hosts.push(host);
-			if (host === "api.nasa.gov") return json(goodApod);
-			if (url.includes("v1.1/search"))
-				return json(
-					url.includes("limit=1") ? { total: 2301, objectIDs: [1] } : metSearch,
-				);
-			return json(metObject);
-		});
-		expect((await fetchPicture("2026-11-06", "k"))?.kind).toBe("apod");
+		stubFetch(true, hosts);
+		const one = await fetchPictures("2026-11-06", undefined);
+		expect(one.map((p) => p.kind)).toEqual(["met", "aic", "rijks"]);
+		expect(await fetchPictures("2026-11-06", undefined)).toEqual(one);
+		hosts.length = 0;
+		await fetchPictures("2026-11-06", "k", ["met", "aic", "rijks"]);
 		expect(hosts.filter((h) => h !== "img")).toEqual(["api.nasa.gov"]);
-		// APOD hangs: The Met stands in once the deadline passes
+	});
+
+	it("lets each source fail or hang on its own", async () => {
+		stubFetch(false);
+		expect((await fetchPictures("2026-11-06", "k")).map((p) => p.kind)).toEqual(
+			["met", "aic", "rijks"],
+		);
+		vi.stubGlobal("fetch", async () => new Response("", { status: 500 }));
+		expect(await fetchPictures("2026-11-06", "k")).toEqual([]);
+		// APOD hangs: the others come back once the deadline passes
 		vi.stubGlobal("fetch", async (url: string) => {
 			if (new URL(url).host === "api.nasa.gov")
 				return new Promise<Response>(() => {});
-			if (url.includes("v1.1/search"))
-				return json(
-					url.includes("limit=1") ? { total: 2301, objectIDs: [1] } : metSearch,
-				);
-			return json(metObject);
+			return new Response("", { status: 500 });
 		});
-		expect((await fetchPicture("2026-11-06", "k", 50))?.kind).toBe("met");
+		expect(await fetchPictures("2026-11-06", "k", [], 50)).toEqual([]);
+	});
+
+	it("keeps a stored picture and orders the strip by source", () => {
+		const pic = (kind: string, title: string) =>
+			({ kind, title }) as unknown as Parameters<
+				typeof mergePictures
+			>[0][number];
+		const merged = mergePictures(
+			[pic("aic", "stored"), pic("met", "stored")],
+			[pic("apod", "new"), pic("aic", "reshuffled"), pic("rijks", "new")],
+			[pic("wikipedia", "new")],
+		);
+		expect(merged.map((p) => `${p.kind}:${p.title}`)).toEqual([
+			"apod:new",
+			"met:stored",
+			"wikipedia:new",
+			"aic:stored",
+			"rijks:new",
+		]);
 	});
 });
 
@@ -348,7 +433,7 @@ describe("day assembly and cache", () => {
 		});
 		const prev = {
 			date: "2026-11-06",
-			picture: { kind: "apod" },
+			pictures: [{ kind: "apod" }],
 			didYouKnow: [{ text: "a" }],
 			onThisDay: { year: 1 },
 			featured: { title: "A" },
@@ -360,14 +445,19 @@ describe("day assembly and cache", () => {
 			events: { items: [] },
 		} as unknown as Parameters<typeof buildDay>[3];
 		const day = await buildDay("2026-11-06", new Date(), "k", prev);
-		expect(hosts).toEqual(["api.inaturalist.org"]);
+		// the sources that no stored picture covers are asked too
+		expect(hosts.filter((h) => h !== "api.inaturalist.org").sort()).toEqual([
+			"api.artic.edu",
+			"collectionapi.metmuseum.org",
+			"data.rijksmuseum.nl",
+		]);
 		expect(day.quiz).toBe(prev?.quiz);
-		// The Met standing in for APOD is asked again
+		// APOD missing from the stored pictures is asked again
 		hosts.length = 0;
 		await buildDay("2026-11-06", new Date(), "k", {
 			...prev,
 			nearYou: { species: [] },
-			picture: { kind: "met" },
+			pictures: [{ kind: "met" }],
 		} as unknown as typeof prev);
 		expect(hosts).toContain("api.nasa.gov");
 		expect(hosts).not.toContain("api.inaturalist.org");
@@ -385,7 +475,7 @@ describe("day assembly and cache", () => {
 			undefined,
 		);
 		expect(day.quote?.author).toBe("Robert Kiyosaki");
-		expect(day.picture).toBeNull();
+		expect(day.pictures).toEqual([]);
 		expect(day.didYouKnow).toEqual([]);
 		expect(day.sun.sunrise).toMatch(/^2026-11-06T07:/);
 		expect(allFailed(day)).toBe(false);
@@ -399,7 +489,7 @@ describe("day assembly and cache", () => {
 			"moon",
 			"nearYou",
 			"onThisDay",
-			"picture",
+			"pictures",
 			"quiz",
 			"quote",
 			"sun",
@@ -432,12 +522,13 @@ describe("day assembly and cache", () => {
 });
 
 describe("hardening", () => {
-	it("drops both Wikipedia sections on a malformed feed instead of throwing", async () => {
+	it("drops every Wikipedia section on a malformed feed instead of throwing", async () => {
 		vi.stubGlobal("fetch", async () => new Response('{"dyk":5}'));
 		expect(await fetchWikipedia("2026-11-06")).toEqual({
 			didYouKnow: [],
 			onThisDay: null,
 			featured: null,
+			image: null,
 		});
 	});
 
@@ -483,9 +574,9 @@ describe("hardening", () => {
 
 	it("rebuilds an incomplete day without losing what it had", () => {
 		const base = {
-			date: "2026-11-06", // even: APOD preferred
+			date: "2026-11-06",
 			generatedAt: "2026-11-05T23:05:00Z",
-			picture: { kind: "met", title: "Chest" },
+			pictures: [{ kind: "met", title: "Chest" }],
 			onThisDay: { year: 1 },
 			featured: { title: "A" },
 			word: null,
@@ -496,19 +587,25 @@ describe("hardening", () => {
 			events: { items: [] },
 			didYouKnow: [{ text: "a" }],
 		} as unknown as NonNullable<Parameters<typeof mergeDay>[0]>;
-		expect(incomplete(base, true)).toBe(true); // word missing, and Met stands in
+		expect(incomplete(base, true)).toBe(true); // word missing, and APOD is not in
 		expect(incomplete({ ...base, word: {} as never }, false)).toBe(false);
 		const fresh = {
 			...base,
 			generatedAt: "2026-11-06T06:05:00Z",
-			picture: { kind: "apod", title: "Moon" },
+			pictures: [
+				{ kind: "apod", title: "Moon" },
+				{ kind: "met", title: "Reshuffled" },
+			],
 			word: { word: "dune" },
 			quote: null,
 			quiz: { questions: [{ question: "second draw" }] },
 		} as unknown as typeof base;
 		const merged = mergeDay(base, fresh);
 		expect(merged.quiz?.questions[0].question).toBe("first draw");
-		expect(merged.picture?.kind).toBe("apod");
+		expect(merged.pictures.map((p) => `${p.kind}:${p.title}`)).toEqual([
+			"apod:Moon",
+			"met:Chest",
+		]);
 		expect(merged.word?.word).toBe("dune");
 		expect(merged.quote?.text).toBe("old");
 		expect(merged.generatedAt).toBe("2026-11-06T06:05:00Z");

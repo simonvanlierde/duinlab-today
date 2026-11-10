@@ -1,5 +1,5 @@
 // The day's data, as rendered by the page and served at /today.json. When a source fails its
-// section is dropped: `didYouKnow` is [], and picture, onThisDay, featured, word, quote, quiz,
+// section is dropped: `didYouKnow` and `pictures` are [], and onThisDay, featured, word, quote, quiz,
 // tides, nearYou, events and weather are null. Instants are ISO strings (`generatedAt` and `fetchedAt` in UTC, `sun`
 // with the Amsterdam offset); `rainNext2h` times are bare HH:MM on the Amsterdam clock.
 
@@ -10,7 +10,7 @@ export interface Credit {
 }
 
 export interface Picture {
-	kind: "apod" | "met";
+	kind: "apod" | "met" | "wikipedia" | "aic" | "rijks";
 	title: string;
 	/** Artist or photographer, when the source names one. */
 	by: string | null;
@@ -185,7 +185,8 @@ export interface Today {
 	generatedAt: string;
 	sun: Sun;
 	moon: Moon;
-	picture: Picture | null;
+	/** Up to five, in the order of PICTURE_ORDER; [] when every source failed. */
+	pictures: Picture[];
 	didYouKnow: Fact[];
 	onThisDay: OnThisDay | null;
 	featured: Featured | null;

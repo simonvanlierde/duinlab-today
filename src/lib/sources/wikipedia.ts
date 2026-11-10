@@ -1,4 +1,4 @@
-import type { Credit, Fact, Featured, OnThisDay } from "../types";
+import type { Credit, Fact, Featured, OnThisDay, Picture } from "../types";
 import { getJson, httpsUrl, safe, stripTags } from "../util";
 
 const CREDIT: Credit = { name: "Wikipedia", url: "https://en.wikipedia.org/" };
@@ -12,6 +12,14 @@ interface Feed {
 		titles?: { normalized?: string };
 		extract?: string;
 		content_urls?: { desktop?: { page?: string } };
+	};
+	image?: {
+		title?: string;
+		thumbnail?: { source?: string; width?: number; height?: number };
+		file_page?: string;
+		artist?: { text?: string };
+		license?: { type?: string; url?: string };
+		description?: { text?: string };
 	};
 	dyk?: { html: string; text: string }[];
 	onthisday?: {
@@ -71,17 +79,49 @@ export function parseFeatured(feed: Feed): Featured | null {
 	return { title, extract: shortExtract(extract), url, credit: CREDIT };
 }
 
+/** The picture of the day; its file page is the credit. */
+export function parseImage(feed: Feed): Picture | null {
+	const i = feed.image;
+	const imageUrl = httpsUrl(i?.thumbnail?.source);
+	const pageUrl = httpsUrl(i?.file_page);
+	// "File:Some_name.jpg" is all the feed gives as a title
+	const title = i?.title
+		?.replace(/^File:/, "")
+		.replace(/\.\w+$/, "")
+		.replaceAll("_", " ")
+		.trim();
+	if (!imageUrl || !pageUrl || !title) return null;
+	const licence = i?.license?.type;
+	const description = stripTags(i?.description?.text ?? "");
+	return {
+		kind: "wikipedia",
+		title,
+		by: i?.artist?.text?.trim() || null,
+		date: null,
+		imageUrl,
+		width: i?.thumbnail?.width ?? null,
+		height: i?.thumbnail?.height ?? null,
+		alt: description ? shortExtract(description) : title,
+		pageUrl,
+		credit: {
+			name: licence ? `Wikimedia Commons (${licence})` : "Wikimedia Commons",
+			url: httpsUrl(i?.license?.url) ?? pageUrl,
+		},
+	};
+}
+
 async function feed(date: string): Promise<Feed> {
 	return getJson<Feed>(
 		`https://api.wikimedia.org/feed/v1/wikipedia/en/featured/${date.replaceAll("-", "/")}`,
 	);
 }
 
-/** One request feeds all three sections; a failure drops all three. */
+/** One request feeds all four sections; a failure drops all four. */
 export async function fetchWikipedia(date: string): Promise<{
 	didYouKnow: Fact[];
 	onThisDay: OnThisDay | null;
 	featured: Featured | null;
+	image: Picture | null;
 }> {
 	// parsing inside `safe`: a malformed feed drops the sections, never the page
 	const got = await safe("wikipedia", async () => {
@@ -90,7 +130,10 @@ export async function fetchWikipedia(date: string): Promise<{
 			didYouKnow: parseFacts(f),
 			onThisDay: parseOnThisDay(f),
 			featured: parseFeatured(f),
+			image: parseImage(f),
 		};
 	});
-	return got ?? { didYouKnow: [], onThisDay: null, featured: null };
+	return (
+		got ?? { didYouKnow: [], onThisDay: null, featured: null, image: null }
+	);
 }

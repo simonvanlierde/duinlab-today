@@ -1,4 +1,3 @@
-import { dayOfYear } from "../day";
 import type { Picture } from "../types";
 import { getJson, httpsUrl, safe, seededRandom, upstream } from "../util";
 
@@ -101,9 +100,186 @@ const fetchMet = (date: string) =>
 		return null;
 	});
 
-/** APOD on even days of the year, The Met on odd days. */
-export const preferredPicture = (date: string): Picture["kind"] =>
-	dayOfYear(date) % 2 === 0 ? "apod" : "met";
+interface Aic {
+	id?: number;
+	title?: string;
+	artist_display?: string;
+	date_display?: string;
+	image_id?: string;
+	is_public_domain?: boolean;
+	thumbnail?: { width?: number; height?: number; alt_text?: string };
+}
+
+export function parseAic(a: Aic): Picture | null {
+	if (!a.is_public_domain || !a.image_id || !a.title || !a.id) return null;
+	// "Georges Seurat (French, 1859-1891)\nmore lines": the first line is the name
+	const by = a.artist_display?.split("\n")[0]?.trim() || null;
+	const pageUrl = `https://www.artic.edu/artworks/${a.id}`;
+	return {
+		kind: "aic",
+		title: a.title,
+		by,
+		date: a.date_display?.trim() || null,
+		imageUrl: `https://www.artic.edu/iiif/2/${encodeURIComponent(a.image_id)}/full/843,/0/default.jpg`,
+		width: a.thumbnail?.width ?? null,
+		height: a.thumbnail?.height ?? null,
+		alt: a.thumbnail?.alt_text?.trim() || a.title,
+		pageUrl,
+		credit: {
+			name: "Art Institute of Chicago (CC0)",
+			url: "https://www.artic.edu/open-access/open-access-images",
+		},
+	};
+}
+
+const AIC_SEARCH =
+	"https://api.artic.edu/api/v1/artworks/search?query[bool][must][0][term][is_public_domain]=true&query[bool][must][1][exists][field]=image_id";
+const AIC_FIELDS =
+	"id,title,artist_display,date_display,image_id,is_public_domain,thumbnail";
+/** The API refuses a result window past about 1000 entries. */
+const AIC_WINDOW = 900;
+const AIC_TRIES = 5;
+
+const fetchAic = (date: string) =>
+	safe("aic", async () => {
+		const from = Math.floor(seededRandom(`aic:${date}`)() * AIC_WINDOW);
+		const { data } = await getJson<{ data?: Aic[] }>(
+			`${AIC_SEARCH}&from=${from}&limit=${AIC_TRIES}&fields=${AIC_FIELDS}`,
+		);
+		for (const a of data ?? []) {
+			const p = parseAic(a);
+			if (p) return p;
+		}
+		return null;
+	});
+
+// Linked Art: only the fields read below are typed.
+interface LaName {
+	content?: string;
+	classified_as?: { id?: string }[];
+	language?: { id?: string }[];
+}
+interface RijksObject {
+	identified_by?: LaName[];
+	produced_by?: {
+		part?: {
+			carried_out_by?: {
+				notation?: { "@language"?: string; "@value"?: string }[];
+			}[];
+		}[];
+		timespan?: { identified_by?: { content?: string }[] };
+	};
+	subject_of?: {
+		digitally_carried_by?: {
+			access_point?: { id?: string }[];
+			format?: string;
+			referred_to_by?: { content?: string }[];
+		}[];
+	}[];
+}
+
+const AAT_PRIMARY_TITLE = "http://vocab.getty.edu/aat/300417200";
+const AAT_ENGLISH = "http://vocab.getty.edu/aat/300388277";
+const PUBLIC_DOMAIN = /creativecommons\.org\/publicdomain\/(mark|zero)\//;
+
+export function parseRijks(o: RijksObject): Picture | null {
+	const carriers = (o.subject_of ?? []).flatMap(
+		(s) => s.digitally_carried_by ?? [],
+	);
+	const licence = carriers
+		.flatMap((c) => c.referred_to_by ?? [])
+		.some((r) => PUBLIC_DOMAIN.test(r.content ?? ""));
+	const iiif = carriers
+		.flatMap((c) => c.access_point ?? [])
+		.map((a) => a.id)
+		.find((id) => id?.includes("/full/max/"));
+	const imageUrl = httpsUrl(iiif?.replace("/full/max/", "/full/960,/"));
+	const pageUrl = httpsUrl(
+		carriers.find((c) => c.format === "text/html")?.access_point?.[0]?.id,
+	);
+	const titles = (o.identified_by ?? []).filter((n) =>
+		n.classified_as?.some((c) => c.id === AAT_PRIMARY_TITLE),
+	);
+	const title = (
+		titles.find((n) => n.language?.some((l) => l.id === AAT_ENGLISH)) ??
+		titles[0]
+	)?.content?.trim();
+	if (!licence || !imageUrl || !pageUrl || !title) return null;
+	const by =
+		o.produced_by?.part
+			?.flatMap((p) => p.carried_out_by ?? [])
+			.flatMap((c) => c.notation ?? [])
+			.find((n) => n["@language"] === "en")
+			?.["@value"]?.trim() || null;
+	return {
+		kind: "rijks",
+		title,
+		by,
+		date: o.produced_by?.timespan?.identified_by?.[0]?.content?.trim() || null,
+		imageUrl,
+		width: null,
+		height: null,
+		alt: by ? `${title}, by ${by}` : title,
+		pageUrl,
+		credit: {
+			name: "Rijksmuseum (public domain)",
+			url: "https://www.rijksmuseum.nl/en/rijksstudio",
+		},
+	};
+}
+
+const RIJKS_SEARCH =
+	"https://data.rijksmuseum.nl/search/collection?imageAvailable=true&type=painting";
+const RIJKS_TRIES = 4;
+/** Paintings dated in these years are plentiful; a page is 100 objects of one year. */
+const RIJKS_YEARS = [1550, 1899] as const;
+const LD = "application/ld+json";
+
+const fetchRijks = (date: string) =>
+	safe("rijks", async () => {
+		const rand = seededRandom(`rijks:${date}`);
+		const year =
+			RIJKS_YEARS[0] +
+			Math.floor(rand() * (RIJKS_YEARS[1] - RIJKS_YEARS[0] + 1));
+		const { orderedItems } = await getJson<{ orderedItems?: { id: string }[] }>(
+			`${RIJKS_SEARCH}&creationDate=${year}`,
+			LD,
+		);
+		const items = orderedItems ?? [];
+		if (items.length === 0) return null;
+		const start = Math.floor(rand() * items.length);
+		const objects = await Promise.all(
+			Array.from({ length: Math.min(RIJKS_TRIES, items.length) }, (_, i) => {
+				const id = items[(start + i) % items.length]?.id;
+				return safe("rijks-object", () =>
+					id && httpsUrl(id)
+						? getJson<RijksObject>(id, LD)
+						: Promise.resolve(null),
+				);
+			}),
+		);
+		for (const o of objects) {
+			const p = o && parseRijks(o);
+			if (p) return p;
+		}
+		return null;
+	});
+
+/** The order the strip shows; a stored picture keeps its source's place. */
+export const PICTURE_ORDER: Picture["kind"][] = [
+	"apod",
+	"met",
+	"wikipedia",
+	"aic",
+	"rijks",
+];
+
+/** One picture per source, the first list's winning, in PICTURE_ORDER. */
+export function mergePictures(...lists: Picture[][]): Picture[] {
+	const byKind = new Map<Picture["kind"], Picture>();
+	for (const p of lists.flat()) if (!byKind.has(p.kind)) byKind.set(p.kind, p);
+	return PICTURE_ORDER.flatMap((k) => byKind.get(k) ?? []);
+}
 
 /** Width and height from the header of a JPEG, PNG or GIF; null for anything else. */
 export function imageSize(
@@ -178,23 +354,34 @@ function deadline<T>(work: Promise<T | null>, ms: number): Promise<T | null> {
 	return Promise.race([work, late]).finally(() => clearTimeout(timer));
 }
 
-/** The day's preferred source; the other stands in. Its size lets the page hold the space before it loads. */
-export async function fetchPicture(
+/**
+ * The sources `have` lacks, each failing or timing out on its own. Wikipedia's picture comes
+ * with its feed, not from here. A size lets the page hold the space before an image loads.
+ */
+export async function fetchPictures(
 	date: string,
 	apiKey: string | undefined,
+	have: Picture["kind"][] = [],
 	deadlineMs = SOURCE_DEADLINE_MS,
-): Promise<Picture | null> {
-	const apod = () => fetchApod(date, apiKey);
-	const met = () => fetchMet(date);
-	const [first, second] =
-		preferredPicture(date) === "apod" ? [apod, met] : [met, apod];
-	// the stand-in is asked only when the preferred source fails or misses its deadline
-	const pick =
-		(await deadline(first(), deadlineMs)) ??
-		(await deadline(second(), deadlineMs));
-	if (!pick) return null;
-	const size = await safe("picture-size", async () =>
-		imageSize(await imageHead(pick.imageUrl)),
+): Promise<Picture[]> {
+	const sources: [Picture["kind"], () => Promise<Picture | null>][] = [
+		["apod", () => fetchApod(date, apiKey)],
+		["met", () => fetchMet(date)],
+		["aic", () => fetchAic(date)],
+		["rijks", () => fetchRijks(date)],
+	];
+	const got = await Promise.all(
+		sources
+			.filter(([kind]) => !have.includes(kind))
+			.map(([, run]) => deadline(run(), deadlineMs)),
 	);
-	return size ? { ...pick, ...size } : pick;
+	return Promise.all(got.flatMap((p) => (p ? [p] : [])).map(sized));
+}
+
+async function sized(p: Picture): Promise<Picture> {
+	if (p.width && p.height) return p;
+	const size = await safe("picture-size", async () =>
+		imageSize(await imageHead(p.imageUrl)),
+	);
+	return size ? { ...p, ...size } : p;
 }

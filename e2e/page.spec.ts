@@ -2,6 +2,8 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 
 const KEY = "today.games.v1";
+const PICTURE_HOSTS =
+	/^https:\/\/(images\.metmuseum\.org|thumb\.wikimedia\.org|www\.artic\.edu\/iiif|iiif\.micr\.io)\//;
 
 async function play(page: Page, name: string) {
 	// a click before the island hydrates opens the game without marking it
@@ -16,8 +18,8 @@ test.beforeEach(async ({ page }) => {
 			? r.fulfill({ body: "ok" })
 			: r.continue(),
 	);
-	// the day's picture (test/unit/fixtures/met-object.json) is the fixture PNG
-	await page.route("https://images.metmuseum.org/**", (r) =>
+	// the day's pictures (Met, Wikipedia, Art Institute, Rijksmuseum fixtures) are the fixture PNG
+	await page.route(PICTURE_HOSTS, (r) =>
 		r.fulfill({ path: "e2e/fixtures/picture.png", contentType: "image/png" }),
 	);
 });
@@ -34,7 +36,10 @@ test("renders the sky, every section from the fixtures, and the ten games", asyn
 	);
 	await expect(page.locator(".games .game")).toHaveCount(10);
 
-	const img = page.locator(".pic img");
+	// no NASA key in e2e: the strip holds the other four sources, in order
+	const slides = page.locator(".pic .slide");
+	await expect(slides).toHaveCount(4);
+	const img = slides.first().locator("img");
 	await expect(img).toHaveAttribute(
 		"src",
 		"https://images.metmuseum.org/CRDImages/ep/web-large/DP-42549-001.jpg",
@@ -43,11 +48,23 @@ test("renders the sky, every section from the fixtures, and the ten games", asyn
 		"alt",
 		"Wheat Field with Cypresses, by Vincent van Gogh",
 	);
+	await expect(img).toHaveAttribute("loading", "eager");
+	await expect(slides.nth(1).locator("img")).toHaveAttribute("loading", "lazy");
 	await expect
 		.poll(() => img.evaluate((i: HTMLImageElement) => i.naturalWidth))
 		.toBe(64);
-	await expect(page.locator(".pic figcaption")).toContainText(
+	await expect(slides.first().locator("figcaption")).toContainText(
 		"Wheat Field with Cypresses, Vincent van Gogh",
+	);
+	await expect(slides.nth(1).locator("figcaption a").first()).toHaveAttribute(
+		"href",
+		/^https:\/\/commons\.wikimedia\.org\/wiki\/File:/,
+	);
+	await expect(slides.nth(2).locator("figcaption")).toContainText(
+		"Art Institute of Chicago",
+	);
+	await expect(slides.nth(3).locator("figcaption")).toContainText(
+		"Rijksmuseum",
 	);
 	const section = (id: string) =>
 		page.locator(`section[aria-labelledby="${id}"]`);
@@ -208,6 +225,43 @@ test("the games are visible without scrolling", async ({ page }) => {
 	const box = await page.locator(".games").boundingBox();
 	const view = page.viewportSize();
 	expect(box && view && box.y + box.height <= view.height).toBe(true);
+});
+
+test("the picture strip moves with arrows, dots and the keyboard", async ({
+	page,
+}) => {
+	await page.goto("/");
+	const strip = page.getByRole("region", { name: /Pictures of the day/ });
+	const dots = strip.locator("xpath=..").locator(".dot");
+	await expect(dots).toHaveCount(4);
+	await expect(dots.first()).toHaveAttribute("aria-current", "true");
+	await page.getByRole("button", { name: "Next picture" }).click();
+	await expect(dots.nth(1)).toHaveAttribute("aria-current", "true");
+	await expect(dots.first()).not.toHaveAttribute("aria-current");
+	await dots.nth(3).click();
+	await expect(dots.nth(3)).toHaveAttribute("aria-current", "true");
+	await expect(
+		page.getByRole("button", { name: "Next picture" }),
+	).toBeDisabled();
+	await strip.focus();
+	await page.keyboard.press("ArrowLeft");
+	await expect(dots.nth(2)).toHaveAttribute("aria-current", "true");
+	await page.getByRole("button", { name: "Previous picture" }).click();
+	await expect(dots.nth(1)).toHaveAttribute("aria-current", "true");
+});
+
+test.describe("the pictures without JavaScript", () => {
+	test.use({ javaScriptEnabled: false });
+	test("are a plain scrollable strip with every caption", async ({ page }) => {
+		await page.goto("/");
+		await expect(page.locator(".pic .slide")).toHaveCount(4);
+		await expect(page.locator(".pic button")).toHaveCount(0);
+		const strip = page.locator(".pic .slides");
+		expect(await strip.evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(
+			true,
+		);
+		await expect(page.locator(".pic figcaption a")).not.toHaveCount(0);
+	});
 });
 
 test("the desktop page fits one screen", async ({ page }) => {

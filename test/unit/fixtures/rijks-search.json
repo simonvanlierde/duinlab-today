@@ -1,0 +1,16 @@
+{
+	"orderedItems": [
+		{
+			"id": "https://id.rijksmuseum.nl/200100988",
+			"type": "HumanMadeObject"
+		},
+		{
+			"id": "https://id.rijksmuseum.nl/20025833",
+			"type": "HumanMadeObject"
+		},
+		{
+			"id": "https://id.rijksmuseum.nl/20026645",
+			"type": "HumanMadeObject"
+		}
+	]
+}

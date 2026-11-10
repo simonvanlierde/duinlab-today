@@ -3,6 +3,7 @@ import Cue from "../components/Cue.astro";
 import Dune from "../components/Dune.astro";
 import Foot from "../components/Foot.astro";
 import Games from "../components/Games.svelte";
+import Pictures from "../components/Pictures.astro";
 import Quiz from "../components/Quiz.svelte";
 import {
 	bodiesAt,
@@ -31,7 +32,7 @@ const today = await getToday(now);
 const asked = Astro.url.searchParams.get("phase");
 const forced = PHASES.includes(asked as SkyPhase);
 const phase = forced ? (asked as SkyPhase) : phaseAt(today.sun, now.getTime());
-const { picture, word, quote, quiz, weather, onThisDay } = today;
+const { pictures, word, quote, quiz, weather, onThisDay } = today;
 // days stored before the featured article existed have no such key
 const featured = today.featured ?? null;
 const tides = today.tides ?? null;
@@ -68,7 +69,7 @@ const lists = (
 		["h-recipes", "Recipes", today.recipes],
 	] as const
 ).filter(([, , items]) => items.length > 0);
-const what = `A small daily page: one picture, a few sourced facts, a word, a quiz and ${today.games.length} daily games.`;
+const what = `A small daily page: a few pictures, sourced facts, a word, a quiz and ${today.games.length} daily games.`;
 ---
 
 <Base
@@ -161,29 +162,7 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 				</section>
 			)
 		}
-		{
-			picture && (
-				<section class="pic" aria-labelledby="h-picture">
-					<Cue id="h-picture" sr>Picture</Cue>
-					<figure>
-						<img
-							src={picture.imageUrl}
-							alt={picture.alt}
-							width={picture.width ?? undefined}
-							height={picture.height ?? undefined}
-							fetchpriority="high"
-							decoding="async"
-						/>
-						<figcaption>
-							<a href={picture.pageUrl}><em>{picture.title}</em></a>
-							{picture.by && <>, {picture.by}</>}
-							{picture.date && <>, {picture.date}</>}.{" "}
-							<span class="src"><a href={picture.credit.url}>{picture.credit.name}</a></span>
-						</figcaption>
-					</figure>
-				</section>
-			)
-		}
+		{pictures.length > 0 && <Pictures pictures={pictures} />}
 			{
 				featured && (
 					<section class="sec feat" aria-labelledby="h-featured">
