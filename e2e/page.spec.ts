@@ -112,7 +112,13 @@ test("train keeps the weather, one fact and the games, and stays after a reload"
 	);
 	await train.click();
 	await expect(train).toHaveAttribute("aria-pressed", "true");
-	for (const hidden of [".pic", ".quote", "#h-news", "#h-recipes", "section.quiz"])
+	for (const hidden of [
+		".pic",
+		".quote",
+		"#h-news",
+		"#h-recipes",
+		"section.quiz",
+	])
 		await expect(page.locator(hidden)).toBeHidden();
 	await expect(page.locator("#h-dyk")).toBeVisible();
 	await expect(page.locator(".games .game").first()).toBeVisible();
