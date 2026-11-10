@@ -1,4 +1,4 @@
-import type { Headline } from "../types";
+import type { Recipe } from "../types";
 import { getText, httpsUrl, safe, stripTags } from "../util";
 
 /** One recipe from each of these, in this order: the newest recipe item of each site's feed. */
@@ -26,7 +26,7 @@ export function parseTopItem(
 	rss: string,
 	source: string,
 	only?: RegExp,
-): Headline | null {
+): Recipe | null {
 	for (const [item] of rss.matchAll(/<item[\s>][\s\S]*?<\/item>/g)) {
 		const title = stripTags(tag(item, "title") ?? "");
 		const url = httpsUrl(tag(item, "link")?.trim());
@@ -36,7 +36,7 @@ export function parseTopItem(
 	return null;
 }
 
-export async function fetchRecipes(): Promise<Headline[]> {
+export async function fetchRecipes(): Promise<Recipe[]> {
 	const items = await Promise.all(
 		RECIPE_FEEDS.map((f) =>
 			safe(`recipes ${f.name}`, async () =>
@@ -48,5 +48,5 @@ export async function fetchRecipes(): Promise<Headline[]> {
 			),
 		),
 	);
-	return items.filter((h): h is Headline => h !== null);
+	return items.filter((h): h is Recipe => h !== null);
 }

@@ -135,10 +135,10 @@ export interface Game {
 }
 
 /** A cooking site's newest recipe, linked to the source. */
-export interface Headline {
+export interface Recipe {
 	title: string;
 	url: string;
-	/** The source's short name ("NOS", "BBC", "Good Food"). */
+	/** The source's short name ("The Guardian", "Good Food"). */
 	source: string;
 }
 
@@ -194,6 +194,6 @@ export interface Today {
 	/** Cached for an hour; null when the marine feed failed. */
 	sea: Sea | null;
 	/** Up to three, one per site (a recipe, not a paper's story); [] when every feed failed. Cached for 3 hours. */
-	recipes: Headline[];
+	recipes: Recipe[];
 	games: Game[];
 }
