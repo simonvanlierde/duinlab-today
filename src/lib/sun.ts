@@ -1,4 +1,5 @@
 import { isoAmsterdam } from "./day";
+import { moonNow } from "./moon";
 import type { Moon, Sun } from "./types";
 
 const LAT = 52.08;
@@ -59,24 +60,10 @@ export function sunTimes(date: string): Sun {
 export const sunPasses = (date: string, altitude: number, morning: boolean) =>
 	isoAmsterdam(crossing(date, 90 - altitude, morning));
 
-const SYNODIC_DAYS = 29.530588853;
-const NEW_MOON_2000 = Date.UTC(2000, 0, 6, 18, 14);
-const MOON_NAMES = [
-	"new moon",
-	"waxing crescent",
-	"first quarter",
-	"waxing gibbous",
-	"full moon",
-	"waning gibbous",
-	"last quarter",
-	"waning crescent",
-];
-
-/** Mean-synodic-month phase: good to about a day, which is enough for a name. */
+/** The moon's phase and its name at `at` (see `moonNow`). */
 export function moonAt(at: Date): Moon {
-	const cycles = (at.getTime() - NEW_MOON_2000) / 86400000 / SYNODIC_DAYS;
-	const phase = cycles - Math.floor(cycles);
-	return { phase, name: MOON_NAMES[Math.floor(phase * 8 + 0.5) % 8] as string };
+	const { phase, name } = moonNow(at.getTime());
+	return { phase, name };
 }
 
 export const PHASES = ["night", "first-light", "dawn", "day", "dusk"] as const;

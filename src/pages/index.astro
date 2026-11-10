@@ -5,9 +5,11 @@ import Foot from "../components/Foot.astro";
 import Games from "../components/Games.svelte";
 import Quiz from "../components/Quiz.svelte";
 import {
+	bodiesAt,
 	moonPath,
 	PHASE_LABEL,
 	PHASE_LINE,
+	PHASE_SUN,
 	saturation,
 } from "../components/sky";
 import Base from "../layouts/Base.astro";
@@ -19,8 +21,9 @@ import {
 	weekday,
 	windLine,
 } from "../lib/format";
+import { moonNow, starNow } from "../lib/moon";
 import { occasionLine } from "../lib/occasions";
-import { PHASES, phaseAt, type SkyPhase } from "../lib/sun";
+import { PHASES, phaseAt, type SkyPhase, sunAltitude } from "../lib/sun";
 import { getToday } from "../lib/today";
 
 const now = new Date();
@@ -46,6 +49,16 @@ const hasQuiz = !!quiz && quiz.questions.length > 0;
 const FORECAST =
 	"https://www.meteoblue.com/en/weather/week/the-hague_netherlands_2747373";
 const almanac = sunLines(today);
+// the moon, sun and star where they are right now; the sky script keeps them current
+const bodies = bodiesAt(
+	today.sun,
+	now.getTime(),
+	forced ? PHASE_SUN[phase].alt : sunAltitude(now.getTime()),
+	moonNow,
+	starNow,
+);
+const orb = (b: { x: number; alt: number }) =>
+	`--x:${b.x.toFixed(4)};--alt:${b.alt.toFixed(2)}`;
 const occasion = occasionLine(today.date);
 const HOLIDAYS =
 	"https://calendar.google.com/calendar/embed?src=en.dutch%23holiday%40group.v.calendar.google.com&ctz=Europe%2FAmsterdam";
@@ -106,17 +119,19 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 				)
 			}
 		</div>
-		<button class="moon" type="button" popovertarget="almanac" aria-label={`${almanac.moonName}: sun and moon times`}>
+		<button class="orb sun" type="button" popovertarget="almanac" data-orb="sun" hidden={!bodies.sun.show} style={orb(bodies.sun)} aria-label="Sun: sun, moon and tide times"></button>
+		<button class="orb moon" type="button" popovertarget="almanac" data-orb="moon" data-moon-label hidden={!bodies.moon.show} style={orb(bodies.moon)} aria-label={`${bodies.moon.label}: sun, moon and tide times`}>
 			<svg viewBox="0 0 18 18" width="26" height="26" aria-hidden="true">
 				<circle cx="9" cy="9" r="8.6" fill="currentColor" opacity=".16" />
-				<path d={moonPath(today.moon, 9)} fill="currentColor" />
+				<path data-moon-path d={moonPath(bodies.moon, 9)} fill="currentColor" />
 			</svg>
 		</button>
+		<button class="orb star" type="button" popovertarget="almanac" data-orb="star" data-star-label hidden={!bodies.star.show} style={orb(bodies.star)} aria-label={`${bodies.star.name}: sun, moon and tide times`}></button>
 		<div id="almanac" class="almanac" popover>
 			<p>Sun up <b>{almanac.sunrise}</b>, down <b>{almanac.sunset}</b></p>
 			<p>Golden hour from <b>{almanac.golden}</b></p>
 			<p>{almanac.daylight}</p>
-			<p>{almanac.moon}</p>
+			<p data-moon-line>{bodies.moon.line}</p>
 			{
 				tides && (
 					<p>
@@ -126,7 +141,6 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 				)
 			}
 		</div>
-		<span class="sun" aria-hidden="true"></span>
 		<Dune />
 	</header>
 

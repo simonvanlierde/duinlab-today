@@ -121,13 +121,16 @@ test("train keeps the weather, one fact and the games, and stays after a reload"
 	await expect(page.locator(".pic")).toBeVisible();
 });
 
-test("the moon opens the sun and moon times, and Escape closes them", async ({
+// whichever of sun, moon and star is up right now
+const orbs = (page: Page) => page.locator("[data-orb]:not([hidden])");
+
+test("the sky's bright body opens the sun, moon and tide times, and Escape closes them", async ({
 	page,
 }) => {
 	await page.goto("/");
 	const almanac = page.locator("#almanac");
 	await expect(almanac).toBeHidden();
-	await page.getByRole("button", { name: /sun and moon times/ }).click();
+	await orbs(page).first().click();
 	await expect(almanac).toBeVisible();
 	await expect(almanac).toContainText(/Sun up \d\d:\d\d, down \d\d:\d\d/);
 	await expect(almanac).toContainText(/% lit/);
@@ -136,6 +139,60 @@ test("the moon opens the sun and moon times, and Escape closes them", async ({
 	);
 	await page.keyboard.press("Escape");
 	await expect(almanac).toBeHidden();
+});
+
+test("by day the sun is a named, focusable button that opens the times", async ({
+	page,
+}) => {
+	await page.goto("/?phase=day");
+	const sun = page.getByRole("button", {
+		name: "Sun: sun, moon and tide times",
+	});
+	await expect(sun).toBeVisible();
+	await sun.focus();
+	await expect(sun).toBeFocused();
+	expect(await sun.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe(
+		"solid",
+	);
+	await page.keyboard.press("Enter");
+	await expect(page.locator("#almanac")).toBeVisible();
+	await expect(page.locator("#almanac")).toContainText(/% lit/);
+	await page.keyboard.press("Escape");
+	await expect(page.locator("#almanac")).toBeHidden();
+});
+
+test("at night the sun is gone and the moon or a bright star stays on screen", async ({
+	page,
+}) => {
+	await page.goto("/?phase=night");
+	await expect(page.locator("[data-orb=sun]")).toBeHidden();
+	const visible = orbs(page);
+	await expect(visible).not.toHaveCount(0);
+	const box = await visible.first().boundingBox();
+	const view = page.viewportSize();
+	expect(box && view).toBeTruthy();
+	if (box && view) {
+		expect(box.x).toBeGreaterThanOrEqual(0);
+		expect(box.x + box.width).toBeLessThanOrEqual(view.width);
+		expect(box.y).toBeGreaterThanOrEqual(0);
+		expect(box.y + box.height).toBeLessThanOrEqual(view.height);
+	}
+	await visible.first().click();
+	await expect(page.locator("#almanac")).toBeVisible();
+});
+
+test.describe("the sky without JavaScript", () => {
+	test.use({ javaScriptEnabled: false });
+	test("the server still places a sun, moon or star that opens the times", async ({
+		page,
+	}) => {
+		await page.goto("/");
+		await expect(orbs(page).first()).toBeVisible();
+		await expect(orbs(page).first()).toHaveAttribute(
+			"popovertarget",
+			"almanac",
+		);
+	});
 });
 
 test("the games are visible without scrolling", async ({ page }) => {

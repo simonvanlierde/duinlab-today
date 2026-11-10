@@ -80,21 +80,14 @@ export function daylight(today: Sun, yesterday: Sun): string {
 	return `${Math.floor(mins / 60)} h ${mins % 60} min of daylight${change}`;
 }
 
-const cap = (s: string) => s[0]?.toUpperCase() + s.slice(1);
-
 /** The almanac's lines and the end-of-paper sunrise, for the day `day`. */
-export function sunLines(day: Pick<Today, "date" | "sun" | "moon">) {
-	const lit = Math.round(
-		((1 - Math.cos(2 * Math.PI * day.moon.phase)) / 2) * 100,
-	);
+export function sunLines(day: Pick<Today, "date" | "sun">) {
 	return {
 		sunrise: clock(day.sun.sunrise),
 		sunset: clock(day.sun.sunset),
 		golden: clock(sunPasses(day.date, 6, false)),
 		daylight: daylight(day.sun, sunTimes(shift(day.date, -1))),
 		nextSunrise: clock(sunTimes(shift(day.date, 1)).sunrise),
-		moonName: cap(day.moon.name),
-		moon: `${cap(day.moon.name)}, ${lit}% lit`,
 	};
 }
 
