@@ -94,7 +94,7 @@ const { pictures } = Astro.props;
 		const dot = slides.map((_, i) => {
 			const d = button("dot", `Picture ${i + 1} of ${slides.length}`, "");
 			d.addEventListener("click", () => go(i));
-			dots.append(d);
+			dots.appendChild(d);
 			return d;
 		});
 		const sync = () => {
@@ -114,7 +114,7 @@ const { pictures } = Astro.props;
 			e.preventDefault();
 			go(current() + (e.key === "ArrowRight" ? 1 : -1));
 		});
-		strip.parentElement?.append(prev, next, dots);
+		for (const control of [prev, next, dots]) strip.parentElement?.appendChild(control);
 		sync();
 	}
 

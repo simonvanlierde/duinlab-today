@@ -7,7 +7,6 @@ import {
 } from "../lib/day";
 
 export const KEY = "today.games.v1";
-const KEEP_DAYS = 60;
 
 export const store = $state({
 	/** localStorage was read; before that (server, no script) rows are plain links. */
@@ -21,11 +20,7 @@ export const store = $state({
 
 function save() {
 	try {
-		const cutoff = shift(store.day, -KEEP_DAYS);
-		const out: Record<string, string[]> = {};
-		for (const [id, days] of Object.entries(store.played))
-			out[id] = days.filter((d) => d >= cutoff);
-		localStorage.setItem(KEY, JSON.stringify(out));
+		localStorage.setItem(KEY, JSON.stringify(store.played));
 	} catch {
 		// private window or full quota: the page keeps working for this visit
 	}

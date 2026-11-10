@@ -1,5 +1,5 @@
 import { env, waitUntil } from "cloudflare:workers";
-import { allFailed, buildDay, type Day, incomplete, mergeDay } from "./build";
+import { type Day, incomplete } from "./build";
 import { cached } from "./cache";
 import { amsterdamDay, shift } from "./day";
 import { games } from "./games";
@@ -19,61 +19,20 @@ const RECIPES_LIFE = { ttl: 3 * 60 * 60, stale: 6 * 60 * 60 };
 const FAILED = { ttl: 60, stale: 0 };
 /** A request rebuilds an incomplete day at most this often; the hourly refresh does the rest. */
 const RETRY_MS = 10 * 60 * 1000;
-/** Keep two days in KV, so a day is never dropped while it is still today somewhere. */
-const KEEP_SECONDS = 2 * 86400;
-
-// bump the version when the Day shape changes: entries outlive a deploy
-const keyFor = (date: string) => `day/v2/${date}`;
-
 const hasApodKey = () => !!env.NASA_API_KEY;
 
-/**
- * Builds the day, keeps what an earlier build of it already had, and stores it in KV. A complete
- * stored day is returned untouched. Called hourly by the cron and by a request that finds no day.
- */
+/** All locations use the same durable coordinator for each Amsterdam day. */
 export function refreshDay(now: Date): Promise<Day> {
-	const date = amsterdamDay(now);
-	let build = building.get(date);
-	if (!build) {
-		build = rebuild(date, now).finally(() => building.delete(date));
-		building.set(date, build);
-	}
-	return build;
-}
-
-/** One build per day at a time in this isolate, so a burst of requests does not each rebuild. */
-const building = new Map<string, Promise<Day>>();
-
-async function rebuild(date: string, now: Date): Promise<Day> {
-	const prev = await readDay(date);
-	if (prev && !incomplete(prev, hasApodKey())) return prev;
-	const built = mergeDay(
-		prev,
-		await buildDay(date, now, env.NASA_API_KEY, prev),
+	return env.DAY_COORDINATOR.getByName(amsterdamDay(now)).refresh(
+		now.toISOString(),
 	);
-	// another isolate (the cron or a request) may have stored the day during the build: its
-	// sections win, so the quiz never changes under someone halfway through it
-	const day = mergeDay(await readDay(date), built);
-	try {
-		await env.DAYS.put(keyFor(date), JSON.stringify(day), {
-			// a total outage is kept a minute only, so the next request tries again
-			expirationTtl: allFailed(day) ? FAILED.ttl : KEEP_SECONDS,
-		});
-	} catch (err) {
-		console.warn(`kv put ${date} failed: ${err}`);
-	}
-	return day;
 }
 
-async function readDay(date: string): Promise<Day | null> {
-	try {
-		return await env.DAYS.get<Day>(keyFor(date), "json");
-	} catch {
-		return null;
-	}
+function readDay(date: string): Promise<Day | null> {
+	return env.DAY_COORDINATOR.getByName(date).read(date);
 }
 
-/** Yesterday's stored day, or null once KV has dropped it (it keeps two days). */
+/** Yesterday's stored day, or null after its two-day retention. */
 export const getYesterday = (now: Date = new Date()) =>
 	readDay(shift(amsterdamDay(now), -1));
 
@@ -83,7 +42,17 @@ async function getDay(now: Date): Promise<Day> {
 		stored &&
 		(!incomplete(stored, hasApodKey()) ||
 			now.getTime() - Date.parse(stored.generatedAt) < RETRY_MS);
-	return fresh ? stored : refreshDay(now);
+	if (stored) {
+		if (!fresh) {
+			waitUntil(
+				refreshDay(now).catch((err) =>
+					console.warn(`day refresh failed: ${err}`),
+				),
+			);
+		}
+		return stored;
+	}
+	return refreshDay(now);
 }
 
 /** The homelab agenda job's events; it refreshes weekly, so KV's edge copy may be an hour old. */

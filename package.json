@@ -1,18 +1,19 @@
 {
 	"name": "duinlab-today",
 	"type": "module",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"engines": {
 		"node": ">=22.23.4"
 	},
 	"scripts": {
 		"dev": "astro dev",
-		"build": "astro build",
+		"types": "wrangler types src/lib/worker-configuration.d.ts",
+		"build": "pnpm run types && astro build",
 		"preview": "wrangler dev",
-		"check": "biome check . && astro check",
+		"check": "pnpm run types && biome check . && astro check",
 		"test": "vitest run",
 		"e2e": "playwright test",
-		"deploy": "astro build && wrangler deploy"
+		"deploy": "pnpm run build && wrangler deploy"
 	},
 	"dependencies": {
 		"@astrojs/cloudflare": "14.4.3",

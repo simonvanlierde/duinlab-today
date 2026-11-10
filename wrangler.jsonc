@@ -6,10 +6,14 @@
 	// the Astro handler plus the hourly refresh of the day (src/worker.ts)
 	"main": "./src/worker.ts",
 	"triggers": { "crons": ["5 * * * *"] },
-	// the built day, one key per date, the same for every Cloudflare location
+	// a public day mirror and the weekly agenda; canonical days live in the coordinator
 	"kv_namespaces": [
 		{ "binding": "DAYS", "id": "300b6192395a4909abf0b46357156964" }
 	],
+	"durable_objects": {
+		"bindings": [{ "name": "DAY_COORDINATOR", "class_name": "DayCoordinator" }]
+	},
+	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["DayCoordinator"] }],
 	"routes": [{ "pattern": "today.duinlab.nl", "custom_domain": true }],
 	// the deploy check reads this URL: the zone's bot challenge answers datacenter IPs with 403
 	"workers_dev": true

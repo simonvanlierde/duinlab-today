@@ -81,6 +81,20 @@ interface Raw {
 
 export function parseWeather(r: Raw, fetchedAt: Date): Weather {
 	const c = r.current;
+	if (
+		![
+			c.temperature_2m,
+			c.weather_code,
+			c.cloud_cover,
+			c.wind_speed_10m,
+			c.wind_direction_10m,
+			r.daily.temperature_2m_max[0],
+			r.daily.temperature_2m_min[0],
+			r.daily.precipitation_probability_max[0],
+			...r.minutely_15.time.map((_, i) => r.minutely_15.precipitation[i]),
+		].every(Number.isFinite)
+	)
+		throw new Error("Weather feed has missing or invalid numbers");
 	return {
 		now: {
 			temperatureC: c.temperature_2m,

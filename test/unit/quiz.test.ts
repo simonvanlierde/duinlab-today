@@ -6,6 +6,7 @@ import {
 	saveQuiz,
 	signature,
 } from "../../src/components/quiz";
+import { shift } from "../../src/lib/day";
 import type { Quiz } from "../../src/lib/types";
 import { stubStorage } from "./stub-storage";
 
@@ -21,6 +22,13 @@ const day = "2026-11-06";
 afterEach(() => vi.unstubAllGlobals());
 
 describe("quiz store", () => {
+	it("keeps a streak longer than sixty days after saving and reloading", () => {
+		vi.stubGlobal("localStorage", stubStorage());
+		let done: string[] = [];
+		for (let i = -64; i <= 0; i++)
+			done = saveQuiz(quiz, [1, 0], done, shift(day, i));
+		expect(quizStreak(loadQuiz(quiz, day).done, day)).toBe(65);
+	});
 	it.each([
 		[-1, 0.5],
 		[2, 4],

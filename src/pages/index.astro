@@ -135,7 +135,10 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 			))
 		}
 		<div id="almanac" class="almanac" popover role="region" aria-labelledby="almanac-title">
-			<h2 id="almanac-title" tabindex="-1">Almanac</h2>
+			<div class="almanac-head">
+				<h2 id="almanac-title" tabindex="-1">Almanac</h2>
+				<button type="button" popovertarget="almanac" popovertargetaction="hide">Close</button>
+			</div>
 			<div class="almanac-details">
 				<div data-almanac-body="sun" data-almanac-name="Sun">
 				<p>Sun up <b>{almanac.sunrise}</b>, down <b>{almanac.sunset}</b></p>
@@ -334,15 +337,15 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 		if (almanac && title && details) {
 			const sections = [...details.querySelectorAll<HTMLElement>(":scope > *")];
 			const unavailable = new Set(sections.filter((section) => section.hidden));
-			for (const button of document.querySelectorAll<HTMLElement>('button[popovertarget="almanac"]')) {
+			for (const button of document.querySelectorAll<HTMLElement>('button[popovertarget="almanac"]:not([popovertargetaction="hide"])')) {
 				button.addEventListener("click", () => {
 					for (const section of sections) section.hidden = unavailable.has(section);
-					details.append(...sections);
+					for (const section of sections) details.appendChild(section);
 					const key = button.dataset.planet ?? button.dataset.orb;
 					const selected = sections.find((section) => section.dataset.almanacBody === key);
 					if (selected) {
 						selected.hidden = false;
-						details.prepend(selected);
+						details.insertBefore(selected, details.firstChild);
 					}
 					title.textContent = selected?.dataset.almanacName ?? "Almanac";
 				});

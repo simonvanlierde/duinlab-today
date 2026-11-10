@@ -16,6 +16,7 @@ the picture links directly to its image.
 ## How it works
 
 After finishing the quiz, open “Review answers” to revisit your choices and the correct answers.
+See [release preparation](docs/releasing.md) before the first canonical-day deployment or a release tag.
 
 ```mermaid
 flowchart LR
@@ -25,8 +26,10 @@ flowchart LR
     page["Astro page<br/>and /today.json"]
   end
   sources[("Wikipedia, Wiktionary,<br/>APOD, The Met, Art Institute,<br/>Rijksmuseum, Open Trivia DB, ZenQuotes,<br/>Rijkswaterstaat, Paard")] --> build
-  build -- "day/v2/date" --> kv[("Workers KV")]
-  kv --> page
+  build --> owner[("Per-day Durable Object")]
+  owner --> page
+  owner -- "public day mirror" --> kv[("Workers KV")]
+  kv -- "weekly agenda" --> page
   live[("Open-Meteo, Buienradar,<br/>recipe feeds")] -- "Cache API,<br/>15 min to 3 h,<br/>stale while revalidating" --> page
   page -- "HTML with the data in it" --> browser["Browser: sky script,<br/>games and quiz islands"]
   browser <--> ls[("localStorage:<br/>ticks, streaks, quiz")]
@@ -35,12 +38,14 @@ flowchart LR
 One Worker serves everything ([`src/worker.ts`](src/worker.ts)).
 
 - **The day** (pictures, facts, featured article, word, quote, quiz, tides and
-  events) is built by a cron run at five past every hour and stored in Workers KV, the same for every Cloudflare location. The run after
+  events) is built by a cron run at five past every hour. A per-day Durable Object persists one canonical
+  copy for every Cloudflare location, with a mirror in Workers KV. The run after
   midnight builds the new day. Later runs only touch a day that is incomplete: they retry a
   failed source and pick up APOD once it publishes at 06:00 Amsterdam time. A rebuild keeps
   every section the day already had, so the quiz never changes under you, and every picture it
   already has (each source picks its artwork from the date). A request that finds
-  no day builds it itself ([`src/lib/today.ts`](src/lib/today.ts)).
+  no day builds it through the same coordinator ([`src/lib/today.ts`](src/lib/today.ts)). An incomplete
+  stored day is returned while missing sources retry in the background. Both stores retain two Amsterdam days.
 - **Weather, sea and recipes** change during the day, so each request reads them through the
   Workers cache: 15 minutes for the weather, an hour for the sea, 3 hours for the recipes. An entry
   past that is still served while the request refreshes it in the background (`waitUntil`): for 2
@@ -57,7 +62,7 @@ One Worker serves everything ([`src/worker.ts`](src/worker.ts)).
 
 ## Develop
 
-You need Node 22 or later (CI uses 26). `packageManager` in `package.json` pins pnpm.
+You need Node 22.23.4 or later (CI uses 26). `packageManager` in `package.json` pins pnpm.
 
 ```sh
 pnpm install
@@ -66,6 +71,7 @@ just dev
 ```
 
 `just dev` starts the dev server in the background; `pnpm exec astro dev stop` ends it.
+Checks and builds generate Cloudflare runtime and binding types from `wrangler.jsonc`.
 `just check` runs CI's lint, types, unit tests and build. `just e2e` runs the browser tests
 against a production build, including axe scans of today, yesterday, about and 404 pages and a print-layout check. The Worker
 reads every source from a local fixture server ([`e2e/fixture-server.mjs`](e2e/fixture-server.mjs))

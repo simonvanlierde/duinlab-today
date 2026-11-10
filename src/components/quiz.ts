@@ -3,7 +3,6 @@ import { amsterdamDay, streak } from "../lib/day";
 import type { Quiz } from "../lib/types";
 
 export const KEY = "today.quiz.v1";
-const KEEP_DAYS = 60;
 
 /** Saved picks belong to these questions; a rebuilt day can bring new ones. */
 export const signature = (quiz: Quiz) =>
@@ -50,7 +49,7 @@ export function saveQuiz(
 ): string[] {
 	const finished =
 		picks.every((p) => p !== null) && !done.includes(day)
-			? [...done, day].slice(-KEEP_DAYS)
+			? [...done, day]
 			: done;
 	try {
 		localStorage.setItem(

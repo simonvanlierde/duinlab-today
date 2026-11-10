@@ -34,7 +34,7 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
 ## Operating Context
 
 - The day turns over at midnight Europe/Amsterdam; everyone sees the same page that day (the
-  day is stored once, in Workers KV).
+  day is stored once in a per-day Durable Object, with a Workers KV mirror).
 - Games open on their own sites in a new tab; the page cannot see whether a game was finished,
   so opening one counts as playing it.
 - Games: factmap.world, TimeGuessr, Shikaku of the day, Krillion, Catfishing, Connections,
@@ -48,8 +48,9 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
   and link only. One per source is visible; More recipes expands the rest. NYT Cooking is left out: it has no public feed.
 - On a desktop screen shorter than 760 px, On this day and the quote start under the fold, so the
   rest of the paper fits one screen.
-- Live feeds (weather, recipes) are cached and served stale while refreshed in the background, so a
-  cold view does not wait on them; weather is never served more than about 2 h past its 15 minutes.
+- Live feeds (weather, recipes) use cached responses while refreshing usable stale entries in
+  the background. Cold or expired entries wait for a fetch; weather is never served more than
+  about 2 h past its 15 minutes.
 - Sources: Wikipedia featured feed (On this day, Did you know, the featured article), Wiktionary word of the day,
   Open Trivia DB (three questions per day, CC BY-SA 4.0, credited), NASA APOD (API key), The
   Met collection API (public-domain highlights), the Art Institute of Chicago and Rijksmuseum (public-domain
