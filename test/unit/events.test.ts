@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseEvents, titleCase } from "../../src/lib/sources/events";
+import {
+	parseEvents,
+	titleCase,
+	withAgenda,
+} from "../../src/lib/sources/events";
 import paard from "./fixtures/paard.html?raw";
 
 const page = (...blocks: string[]) =>
@@ -82,5 +86,50 @@ describe("titleCase", () => {
 		);
 		expect(titleCase("SEA-FOAM (LIVE)")).toBe("Sea-Foam (Live)");
 		expect(titleCase("Paardcafé: Club Pony!")).toBe("Paardcafé: Club Pony!");
+	});
+});
+
+describe("withAgenda", () => {
+	const paard = {
+		items: [
+			{
+				name: "Show",
+				day: "2026-11-12",
+				time: "20:00",
+				venue: "Paard",
+				url: "https://www.paard.nl/event/show",
+			},
+		],
+		url: "https://www.paard.nl/event/",
+		credit: { name: "Paard", url: "https://www.paard.nl/event/" },
+	};
+	const item = (start: string, time: string | null, venue = "Amare") => ({
+		venue,
+		name: `${venue} ${start}`,
+		url: `https://www.amare.nl/en/agenda/${start}`,
+		start,
+		time,
+		end: null,
+	});
+
+	it("adds this week's agenda items in time order and credits each venue", () => {
+		const r = withAgenda(
+			paard,
+			{ items: [item("2026-11-11", "19:00"), item("2026-11-30", "19:00")] },
+			"2026-11-10",
+		);
+		expect(r?.items.map((i) => i.venue)).toEqual(["Amare", "Paard"]);
+		expect(r?.credit.name).toBe("Amare, Paard");
+	});
+
+	it("keeps Paard alone when the agenda is missing, and the agenda alone when Paard failed", () => {
+		expect(withAgenda(paard, null, "2026-11-10")).toEqual(paard);
+		expect(
+			withAgenda(null, { items: [item("2026-11-10", null)] }, "2026-11-10")
+				?.items,
+		).toHaveLength(1);
+		expect(
+			withAgenda(null, { items: [item("2026-11-30", null)] }, "2026-11-10"),
+		).toBeNull();
 	});
 });

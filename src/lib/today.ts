@@ -3,6 +3,7 @@ import { allFailed, buildDay, type Day, incomplete, mergeDay } from "./build";
 import { cached } from "./cache";
 import { amsterdamDay } from "./day";
 import { games } from "./games";
+import { withAgenda } from "./sources/events";
 import { fetchNews, fetchRecipes } from "./sources/news";
 import { fetchWeather } from "./sources/weather";
 import type { Today } from "./types";
@@ -77,10 +78,23 @@ async function getDay(now: Date): Promise<Day> {
 	return fresh ? stored : refreshDay(now);
 }
 
+/** The homelab agenda job's events; it changes twice a month, so KV's edge copy may be an hour old. */
+async function readAgenda() {
+	try {
+		return await env.DAYS.get<Parameters<typeof withAgenda>[1]>("agenda/v1", {
+			type: "json",
+			cacheTtl: 3600,
+		});
+	} catch {
+		return null;
+	}
+}
+
 export async function getToday(now: Date = new Date()): Promise<Today> {
 	const cache = (caches as unknown as { default: Cache }).default;
-	const [day, weather, news, recipes] = await Promise.all([
+	const [day, agenda, weather, news, recipes] = await Promise.all([
 		getDay(now),
+		readAgenda(),
 		cached(
 			cache,
 			"weather",
@@ -101,5 +115,12 @@ export async function getToday(now: Date = new Date()): Promise<Today> {
 		),
 	]);
 	// games are static: added here so a change to the list shows without waiting for midnight
-	return { ...day, games, weather, news, recipes };
+	return {
+		...day,
+		events: withAgenda(day.events, agenda, day.date),
+		games,
+		weather,
+		news,
+		recipes,
+	};
 }
