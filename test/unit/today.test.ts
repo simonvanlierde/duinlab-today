@@ -31,6 +31,7 @@ const day = (quiz: string) =>
 		date: "2026-11-10",
 		generatedAt: NOW.toISOString(),
 		didYouKnow: [],
+		pictures: [],
 		quiz: { questions: [], id: quiz },
 	}) as unknown as Day;
 const storedQuiz = () => JSON.parse(store.get(KEY) ?? "null")?.quiz.id;
