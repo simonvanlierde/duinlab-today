@@ -5,14 +5,7 @@ import Foot from "../components/Foot.astro";
 import Games from "../components/Games.svelte";
 import Pictures from "../components/Pictures.astro";
 import Quiz from "../components/Quiz.svelte";
-import {
-	bodiesAt,
-	moonPath,
-	PHASE_LABEL,
-	PHASE_LINE,
-	PHASE_SUN,
-	saturation,
-} from "../components/sky";
+import { bodiesAt, moonPath, PHASE_SUN, saturation } from "../components/sky";
 import Base from "../layouts/Base.astro";
 import {
 	clock,
@@ -25,6 +18,7 @@ import {
 import { moonNow, planetsAt, starNow } from "../lib/moon";
 import { occasionLine } from "../lib/occasions";
 import { planetPositions, planetsTonight } from "../lib/planets";
+import { previewEvents } from "../lib/sources/events";
 import { PHASES, phaseAt, type SkyPhase, sunAltitude } from "../lib/sun";
 import { getToday } from "../lib/today";
 
@@ -39,6 +33,8 @@ const sea = today.sea;
 const featured = today.featured ?? null;
 const tides = today.tides ?? null;
 const events = today.events?.items.length ? today.events : null;
+const eventPreview = previewEvents(events?.items ?? []);
+const eventMore = events?.items.filter((e) => !eventPreview.includes(e)) ?? [];
 const tideTimes = (kind: "high" | "low") =>
 	(tides?.events ?? [])
 		.filter((e) => e.kind === kind)
@@ -82,20 +78,10 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 	description={what}
 >
 	<a class="skip" href="#paper">Skip to the paper</a>
-	<p class="bar">
-		<span class="wrap bar-in">
-			<span><span data-clock>{clock(now)}</span> &middot; <span data-phase-label>{PHASE_LABEL[phase]}</span><span data-progress></span></span>
-			<span class="mode" role="group" aria-label="How much of the paper">
-				<button type="button" data-mode-set="coffee" aria-pressed="true" title="The whole paper">Coffee</button>
-				<button type="button" data-mode-set="train" aria-pressed="false" title="The weather, one fact and the games">Train</button>
-			</span>
-		</span>
-	</p>
 	<header class="sky">
 		<div class="wrap mast">
 			<div>
-				<h1>{heading}</h1>
-				<p class="greet" data-phase-line>{PHASE_LINE[phase]}</p>
+				<div class="date-time"><h1>{heading}</h1><time data-clock>{clock(now)}</time></div>
 				{
 					occasion && (
 						<p class="occasion">
@@ -176,28 +162,7 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 	</header>
 
 	<main class="wrap front" id="paper">
-		{
-			today.games.length > 0 && (
-				<section class="rail" aria-labelledby="h-games">
-					<Games client:load games={today.games} />
-					<p class="the-end" aria-live="polite">
-						That's the paper. The sun is back at {almanac.nextSunrise} tomorrow.
-					</p>
-				</section>
-			)
-		}
 		{pictures.length > 0 && <Pictures pictures={pictures} />}
-			{
-				featured && (
-					<section class="sec feat" aria-labelledby="h-featured">
-						<Cue id="h-featured">Featured article</Cue>
-						<p>
-							<a href={featured.url}><strong>{featured.title}</strong></a>. {featured.extract}{" "}
-							<span class="src"><a href={featured.credit.url}>{featured.credit.name}</a></span>
-						</p>
-					</section>
-				)
-			}
 		<div class="reading">
 			{
 				fact && (
@@ -247,6 +212,17 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 				)
 			}
 		</div>
+			{
+				featured && (
+					<section class="sec feat" aria-labelledby="h-featured">
+						<Cue id="h-featured">Featured article</Cue>
+						<p>
+							<a href={featured.url}><strong>{featured.title}</strong></a>. {featured.extract}{" "}
+							<span class="src"><a href={featured.credit.url}>{featured.credit.name}</a></span>
+						</p>
+					</section>
+				)
+			}
 		{
 			onThisDay && (
 				<section class="sec otd" aria-labelledby="h-otd">
@@ -269,39 +245,72 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 				</figure>
 			)
 		}
+		{
+			today.games.length > 0 && (
+				<section class="rail" aria-labelledby="h-games">
+					<Games client:load games={today.games} />
+					<p class="the-end" aria-live="polite">
+						That's the paper. The sun is back at {almanac.nextSunrise} tomorrow.
+					</p>
+				</section>
+			)
+		}
 	</main>
 
+	<div class="wrap extras">
 	{
 		today.recipes.length > 0 && (
-			<section class="wrap recipes" aria-labelledby="h-recipes">
+			<section class="recipes" aria-labelledby="h-recipes">
 				<Cue id="h-recipes">Recipes</Cue>
 				<ul class="plain">
-					{today.recipes.map((r) => (
+					{today.recipes.slice(0, 3).map((r) => (
 						<li>
 							<span class="paper">{r.source}</span> <a href={r.url}>{r.title}</a>
 						</li>
 					))}
 				</ul>
+				{today.recipes.length > 3 && (
+					<details class="more">
+						<summary>More recipes</summary>
+						<ul class="plain">
+							{today.recipes.slice(3).map((r) => (
+								<li><span class="paper">{r.source}</span> <a href={r.url}>{r.title}</a></li>
+							))}
+						</ul>
+					</details>
+				)}
 			</section>
 		)
 	}
 
 	{
 		events && (
-			<section class="wrap local" aria-labelledby="h-events">
+			<section class="local" aria-labelledby="h-events">
 				<Cue id="h-events">This week in The Hague</Cue>
 				<ul class="plain">
-					{events.items.map((e) => (
+					{eventPreview.map((e) => (
 						<li>
 							<span class="when">{weekday(e.day, today.date)}{e.time && ` ${e.time}`}</span>{" "}
 							<a href={e.url}>{e.name}</a> <span class="mute">{e.venue}</span>
 						</li>
 					))}
 				</ul>
+				{eventMore.length > 0 && (
+					<details class="more">
+						<summary>More events</summary>
+						<ul class="plain">
+							{eventMore.map((e) => (
+								<li><span class="when">{weekday(e.day, today.date)}{e.time && ` ${e.time}`}</span>{" "}<a href={e.url}>{e.name}</a> <span class="mute">{e.venue}</span></li>
+							))}
+						</ul>
+					</details>
+				)}
 				<p class="src"><a href={events.url}>{events.credit.name}</a></p>
 			</section>
 		)
 	}
+
+	</div>
 
 	<Foot>New every midnight. <a href="/yesterday">Yesterday's paper</a> &middot; <a href="/about">About</a> &middot;</Foot>
 </Base>

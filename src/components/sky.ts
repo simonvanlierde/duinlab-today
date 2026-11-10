@@ -1,22 +1,6 @@
 import type { SkyPhase } from "../lib/sun";
 import type { Moon, Weather } from "../lib/types";
 
-export const PHASE_LABEL: Record<SkyPhase, string> = {
-	night: "night",
-	"first-light": "first light",
-	dawn: "dawn",
-	day: "day",
-	dusk: "dusk",
-};
-
-export const PHASE_LINE: Record<SkyPhase, string> = {
-	night: "Still dark out.",
-	"first-light": "Good morning. The sky is still deciding.",
-	dawn: "The sun is up, just.",
-	day: "Daylight.",
-	dusk: "The light is going.",
-};
-
 /** Chroma multiplier for the sky: full colour when clear, a greyer sky (not a grey one) when overcast. */
 export function saturation(weather: Weather | null): number {
 	if (!weather) return 1;

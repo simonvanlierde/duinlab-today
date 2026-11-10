@@ -11,9 +11,7 @@ import {
 	store,
 	streak,
 	ticks,
-	unmark,
 } from "./games.svelte";
-import { sharedScore } from "./quiz";
 
 let { games }: { games: Game[] } = $props();
 
@@ -23,10 +21,9 @@ const live = $derived(store.ready && !store.off);
 const done = $derived(live && allPlayed());
 /** Phones fold the board to one line once all are played; this opens it again. */
 let unfolded = $state(false);
-let shared = $state("");
 let unfoldBtn = $state<HTMLButtonElement>();
 let board = $state<HTMLOListElement>();
-/** The count is announced only after someone marks or un-marks a game, not when the page loads. */
+/** The count is announced only after someone opens a game, not when the page loads. */
 let announce = $state(false);
 
 /** Opening the last game folds the board away; keyboard focus moves to the unfold button. */
@@ -42,33 +39,6 @@ async function unfold() {
 	unfolded = true;
 	await tick();
 	board?.querySelector("a")?.focus();
-}
-
-/** One line to paste to each other: the quiz score and the games played today. */
-async function share() {
-	const quiz = sharedScore();
-	const day = new Intl.DateTimeFormat("en-GB", {
-		timeZone: "Europe/Amsterdam",
-		weekday: "short",
-		day: "numeric",
-		month: "short",
-	}).format(new Date());
-	const played = games.filter((g) => isPlayed(g.id)).map((g) => g.name);
-	const text = `today.duinlab.nl, ${day}${quiz} · games ${played.length}/${games.length}${played.length ? `: ${played.join(", ")}` : ""}`;
-	shared = "";
-	await tick();
-	try {
-		if (navigator.share && matchMedia("(pointer: coarse)").matches) {
-			await navigator.share({ text });
-			return;
-		}
-		await navigator.clipboard.writeText(text);
-		shared = "Copied. Paste it to someone.";
-	} catch (e) {
-		// the person closed the share sheet
-		if (e instanceof DOMException && e.name === "AbortError") return;
-		shared = `Copy this: ${text}`;
-	}
 }
 </script>
 
@@ -122,36 +92,6 @@ async function share() {
 
 {#if live && !anyHistory()}
 	<p class="first-visit">0 days. Everyone starts in the dark.</p>
-{:else if live}
-	<div class="games-foot">
-	<details class="streaks">
-		<summary>Un-mark a game from the last 14 days</summary>
-		<ol class="plain">
-			{#each games as g (g.id)}
-				{@const n = streak(g.id)}
-				<li class="streak-row">
-					<span class="streak-name">{g.name}</span>
-					<span class="sr">{n} day streak</span>
-					<span class="ticks" aria-hidden="true">
-						{#each ticks(g.id) as on, i (i)}
-							<i class="tick" class:on></i>
-						{/each}
-					</span>
-					{#if isPlayed(g.id)}
-						<button type="button" class="undo" onclick={() => {
-							announce = true;
-							unmark(g.id);
-						}} aria-label={`Un-mark ${g.name} as played`}>un-mark</button>
-					{/if}
-				</li>
-			{/each}
-		</ol>
-	</details>
-	{#if playedCount() > 0}
-		<button type="button" class="link share" onclick={share}>Share today's score</button>
-	{/if}
-	</div>
-	<p class="shared" aria-live="polite">{shared}</p>
 {/if}
 
 <style>
@@ -253,22 +193,6 @@ async function share() {
 	.played .streak {
 		color: var(--lit-text);
 	}
-	.streaks {
-		margin-top: 2px;
-	}
-	.streak-row {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto 52px;
-		align-items: center;
-		gap: 12px;
-		min-height: 32px;
-		font-size: 0.875rem;
-	}
-	.ticks {
-		display: inline-flex;
-		align-items: center;
-		gap: 3px;
-	}
 	.tick {
 		width: 5px;
 		height: 4px;
@@ -278,28 +202,6 @@ async function share() {
 	.tick.on {
 		height: 12px;
 		background: var(--lit);
-	}
-	.undo {
-		min-height: 44px;
-		padding: 0 4px;
-		background: none;
-		border: 0;
-		font-weight: 600;
-		letter-spacing: 0.06em;
-		text-decoration: underline;
-		text-underline-offset: 0.25em;
-		cursor: pointer;
-	}
-	.undo {
-		font-size: 0.8125rem;
-		min-height: 32px;
-		position: relative;
-	}
-	.undo::after {
-		/* 44px hit area on a 32px row */
-		content: "";
-		position: absolute;
-		inset: -6px 0;
 	}
 	/* the last two weeks, under a game's name on hover */
 	.game {
@@ -375,28 +277,12 @@ async function share() {
 			display: none;
 		}
 	}
-	.unfold,
-	.share {
+	.unfold {
 		min-height: 44px;
 		font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
 		font-weight: 600;
 		font-size: 0.9375rem;
 		letter-spacing: 0.04em;
 		color: var(--mute);
-	}
-	.games-foot {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: start;
-		justify-content: space-between;
-		gap: 0 16px;
-	}
-	.games-foot .streaks {
-		flex: 1 1 auto;
-	}
-	.shared {
-		font-size: 0.875rem;
-		color: var(--mute);
-		overflow-wrap: anywhere;
 	}
 </style>

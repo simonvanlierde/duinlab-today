@@ -1,7 +1,7 @@
 import type { Recipe } from "../types";
 import { getText, httpsUrl, safe, stripTags } from "../util";
 
-/** One recipe from each of these, in this order: the newest recipe item of each site's feed. */
+/** The newest recipes from each of these feeds. */
 const RECIPE_FEEDS = [
 	{
 		name: "The Guardian",
@@ -21,26 +21,33 @@ const tag = (xml: string, name: string) =>
 		`<${name}[^>]*>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</${name}>`,
 	).exec(xml)?.[1];
 
-/** The first item of an RSS feed (the first whose link matches `only`, if given), or null. */
-export function parseTopItem(
+/** Up to three recipes from a feed, skipping invalid links, duplicates and non-recipe items. */
+export function parseRecipes(
 	rss: string,
 	source: string,
 	only?: RegExp,
-): Recipe | null {
+): Recipe[] {
+	const recipes: Recipe[] = [];
 	for (const [item] of rss.matchAll(/<item[\s>][\s\S]*?<\/item>/g)) {
 		const title = stripTags(tag(item, "title") ?? "");
 		const url = httpsUrl(tag(item, "link")?.trim());
-		if (title && url && (!only || only.test(url)))
-			return { title, url, source };
+		if (
+			title &&
+			url &&
+			(!only || only.test(url)) &&
+			!recipes.some((r) => r.url === url)
+		)
+			recipes.push({ title, url, source });
+		if (recipes.length === 3) break;
 	}
-	return null;
+	return recipes;
 }
 
 export async function fetchRecipes(): Promise<Recipe[]> {
 	const items = await Promise.all(
 		RECIPE_FEEDS.map((f) =>
 			safe(`recipes ${f.name}`, async () =>
-				parseTopItem(
+				parseRecipes(
 					await getText(f.url, "application/rss+xml"),
 					f.name,
 					f.only,
@@ -48,5 +55,7 @@ export async function fetchRecipes(): Promise<Recipe[]> {
 			),
 		),
 	);
-	return items.filter((h): h is Recipe => h !== null);
+	return [0, 1, 2].flatMap((n) =>
+		items.flatMap((recipes) => (recipes?.[n] ? [recipes[n]] : [])),
+	);
 }

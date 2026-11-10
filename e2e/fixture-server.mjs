@@ -47,7 +47,14 @@ const recipeRss = (host) =>
 		? `<item><title>Good Food fixture review</title><link>https://${host}/review/fixture-pan</link></item>`
 		: "") +
 	`<item><title>${RECIPE_HOSTS[host]} fixture recipe: dune bread</title>` +
-	`<link>https://${host}/recipes/fixture-bread</link></item></channel></rss>`;
+	`<link>https://${host}/recipes/fixture-bread</link></item>` +
+	["soup", "salad"]
+		.map(
+			(dish) =>
+				`<item><title>${RECIPE_HOSTS[host]} fixture ${dish}</title><link>https://${host}/recipes/fixture-${dish}</link></item>`,
+		)
+		.join("") +
+	`</channel></rss>`;
 
 const metObject = () => text("met-object.json");
 

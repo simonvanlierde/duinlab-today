@@ -81,7 +81,7 @@ are:
 | `onThisDay`, `featured`, `word`, `quote`, `quiz`, `tides`, `events`, `weather`, `sea` | objects | `null` |
 | `didYouKnow` | a list of facts | `[]` |
 | `pictures` | up to five, in this order: APOD, The Met, Wikipedia picture of the day, Art Institute of Chicago, Rijksmuseum; one per source | `[]` |
-| `recipes` | up to three recipes (`title`, `url`, `source`), one per site | `[]` |
+| `recipes` | up to nine recipes (`title`, `url`, `source`), three per site | `[]` |
 
 Sun times carry the Amsterdam offset. `weather.rainNext2h[].time` is `HH:MM` on the
 Amsterdam clock, and `mm` is mm per hour: 5-minute steps from Buienradar's radar, or 15-minute

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	parseEvents,
+	previewEvents,
 	titleCase,
 	withAgenda,
 } from "../../src/lib/sources/events";
@@ -14,9 +15,9 @@ const ev = (name: string, startDate: string, extra = "") =>
 	`{"@type":"Event","name":"${name}","url":"https://www.paard.nl/event/x/","startDate":"${startDate}"${extra}}`;
 
 describe("parseEvents", () => {
-	it("takes the next week of shows, sorted, at most five", () => {
+	it("takes the next week of shows, sorted", () => {
 		const r = parseEvents(paard, "2026-11-10");
-		expect(r?.items).toHaveLength(5);
+		expect(r?.items.length).toBeGreaterThan(5);
 		const days = r?.items.map((i) => i.day) ?? [];
 		expect(days).toEqual([...days].sort());
 		expect(days.every((d) => d >= "2026-11-10" && d <= "2026-11-16")).toBe(
@@ -133,7 +134,7 @@ describe("withAgenda", () => {
 		).toBeNull();
 	});
 
-	it("takes at most two per site when there are several, whatever their venues", () => {
+	it("previews two per site and keeps the remaining events", () => {
 		const many = ["2026-11-10", "2026-11-11", "2026-11-12"].map((d, n) => ({
 			...item(d, "09:00", `Venue ${n}`),
 			url: `https://denhaag.com/en/agenda/${d}`,
@@ -142,9 +143,50 @@ describe("withAgenda", () => {
 		expect(r?.items.map((i) => i.venue)).toEqual([
 			"Venue 0",
 			"Venue 1",
+			"Venue 2",
+			"Paard",
+		]);
+		expect(previewEvents(r?.items ?? []).map((i) => i.venue)).toEqual([
+			"Venue 0",
+			"Venue 1",
 			"Paard",
 		]);
 		// the credit names the sites, not the dozens of venues DenHaag.com lists
 		expect(r?.credit.name).toBe("DenHaag.com, Paard");
+	});
+});
+
+describe("agenda exclusions", () => {
+	it("removes excluded venues before choosing the preview", () => {
+		const venues = [
+			"Palace Noordeinde",
+			"Paleis Noordeinde",
+			"Namuso Gallery",
+			"Laan van Meerdervoort 7B",
+			"Pulchri Studio",
+			"Amare",
+		];
+		const items = venues.map((venue) => ({
+			venue,
+			name: "Exhibition",
+			url: "https://denhaag.com/en/agenda/exhibition",
+			start: "2026-11-10",
+			time: null,
+			end: null,
+		}));
+		expect(
+			withAgenda(null, { items }, "2026-11-10")?.items.map((i) => i.venue),
+		).toEqual(["Amare"]);
+	});
+	it("keeps more events available beyond the preview", () => {
+		const items = Array.from({ length: 9 }, (_, n) => ({
+			venue: "Amare",
+			name: `Show ${n}`,
+			url: `https://www.amare.nl/en/agenda/${n}`,
+			start: "2026-11-10",
+			time: null,
+			end: null,
+		}));
+		expect(withAgenda(null, { items }, "2026-11-10")?.items).toHaveLength(9);
 	});
 });

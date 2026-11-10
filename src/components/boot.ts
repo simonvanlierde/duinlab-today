@@ -2,15 +2,7 @@ import { allPlayed, amsterdamDay } from "../lib/day";
 import { moonNow, planetsAt, starNow } from "../lib/moon";
 import { phaseAt, type SkyPhase, sunAltitude } from "../lib/sun";
 import type { Sun } from "../lib/types";
-import {
-	bodiesAt,
-	moonPath,
-	PHASE_LABEL,
-	PHASE_LINE,
-	PHASE_SUN,
-	SKY,
-	skyAt,
-} from "./sky";
+import { bodiesAt, moonPath, PHASE_SUN, SKY, skyAt } from "./sky";
 
 /** The functions the page runs, inlined by their source: each must be self-contained. */
 /** Planets by how bright they usually look, so the brighter one keeps its place. */
@@ -37,8 +29,6 @@ const INLINED = {
 type Cfg = {
 	sun: Sun;
 	forced: string | null;
-	labels: Record<string, string>;
-	lines: Record<string, string>;
 	ids: string[];
 	key: string;
 	table: typeof SKY;
@@ -89,22 +79,8 @@ const boot = (cfg: Cfg) => {
 		const hhmm = fmt.format(now);
 		for (const el of document.querySelectorAll("[data-clock]"))
 			el.textContent = hhmm;
-		let played = "";
-		try {
-			const saved = JSON.parse(localStorage.getItem(cfg.key) ?? "{}");
-			const n = cfg.ids.filter((id) => saved[id]?.includes(loaded)).length;
-			if (cfg.ids.length > 0) played = ` · ${n}/${cfg.ids.length} played`;
-		} catch {
-			// no storage: no count
-		}
-		for (const el of document.querySelectorAll("[data-progress]"))
-			el.textContent = played;
 		const p = (cfg.forced ?? cfg.phaseAt(cfg.sun, now)) as SkyPhase;
 		root.dataset.phase = p;
-		for (const el of document.querySelectorAll("[data-phase-label]"))
-			el.textContent = cfg.labels[p];
-		for (const el of document.querySelectorAll("[data-phase-line]"))
-			el.textContent = cfg.lines[p];
 		const sun = root.hasAttribute("data-whiteout")
 			? cfg.phaseSun.day
 			: cfg.forced
@@ -181,37 +157,6 @@ const boot = (cfg: Cfg) => {
 	} catch {
 		// no storage: no replay
 	}
-	// coffee is the whole paper, train the short one (weather, one fact, the games), per browser
-	const MODE = "today.mode.v1";
-	const setMode = (mode: string | null) => {
-		if (mode === "train") root.dataset.mode = "train";
-		else delete root.dataset.mode;
-		for (const el of document.querySelectorAll("[data-mode-set]"))
-			el.setAttribute(
-				"aria-pressed",
-				String(el.getAttribute("data-mode-set") === (mode ?? "coffee")),
-			);
-	};
-	try {
-		setMode(localStorage.getItem(MODE));
-	} catch {
-		// no storage: the whole paper
-	}
-	document.addEventListener("DOMContentLoaded", () =>
-		setMode(root.dataset.mode ?? null),
-	);
-	document.addEventListener("click", (e) => {
-		const mode = (e.target as Element | null)
-			?.closest?.("[data-mode-set]")
-			?.getAttribute("data-mode-set");
-		if (!mode) return;
-		setMode(mode);
-		try {
-			localStorage.setItem(MODE, mode);
-		} catch {
-			// no storage: the choice lasts until reload
-		}
-	});
 	const repaint = () => {
 		if (!document.hidden) paint();
 	};
@@ -243,8 +188,6 @@ export function skyBootScript(day: {
 	const cfg = {
 		sun: day.sun,
 		forced: day.forced,
-		labels: PHASE_LABEL,
-		lines: PHASE_LINE,
 		ids: day.ids,
 		key: "today.games.v1",
 		table: SKY,

@@ -5,7 +5,9 @@ import { decodeEntities, getText, httpsUrl, safe } from "../util";
 // The /event/ archive lists every upcoming show with its JSON-LD in one GET; the home and
 // agenda pages carry none. robots.txt only disallows /wp-admin.
 const AGENDA = "https://www.paard.nl/event/";
-const MAX = 5;
+const PREVIEW = 5;
+const EXCLUDED_VENUES =
+	/(?:palace|paleis) noordeinde|namuso gallery|laan van meerdervoort\s+7\s*b|pulchri studio/i;
 const BLOCK = /<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/g;
 const LOCAL = /^(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2}))?/;
 
@@ -90,7 +92,7 @@ export function parseEvents(html: string, date: string): Events | null {
 	if (shows === 0) return null;
 	found.sort((a, b) => a.start.localeCompare(b.start));
 	return {
-		items: found.slice(0, MAX).map(({ start: _, ...h }) => h),
+		items: found.map(({ start: _, ...h }) => h),
 		url: AGENDA,
 		credit: { name: "Paard", url: AGENDA },
 	};
@@ -117,8 +119,8 @@ interface AgendaItem {
 }
 
 /**
- * Paard's week plus the agenda's events that start this week (`date` through date+6), sorted,
- * at most MAX and two per site (Paard, Amare, DenHaag.com) when there are several. The credit names
+ * Paard's week plus the agenda's events that start this week (`date` through date+6), sorted.
+ * The credit names
  * each site that has an item; the venue stays on the item.
  */
 export function withAgenda(
@@ -128,7 +130,13 @@ export function withAgenda(
 ): Events | null {
 	const last = shift(date, 6);
 	const extra: Happening[] = (agenda?.items ?? [])
-		.filter((a) => a.start >= date && a.start <= last && httpsUrl(a.url))
+		.filter(
+			(a) =>
+				a.start >= date &&
+				a.start <= last &&
+				httpsUrl(a.url) &&
+				!EXCLUDED_VENUES.test(a.venue),
+		)
 		.map((a) => ({
 			name: a.name,
 			day: a.start,
@@ -137,22 +145,12 @@ export function withAgenda(
 			url: a.url,
 		}));
 	if (!paard && extra.length === 0) return null;
-	const all = [...(paard?.items ?? []), ...extra].sort((a, b) =>
+	const items = [...(paard?.items ?? []), ...extra].sort((a, b) =>
 		`${a.day}T${a.time ?? "00:00"}`.localeCompare(
 			`${b.day}T${b.time ?? "00:00"}`,
 		),
 	);
-	// DenHaag.com lists dozens a week at many venues: two per site keeps it from filling the list
 	const site = (i: Happening) => new URL(i.url).hostname;
-	const perSite = new Set(all.map(site)).size > 1 ? 2 : MAX;
-	const taken = new Map<string, number>();
-	const items = all
-		.filter((i) => {
-			const n = taken.get(site(i)) ?? 0;
-			taken.set(site(i), n + 1);
-			return n < perSite;
-		})
-		.slice(0, MAX);
 	const sites = [...new Set(items.map((i) => SITE_NAMES[site(i)] ?? site(i)))];
 	return {
 		items,
@@ -162,4 +160,18 @@ export function withAgenda(
 			url: paard?.credit.url ?? AGENDA,
 		},
 	};
+}
+
+/** The first five events, at most two per source when several sources are available. */
+export function previewEvents(items: Happening[]): Happening[] {
+	const site = (i: Happening) => new URL(i.url).hostname;
+	const perSite = new Set(items.map(site)).size > 1 ? 2 : PREVIEW;
+	const taken = new Map<string, number>();
+	return items
+		.filter((i) => {
+			const n = taken.get(site(i)) ?? 0;
+			taken.set(site(i), n + 1);
+			return n < perSite;
+		})
+		.slice(0, PREVIEW);
 }

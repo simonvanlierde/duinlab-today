@@ -49,9 +49,6 @@ export function saveQuiz(
 			? [...done, day].slice(-KEEP_DAYS)
 			: done;
 	try {
-		const score = picks.filter(
-			(p, j) => p === quiz.questions[j]?.correct,
-		).length;
 		localStorage.setItem(
 			KEY,
 			JSON.stringify({
@@ -59,7 +56,6 @@ export function saveQuiz(
 				sig: signature(quiz),
 				picks,
 				done: finished,
-				score,
 			}),
 		);
 	} catch {
@@ -71,15 +67,3 @@ export function saveQuiz(
 /** Consecutive days with the whole quiz answered, ending today or yesterday. */
 export const quizStreak = (done: string[], day = amsterdamDay()) =>
 	streak((d) => done.includes(d), day);
-
-/** " · quiz 2/3" when today's quiz score is saved, else "": for the share line. */
-export function sharedScore(day = amsterdamDay()): string {
-	try {
-		const q = JSON.parse(localStorage.getItem(KEY) ?? "null");
-		if (q?.day === day && typeof q.score === "number")
-			return ` · quiz ${q.score}/${q.picks.length}`;
-	} catch {
-		// no quiz score then
-	}
-	return "";
-}
