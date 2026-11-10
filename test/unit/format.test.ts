@@ -14,7 +14,7 @@ describe("sunLines", () => {
 			sunrise: "07:47",
 			sunset: "17:05",
 			golden: "16:13",
-			daylight: "9 h 19 min of daylight, −4 min",
+			daylight: "9 h 19 min of daylight, 4 min less than yesterday",
 			nextSunrise: "07:48",
 		});
 	});

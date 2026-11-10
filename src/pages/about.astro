@@ -9,8 +9,8 @@ import Plain from "../layouts/Plain.astro";
 	<Fragment slot="title">About this page</Fragment>
 
 	<p>
-		A daily page for two of us in The Hague, open to anyone: a few pictures, a few facts, a word, a quiz and a
-		handful of games. It changes at midnight, Amsterdam time.
+		A daily page for the two of us in The Hague, open to anyone: the weather, a few pictures, a few facts, a
+		word, a quiz, a handful of games, new recipes, and what's on nearby. It changes at midnight, Amsterdam time.
 	</p>
 
 	<h2>Privacy</h2>
@@ -35,21 +35,40 @@ import Plain from "../layouts/Plain.astro";
 	</p>
 
 	<h2>Sources</h2>
-	<p>
-		Each fact links to where it came from: Wikipedia (also its picture of the day), Wiktionary, NASA APOD, The Metropolitan Museum of Art, the Art Institute of Chicago, the Rijksmuseum,
-		Open Trivia DB (CC BY-SA 4.0), ZenQuotes, and <a href="https://open-meteo.com/">Open-Meteo</a> for the
-		weather. The rain line comes from <a href="https://www.buienradar.nl/">Buienradar</a>'s radar, or from
-		Open-Meteo when Buienradar is down. Open-Meteo also supplies the air quality and pollen line, which shows
-		only when the European AQI is 60 or more or a pollen count is high. The weather line opens
-		<a href="https://www.meteoblue.com/en/weather/week/the-hague_netherlands_2747373">meteoblue</a>. The
-		recipes are the newest from the Guardian, BBC Good Food and Love and Lemons. Tide times at
-		Scheveningen come from <a href="https://waterinfo.rws.nl/">Rijkswaterstaat</a>, and the week's
-		shows and events from <a href="https://www.paard.nl/">Paard</a>, <a href="https://www.amare.nl/">Amare</a> and <a href="https://denhaag.com/en/agenda">DenHaag.com</a>'s agendas. The sea temperature and wave height off
-		Scheveningen come from <a href="https://open-meteo.com/en/docs/marine-weather-api">Open-Meteo's marine API</a>.
-		The sky is worked out from the sun's position over The Hague, in your browser. The planets come from
-		<a href="https://github.com/cosinekitty/astronomy">Astronomy Engine</a> (MIT), and the full moons, solstices,
-		equinoxes and eclipses in the line under the date too; the meteor shower peaks are fixed approximate dates.
-	</p>
+	<p>Each item on the page links to where it came from.</p>
+	<ul>
+		<li>Facts, the featured article and on this day: Wikipedia. The word: Wiktionary.</li>
+		<li>
+			The pictures: NASA APOD, The Metropolitan Museum of Art, Wikipedia's picture of the day, the Art
+			Institute of Chicago and the Rijksmuseum.
+		</li>
+		<li>The quiz: Open Trivia DB (CC BY-SA 4.0). The quote: ZenQuotes.</li>
+		<li>
+			The weather: <a href="https://open-meteo.com/">Open-Meteo</a>. The rain line comes from
+			<a href="https://www.buienradar.nl/">Buienradar</a>'s radar, or from Open-Meteo when Buienradar is down.
+			The weather line opens the week ahead on
+			<a href="https://www.meteoblue.com/en/weather/week/the-hague_netherlands_2747373">meteoblue</a>.
+		</li>
+		<li>
+			Air quality and pollen: Open-Meteo, shown only when the European AQI is 60 or more or a pollen count
+			is high by MeteoSwiss's classes.
+		</li>
+		<li>
+			Tide times at Scheveningen: <a href="https://waterinfo.rws.nl/">Rijkswaterstaat</a>. The sea temperature
+			and waves: <a href="https://open-meteo.com/en/docs/marine-weather-api">Open-Meteo's marine API</a>.
+		</li>
+		<li>
+			This week's shows and events: <a href="https://www.paard.nl/">Paard</a>,
+			<a href="https://www.amare.nl/">Amare</a> and <a href="https://denhaag.com/en/agenda">DenHaag.com</a>.
+		</li>
+		<li>Recipes: the newest from the Guardian, BBC Good Food and Love and Lemons.</li>
+		<li>
+			The planets, full moons, solstices, equinoxes and eclipses:
+			<a href="https://github.com/cosinekitty/astronomy">Astronomy Engine</a> (MIT). The meteor shower peaks
+			are fixed approximate dates.
+		</li>
+	</ul>
+	<p>Your browser works out the sky from the sun's position over The Hague.</p>
 
 	<h2>Code</h2>
 	<p>

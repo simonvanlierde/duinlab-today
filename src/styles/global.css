@@ -992,8 +992,11 @@ summary {
 	font-size: 1.25rem;
 	font-weight: 500;
 }
-.prose p + p {
+.prose :is(p, ul) + :is(p, ul) {
 	margin-top: 0.7em;
+}
+.prose li + li {
+	margin-top: 0.3em;
 }
 code {
 	font-size: 0.875em;
