@@ -87,7 +87,7 @@ const sections = (d: Day) => [
 	d.didYouKnow.length > 0 ? d.didYouKnow : null,
 ];
 
-export const missingSections = (d: Day) => sections(d).filter((s) => !s).length;
+const missingSections = (d: Day) => sections(d).filter((s) => !s).length;
 
 export const allFailed = (d: Day) => sections(d).every((s) => !s);
 
