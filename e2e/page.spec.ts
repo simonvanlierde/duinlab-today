@@ -89,7 +89,9 @@ test("renders the sky, every section from the fixtures, and the ten games", asyn
 		"Robert Kiyosaki",
 	);
 	await expect(page.locator(".wx")).toContainText(/5°\s*overcast, 9° \/ 2°/);
-	await expect(page.locator(".strip")).toContainText("dry until 10:15");
+	await expect(page.locator(".strip")).toContainText(
+		"rain expected around 10:15",
+	);
 	await expect(page.locator(".strip")).toContainText(
 		"Grass pollen high today · Air quality poor (AQI 64)",
 	);
@@ -597,11 +599,19 @@ test.describe("without JavaScript", () => {
 
 test("the about page says what is kept and links the source", async ({
 	page,
-}) => {
+}, testInfo) => {
 	await page.goto("/");
 	await expect(page.locator(".wx")).toHaveAttribute("href", /meteoblue\.com/);
 	await page.getByRole("link", { name: "About", exact: true }).click();
 	await expect(page.locator("h1")).toHaveText("About this page");
+	await expect(
+		page.locator("footer").getByRole("link", { name: "Simon van Lierde" }),
+	).toHaveAttribute("href", "https://simonvanlierde.com");
+	await expect(page.locator("footer")).not.toContainText("duinlab.nl");
+	await page.screenshot({
+		path: testInfo.outputPath("about.png"),
+		fullPage: true,
+	});
 	await expect(
 		page.getByRole("link", { name: /github\.com\/simonvanlierde/ }),
 	).toBeVisible();

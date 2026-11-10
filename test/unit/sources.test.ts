@@ -302,7 +302,9 @@ describe("parsers", () => {
 			{ time: "10:20", mm: 10 },
 			{ time: "10:25", mm: 0.1 },
 		]);
-		expect(rainLine(parseRaintext(raintext))).toBe("Dry until 10:15");
+		expect(rainLine(parseRaintext(raintext))).toBe(
+			"Rain expected around 10:15",
+		);
 		// Buienradar ends its lines with CRLF; git stores the fixture with LF
 		expect(parseRaintext("000|10:05\r\n141|10:10\r\n")).toEqual([
 			{ time: "10:05", mm: 0 },
@@ -675,8 +677,15 @@ describe("hardening", () => {
 		const step = (time: string, mm: number) => ({ time, mm });
 		expect(rainLine([step("10:00", 0.3), step("10:15", 0)])).toBe("Rain now");
 		expect(rainLine([step("10:00", 0), step("10:15", 0.2)])).toBe(
-			"Dry until 10:15",
+			"Rain expected around 10:15",
 		);
+	});
+
+	it("limits a dry forecast to the next two hours", () => {
+		expect(rainLine([{ time: "23:30", mm: 0 }])).toBe(
+			"No rain expected in the next 2 hours",
+		);
+		expect(rainLine([])).toBe("");
 	});
 
 	it("rebuilds an incomplete day without losing what it had", () => {
