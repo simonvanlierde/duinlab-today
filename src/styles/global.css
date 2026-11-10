@@ -221,13 +221,13 @@ summary,
 	min-height: 40px;
 	font-variant-numeric: tabular-nums;
 }
-/* the toggle needs the boot script, so a page without JavaScript has none */
-html:not(.js) .mode {
-	display: none;
-}
 .mode {
 	display: inline-flex;
 	gap: 4px;
+}
+/* the toggle needs the boot script, so a page without JavaScript has none */
+html:not(.js) .mode {
+	display: none;
 }
 .mode button {
 	min-height: 28px;
@@ -965,7 +965,7 @@ summary {
 		grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
 	}
 }
-.recipes li {
+.recipes ul > li {
 	font-size: 0.9375rem;
 	text-wrap: pretty;
 }

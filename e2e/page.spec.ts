@@ -153,7 +153,7 @@ test("the sky's bright body opens the sun, moon and tide times, and Escape close
 	// which planets show depends on the date: the line is there only when one is up tonight
 	const tonight = almanac.locator("p", { hasText: /^Tonight:/ });
 	if (await tonight.count())
-		for (const part of (await tonight.innerText())
+		for (const part of ((await tonight.textContent()) ?? "")
 			.replace(/^Tonight: /, "")
 			.split(", "))
 			expect(part).toMatch(
