@@ -86,7 +86,7 @@ async function getDay(now: Date): Promise<Day> {
 	return fresh ? stored : refreshDay(now);
 }
 
-/** The homelab agenda job's events; it changes twice a month, so KV's edge copy may be an hour old. */
+/** The homelab agenda job's events; it refreshes weekly, so KV's edge copy may be an hour old. */
 async function readAgenda() {
 	try {
 		return await env.DAYS.get<Parameters<typeof withAgenda>[1]>("agenda/v1", {

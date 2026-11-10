@@ -3,8 +3,8 @@
 A small daily page at <https://today.duinlab.nl>: up to five pictures in a swipe strip, a few sourced facts, the
 weather in The Hague, a three-question quiz and a short list of daily web
 games with played-today marks and streaks. The sky at the top follows the sun's position over
-The Hague, minute by minute. Checkmarks and streaks stay in your browser; the server keeps
-nothing beyond Cloudflare's request logs.
+The Hague, minute by minute. Checkmarks and streaks stay in your browser. The server stores two days of public content
+and cached feeds, alongside Cloudflare's request logs; it stores no personal progress.
 
 ## How it works
 
@@ -58,7 +58,7 @@ just dev
 
 `just dev` starts the dev server in the background; `pnpm exec astro dev stop` ends it.
 `just check` runs CI's lint, types, unit tests and build. `just e2e` runs the browser tests
-against a production build, including an axe scan of the home, about and 404 pages. The Worker
+against a production build, including axe scans of today, yesterday, about and 404 pages and a print-layout check. The Worker
 reads every source from a local fixture server ([`e2e/fixture-server.mjs`](e2e/fixture-server.mjs))
 through the `FIXTURE_ORIGIN` variable, so the tests run offline and give the same page every time.
 

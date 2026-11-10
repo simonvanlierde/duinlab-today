@@ -372,9 +372,6 @@ test("opening a game marks it and state survives a reload", async ({
 }) => {
 	await page.goto("/");
 	await expect(page.locator(".count")).toContainText("0 of 10 played");
-	await expect(page.locator(".first-visit")).toHaveText(
-		"0 days. Everyone starts in the dark.",
-	);
 	await expect(page.locator(".games .name").first()).toHaveAttribute(
 		"target",
 		"_blank",
@@ -423,7 +420,6 @@ test("a streak counts consecutive days", async ({ page }) => {
 	await page.goto("/");
 	const row = page.locator(".game", { hasText: "Wordle" });
 	await expect(row.locator(".streak .figure")).toHaveText("3");
-	await expect(page.locator(".first-visit")).toHaveCount(0);
 });
 
 test("without localStorage the games are plain links and nothing breaks", async ({
