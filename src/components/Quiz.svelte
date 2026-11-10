@@ -103,10 +103,34 @@ const score = $derived(
 			</span>
 			<a class="src" href={quiz.credit.url}>{quiz.credit.name}</a>
 		</p>
+		<details class="more review">
+			<summary>Review answers</summary>
+			<ol>
+				{#each quiz.questions as question, i (i)}
+					<li>
+						<p class="review-question">{question.question}</p>
+						<p>Your answer: {question.answers[picks[i]!]}</p>
+						<p>Correct answer: {question.answers[question.correct]}</p>
+					</li>
+				{/each}
+			</ol>
+		</details>
 	{/if}
 </div>
 
 <style>
+	.review ol {
+		padding: 4px 0 4px 1.5em;
+		font-size: 0.9375rem;
+		overflow-wrap: anywhere;
+	}
+	.review li + li {
+		margin-top: 16px;
+	}
+	.review-question {
+		margin-bottom: 4px;
+		font-weight: 500;
+	}
 	.qn {
 		margin-left: auto;
 		font-variant-numeric: tabular-nums;

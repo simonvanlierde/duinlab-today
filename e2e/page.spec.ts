@@ -348,23 +348,63 @@ test("on desktop altitude reaches the full height of the sky", async ({
 
 test("the quiz asks one question at a time and keeps the score", async ({
 	page,
-}) => {
+}, testInfo) => {
 	await page.goto("/");
 	const quiz = page.locator(".quiz-live");
 	// the server-rendered buttons are inert until the island hydrates
 	await page.locator("astro-island:not([ssr]) .quiz-live").waitFor();
 	await expect(quiz.locator(".q")).toHaveCount(1);
+	await expect(quiz.getByText("Review answers", { exact: true })).toHaveCount(
+		0,
+	);
+	const questions = [];
+	const choices = [];
+	const correct = [];
 	const total = Number(
 		(await quiz.locator(".qn").textContent())?.match(/of (\d+)/)?.[1],
 	);
 	for (let i = 0; i < total; i++) {
+		questions.push((await quiz.locator(".q").textContent()) ?? "");
+		choices.push(await quiz.locator(".answer").first().textContent());
 		await quiz.locator(".answer").first().click();
+		correct.push(
+			((await quiz.locator(".answer.right").textContent()) ?? "")
+				.trim()
+				.replace(/\s*right$/, ""),
+		);
 		await expect(quiz.locator(".answer").first()).toBeDisabled();
 		await quiz.locator(".next").click();
 	}
 	await expect(quiz.locator(".score")).toContainText(`of ${total}.`);
+	const saved = await page.evaluate(() =>
+		localStorage.getItem("today.quiz.v1"),
+	);
+	const summary = quiz.getByText("Review answers", { exact: true });
+	await summary.focus();
+	await page.keyboard.press("Enter");
+	const review = quiz.locator(".review li");
+	await expect(review).toHaveCount(total);
+	for (let i = 0; i < total; i++) {
+		await expect(review.nth(i)).toBeVisible();
+		await expect(review.nth(i)).toContainText(questions[i]);
+		await expect(review.nth(i)).toContainText(`Your answer: ${choices[i]}`);
+		await expect(review.nth(i)).toContainText(`Correct answer: ${correct[i]}`);
+	}
+	await quiz.screenshot({
+		path: `test-results/quiz-review-${testInfo.project.name}.png`,
+	});
+	expect(
+		(await new AxeBuilder({ page }).include(".quiz-live").analyze()).violations,
+	).toEqual([]);
+	expect(await page.evaluate(() => localStorage.getItem("today.quiz.v1"))).toBe(
+		saved,
+	);
+	await page.keyboard.press("Enter");
+	await expect(review.first()).toBeHidden();
 	await page.reload();
 	await expect(quiz.locator(".score")).toContainText(`of ${total}.`);
+	await quiz.getByText("Review answers", { exact: true }).click();
+	await expect(review.first()).toContainText(`Your answer: ${choices[0]}`);
 });
 
 test("opening a game marks it and state survives a reload", async ({
