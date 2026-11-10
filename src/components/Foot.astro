@@ -12,6 +12,8 @@
 <style>
 	.small {
 		font-size: 0.8125rem;
+		/* a wrapped line clears the 8px hit areas above and below its links */
+		line-height: 2.5;
 	}
 	.foot {
 		display: grid;
@@ -24,7 +26,7 @@
 	/* links from the slot carry the page's scope, hence :global */
 	.foot :global(a) {
 		/* a taller hit area without a taller line */
-		padding-block: 10px;
-		margin-block: -10px;
+		padding-block: 8px;
+		margin-block: -8px;
 	}
 </style>
