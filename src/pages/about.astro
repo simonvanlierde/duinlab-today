@@ -9,8 +9,8 @@ import Plain from "../layouts/Plain.astro";
 	<Fragment slot="title">About this page</Fragment>
 
 	<p>
-		A daily page for the two of us in The Hague, open to anyone: the weather, one picture, a few facts, a word,
-		a quiz, a handful of games, the headlines, new recipes, and what's on nearby. It changes at midnight, Amsterdam time.
+		A daily page for the two of us in The Hague, open to anyone: the weather, a few pictures, a few facts, a
+		word, a quiz, a handful of games, new recipes, and what's on nearby. It changes at midnight, Amsterdam time.
 	</p>
 
 	<h2>Privacy</h2>
@@ -22,7 +22,7 @@ import Plain from "../layouts/Plain.astro";
 	</p>
 	<p>
 		A Cloudflare Worker serves the page. Cloudflare keeps request logs for a few days: the address asked for,
-		the time, and connection details such as your IP address. I only read them to trace a fault. The day's picture loads straight from NASA, The Met or YouTube, so
+		the time, and connection details such as your IP address. I only read them to trace a fault. The day's pictures load straight from NASA, The Met, Wikimedia, the Art Institute, the Rijksmuseum or YouTube, so
 		they see your IP address too.
 	</p>
 
@@ -38,7 +38,10 @@ import Plain from "../layouts/Plain.astro";
 	<p>Each item on the page links to where it came from.</p>
 	<ul>
 		<li>Facts, the featured article and on this day: Wikipedia. The word: Wiktionary.</li>
-		<li>The picture: NASA APOD or The Metropolitan Museum of Art.</li>
+		<li>
+			The pictures: NASA APOD, The Metropolitan Museum of Art, Wikipedia's picture of the day, the Art
+			Institute of Chicago and the Rijksmuseum.
+		</li>
 		<li>The quiz: Open Trivia DB (CC BY-SA 4.0). The quote: ZenQuotes.</li>
 		<li>
 			The weather: <a href="https://open-meteo.com/">Open-Meteo</a>. The rain line comes from
@@ -46,14 +49,24 @@ import Plain from "../layouts/Plain.astro";
 			The weather line opens the week ahead on
 			<a href="https://www.meteoblue.com/en/weather/week/the-hague_netherlands_2747373">meteoblue</a>.
 		</li>
-		<li>Tide times at Scheveningen: <a href="https://waterinfo.rws.nl/">Rijkswaterstaat</a>.</li>
 		<li>
-			Wildlife seen within 15 km this week: <a href="https://www.inaturalist.org/">iNaturalist</a>, confirmed
-			sightings only.
+			Air quality and pollen: Open-Meteo, shown only when the European AQI is 60 or more or a pollen count
+			is high by MeteoSwiss's classes.
 		</li>
-		<li>This week's shows: <a href="https://www.paard.nl/">Paard</a>'s agenda.</li>
-		<li>Headlines: the top story of NOS, NRC, the BBC, the Guardian and the New York Times.</li>
+		<li>
+			Tide times at Scheveningen: <a href="https://waterinfo.rws.nl/">Rijkswaterstaat</a>. The sea temperature
+			and waves: <a href="https://open-meteo.com/en/docs/marine-weather-api">Open-Meteo's marine API</a>.
+		</li>
+		<li>
+			This week's shows and events: <a href="https://www.paard.nl/">Paard</a>,
+			<a href="https://www.amare.nl/">Amare</a> and <a href="https://denhaag.com/en/agenda">DenHaag.com</a>.
+		</li>
 		<li>Recipes: the newest from the Guardian, BBC Good Food and Love and Lemons.</li>
+		<li>
+			The planets, full moons, solstices, equinoxes and eclipses:
+			<a href="https://github.com/cosinekitty/astronomy">Astronomy Engine</a> (MIT). The meteor shower peaks
+			are fixed approximate dates.
+		</li>
 	</ul>
 	<p>Your browser works out the sky from the sun's position over The Hague.</p>
 

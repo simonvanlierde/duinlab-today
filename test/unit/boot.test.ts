@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { skyBootScript } from "../../src/components/boot";
+import { overlap, skyBootScript } from "../../src/components/boot";
 import { sunTimes } from "../../src/lib/sun";
 import { stubStorage } from "./stub-storage";
 
@@ -81,5 +81,15 @@ describe("skyBootScript", () => {
 		const dark = run(skyBootScript({ sun, forced: null, ids }), half);
 		expect(dark.attrs.has("data-whiteout")).toBe(false);
 		expect(dark.root.dataset.ground).toBe("dark");
+	});
+});
+
+describe("overlap", () => {
+	const box = (left: number, top: number) =>
+		({ left, top, right: left + 32, bottom: top + 32 }) as DOMRectReadOnly;
+	it("sees boxes that share area, not ones that only touch", () => {
+		expect(overlap(box(0, 0), box(20, 20))).toBe(true);
+		expect(overlap(box(0, 0), box(32, 0))).toBe(false);
+		expect(overlap(box(0, 0), box(0, 40))).toBe(false);
 	});
 });

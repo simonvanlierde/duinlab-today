@@ -2,6 +2,8 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 
 const KEY = "today.games.v1";
+const PICTURE_HOSTS =
+	/^https:\/\/(images\.metmuseum\.org|thumb\.wikimedia\.org|www\.artic\.edu\/iiif|iiif\.micr\.io)\//;
 
 async function play(page: Page, name: string) {
 	// a click before the island hydrates opens the game without marking it
@@ -16,8 +18,8 @@ test.beforeEach(async ({ page }) => {
 			? r.fulfill({ body: "ok" })
 			: r.continue(),
 	);
-	// the day's picture (test/unit/fixtures/met-object.json) is the fixture PNG
-	await page.route("https://images.metmuseum.org/**", (r) =>
+	// the day's pictures (Met, Wikipedia, Art Institute, Rijksmuseum fixtures) are the fixture PNG
+	await page.route(PICTURE_HOSTS, (r) =>
 		r.fulfill({ path: "e2e/fixtures/picture.png", contentType: "image/png" }),
 	);
 });
@@ -34,7 +36,10 @@ test("renders the sky, every section from the fixtures, and the ten games", asyn
 	);
 	await expect(page.locator(".games .game")).toHaveCount(10);
 
-	const img = page.locator(".pic img");
+	// no NASA key in e2e: the strip holds the other four sources, in order
+	const slides = page.locator(".pic .slide");
+	await expect(slides).toHaveCount(4);
+	const img = slides.first().locator("img");
 	await expect(img).toHaveAttribute(
 		"src",
 		"https://images.metmuseum.org/CRDImages/ep/web-large/DP-42549-001.jpg",
@@ -43,11 +48,23 @@ test("renders the sky, every section from the fixtures, and the ten games", asyn
 		"alt",
 		"Wheat Field with Cypresses, by Vincent van Gogh",
 	);
+	await expect(img).toHaveAttribute("loading", "eager");
+	await expect(slides.nth(1).locator("img")).toHaveAttribute("loading", "lazy");
 	await expect
 		.poll(() => img.evaluate((i: HTMLImageElement) => i.naturalWidth))
 		.toBe(64);
-	await expect(page.locator(".pic figcaption")).toContainText(
+	await expect(slides.first().locator("figcaption")).toContainText(
 		"Wheat Field with Cypresses, Vincent van Gogh",
+	);
+	await expect(slides.nth(1).locator("figcaption a").first()).toHaveAttribute(
+		"href",
+		/^https:\/\/commons\.wikimedia\.org\/wiki\/File:/,
+	);
+	await expect(slides.nth(2).locator("figcaption")).toContainText(
+		"Art Institute of Chicago",
+	);
+	await expect(slides.nth(3).locator("figcaption")).toContainText(
+		"Rijksmuseum",
 	);
 	const section = (id: string) =>
 		page.locator(`section[aria-labelledby="${id}"]`);
@@ -56,7 +73,7 @@ test("renders the sky, every section from the fixtures, and the ten games", asyn
 	);
 	await expect(section("h-word").locator(".word")).toHaveText("sax");
 	await expect(section("h-featured")).toContainText("Bill Madden (soldier)");
-	await expect(page.locator(".quiz-live .qn")).toHaveText("1 of 5");
+	await expect(page.locator(".quiz-live .qn")).toHaveText("1 of 3");
 	await expect(page.locator(".quiz-live .q")).toHaveText(
 		'Which Kingdom Hearts game featured the cast of "The World Ends With You"?',
 	);
@@ -71,23 +88,12 @@ test("renders the sky, every section from the fixtures, and the ten games", asyn
 	);
 	await expect(page.locator(".wx")).toContainText(/5°\s*overcast, 9° \/ 2°/);
 	await expect(page.locator(".strip")).toContainText("dry until 10:15");
-	await expect(section("h-near").locator("li")).toHaveCount(3);
-	await expect(section("h-near").locator("li").first()).toContainText(
-		"November Tubic 4 sightings",
+	await expect(page.locator(".strip")).toContainText(
+		"Grass pollen high today · Air quality poor (AQI 64)",
 	);
 	await expect(section("h-events").locator("li")).toHaveCount(5);
 	await expect(section("h-events").locator("li").first()).toContainText(
 		/^Tomorrow 19:20 Takuya Kuroda/,
-	);
-	await expect(section("h-news").locator(".paper")).toHaveText([
-		"NOS",
-		"NRC",
-		"BBC",
-		"The Guardian",
-		"NYT",
-	]);
-	await expect(section("h-news").locator("li").first()).toContainText(
-		"NOS fixture headline: sand dunes grow a metre",
 	);
 	await expect(section("h-recipes").locator(".paper")).toHaveText([
 		"The Guardian",
@@ -112,13 +118,7 @@ test("train keeps the weather, one fact and the games, and stays after a reload"
 	);
 	await train.click();
 	await expect(train).toHaveAttribute("aria-pressed", "true");
-	for (const hidden of [
-		".pic",
-		".quote",
-		"#h-news",
-		"#h-recipes",
-		"section.quiz",
-	])
+	for (const hidden of [".pic", ".quote", "#h-recipes", "section.quiz"])
 		await expect(page.locator(hidden)).toBeHidden();
 	await expect(page.locator("#h-dyk")).toBeVisible();
 	await expect(page.locator(".games .game").first()).toBeVisible();
@@ -145,8 +145,43 @@ test("the sky's bright body opens the sun, moon and tide times, and Escape close
 	await expect(almanac).toContainText(
 		/High water \d\d:\d\d and \d\d:\d\d, low \d\d:\d\d and \d\d:\d\d at Scheveningen/,
 	);
+	// the Open-Meteo marine fixture
+	await expect(almanac).toContainText(
+		"Sea at Scheveningen 11.6 °C, waves 0.1 m",
+	);
+	await expect(almanac.getByRole("link", { name: "Open-Meteo" })).toBeVisible();
+	// which planets show depends on the date: the line is there only when one is up tonight
+	const tonight = almanac.locator("p", { hasText: /^Tonight:/ });
+	if (await tonight.count())
+		for (const part of ((await tonight.textContent()) ?? "")
+			.replace(/^Tonight: /, "")
+			.split(", "))
+			expect(part).toMatch(
+				/^\w+ in the [a-z-]+(?: (?:from|until) \d\d:\d\d){0,2}(?: all night)?$/,
+			);
 	await page.keyboard.press("Escape");
 	await expect(almanac).toBeHidden();
+});
+
+test("the planets are named buttons that open the almanac, and show only in the dark", async ({
+	page,
+}) => {
+	await page.goto("/?phase=night");
+	const planets = page.locator("[data-planet]");
+	await expect(planets).toHaveCount(5);
+	for (const name of ["Mercury", "Venus", "Mars", "Jupiter", "Saturn"])
+		await expect(page.locator(`[data-planet=${name}]`)).toHaveAttribute(
+			"aria-label",
+			new RegExp(`^${name}:`),
+		);
+	const up = page.locator("[data-planet]:not([hidden])");
+	if (await up.count()) {
+		await up.first().click();
+		await expect(page.locator("#almanac")).toBeVisible();
+	}
+	await page.keyboard.press("Escape");
+	await page.goto("/?phase=day");
+	await expect(page.locator("[data-planet]:not([hidden])")).toHaveCount(0);
 });
 
 test("by day the sun is a named, focusable button that opens the times", async ({
@@ -210,6 +245,43 @@ test("the games are visible without scrolling", async ({ page }) => {
 	expect(box && view && box.y + box.height <= view.height).toBe(true);
 });
 
+test("the picture strip moves with arrows, dots and the keyboard", async ({
+	page,
+}) => {
+	await page.goto("/");
+	const strip = page.getByRole("region", { name: /Pictures of the day/ });
+	const dots = strip.locator("xpath=..").locator(".dot");
+	await expect(dots).toHaveCount(4);
+	await expect(dots.first()).toHaveAttribute("aria-current", "true");
+	await page.getByRole("button", { name: "Next picture" }).click();
+	await expect(dots.nth(1)).toHaveAttribute("aria-current", "true");
+	await expect(dots.first()).not.toHaveAttribute("aria-current");
+	await dots.nth(3).click();
+	await expect(dots.nth(3)).toHaveAttribute("aria-current", "true");
+	await expect(
+		page.getByRole("button", { name: "Next picture" }),
+	).toBeDisabled();
+	await strip.focus();
+	await page.keyboard.press("ArrowLeft");
+	await expect(dots.nth(2)).toHaveAttribute("aria-current", "true");
+	await page.getByRole("button", { name: "Previous picture" }).click();
+	await expect(dots.nth(1)).toHaveAttribute("aria-current", "true");
+});
+
+test.describe("the pictures without JavaScript", () => {
+	test.use({ javaScriptEnabled: false });
+	test("are a plain scrollable strip with every caption", async ({ page }) => {
+		await page.goto("/");
+		await expect(page.locator(".pic .slide")).toHaveCount(4);
+		await expect(page.locator(".pic button")).toHaveCount(0);
+		const strip = page.locator(".pic .slides");
+		expect(await strip.evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(
+			true,
+		);
+		await expect(page.locator(".pic figcaption a")).not.toHaveCount(0);
+	});
+});
+
 test("the desktop page fits one screen", async ({ page }) => {
 	for (const [width, height] of [
 		[1440, 900],
@@ -217,13 +289,59 @@ test("the desktop page fits one screen", async ({ page }) => {
 	]) {
 		await page.setViewportSize({ width, height });
 		await page.goto("/");
-		// the paper itself; the headlines and the footer follow below the fold
+		// the paper itself; the recipes and the footer follow below the fold
 		const tall = await page.evaluate(
 			() =>
 				document.querySelector("#paper")?.getBoundingClientRect().bottom ?? 0,
 		);
 		expect(tall).toBeLessThanOrEqual(height);
 	}
+});
+
+test("on a short desktop the picture, reading and games fit, and the quote waits under the fold", async ({
+	page,
+}) => {
+	for (const [width, height] of [
+		[1100, 700],
+		[1280, 700],
+	]) {
+		await page.setViewportSize({ width, height });
+		await page.goto("/");
+		const edges = await page.evaluate(() => {
+			const box = (s: string) =>
+				document.querySelector(s)?.getBoundingClientRect();
+			return {
+				above: [".pic", ".feat", ".reading", ".rail"].map(
+					(s) => box(s)?.bottom ?? 0,
+				),
+				rail: box(".rail")?.bottom ?? 0,
+				quote: box(".quote")?.top ?? 0,
+			};
+		});
+		for (const bottom of edges.above)
+			expect(bottom).toBeLessThanOrEqual(height);
+		expect(edges.quote).toBeGreaterThan(edges.rail);
+	}
+});
+
+test("on desktop altitude reaches the full height of the sky", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 1280, height: 800 });
+	await page.goto("/");
+	const star = page.locator("[data-orb=star]");
+	const sky = await page.locator("header.sky").boundingBox();
+	await star.evaluate((el) => {
+		el.removeAttribute("hidden");
+		el.style.setProperty("--alt", "60");
+	});
+	const box = await star.boundingBox();
+	expect(sky && box).toBeTruthy();
+	if (sky && box)
+		// the old 64px band would put 60 degrees under 76px; here it is two thirds of the way up
+		expect(sky.y + sky.height - (box.y + box.height / 2)).toBeGreaterThan(
+			(sky.height - 76) * 0.5,
+		);
 });
 
 test("the quiz asks one question at a time and keeps the score", async ({
@@ -385,6 +503,18 @@ test("the about page says what is kept and links the source", async ({
 	await expect(page.locator("h1")).toHaveText("Below the horizon");
 });
 
+test("yesterday's paper shows the stored day with the quiz answers", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page.getByRole("link", { name: "Yesterday's paper" }).click();
+	await expect(page.getByText("Which planet is red?")).toBeVisible();
+	await expect(page.locator("strong", { hasText: "Mars" })).toBeVisible();
+	await expect(page.getByText("Yesterday's quote.")).toBeVisible();
+	await page.getByRole("link", { name: "Today's paper" }).click();
+	await expect(page).toHaveURL(/\/$/);
+});
+
 test("security headers and a CSP that the page keeps to", async ({
 	page,
 	request,
@@ -442,6 +572,7 @@ const PHASES = ["night", "first-light", "dawn", "day", "dusk"];
 for (const path of [
 	...PHASES.map((p) => `/?phase=${p}`),
 	"/about",
+	"/yesterday",
 	"/no-such-page",
 ]) {
 	test(`no axe violations (WCAG 2.2 AA) on ${path}`, async ({ page }) => {

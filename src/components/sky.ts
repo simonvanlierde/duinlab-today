@@ -41,18 +41,21 @@ export function moonPath(m: Moon, r = 9): string {
  * All three share the sun's mapping: across by hour angle (the sun's own sunrise-to-sunset
  * fraction, so the moon on the meridian is where the sun is at noon) and up by altitude.
  * The sun shows while it is nearly up, the moon while it is above the horizon, the star only
- * when neither does, so the masthead always has one way into the almanac.
+ * when neither does, so the masthead always has one way into the almanac. Planets show
+ * once the sun is 6 degrees down and they are above 3 degrees.
  * Self-contained: the layout inlines it into the page; the sky functions come in as arguments.
  */
 export function bodiesAt<
 	M extends { alt: number; h: number },
 	S extends { alt: number; h: number },
+	P extends { alt: number; h: number },
 >(
 	sun: { sunrise: string; sunset: string },
 	now: number,
 	sunAlt: number,
 	moonNow: (now: number) => M,
 	starNow: (now: number) => S,
+	planetsNow: (now: number) => P[] = () => [],
 ) {
 	const rise = Date.parse(sun.sunrise);
 	const set = Date.parse(sun.sunset);
@@ -73,6 +76,9 @@ export function bodiesAt<
 			show: !sunShow && !moonShow,
 			x: across(star.h),
 		}),
+		planets: planetsNow(now).map((p) =>
+			Object.assign({}, p, { show: sunAlt < -6 && p.alt > 3, x: across(p.h) }),
+		),
 	};
 }
 

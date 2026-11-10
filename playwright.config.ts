@@ -27,7 +27,7 @@ export default defineConfig({
 		},
 		{
 			// its own KV and cache state, emptied each run: a day stored by `wrangler dev` never leaks in
-			command: `rm -rf .wrangler/e2e && pnpm build && pnpm exec wrangler dev --port ${port} --persist-to .wrangler/e2e --var FIXTURE_ORIGIN:${fixtures}`,
+			command: `rm -rf .wrangler/e2e && pnpm build && node e2e/seed-yesterday.mjs && pnpm exec wrangler dev --port ${port} --persist-to .wrangler/e2e --var FIXTURE_ORIGIN:${fixtures}`,
 			url: `http://localhost:${port}`,
 			// a reused server could be serving an older build
 			reuseExistingServer: false,

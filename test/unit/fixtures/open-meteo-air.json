@@ -1,0 +1,20 @@
+{
+	"latitude": 52.1,
+	"longitude": 4.3,
+	"timezone": "GMT",
+	"current_units": {
+		"time": "iso8601",
+		"european_aqi": "EAQI",
+		"grass_pollen": "grains/m³"
+	},
+	"current": {
+		"time": "2026-11-10T11:00",
+		"interval": 3600,
+		"european_aqi": 64,
+		"grass_pollen": 60.0,
+		"birch_pollen": 0.0,
+		"alder_pollen": 0.0,
+		"ragweed_pollen": 0.0,
+		"mugwort_pollen": 0.0
+	}
+}

@@ -35,18 +35,6 @@ function redated(body, base) {
 	);
 }
 
-const PAPERS = {
-	"feeds.nos.nl": "NOS",
-	"www.nrc.nl": "NRC",
-	"feeds.bbci.co.uk": "BBC",
-	"www.theguardian.com": "The Guardian",
-	"rss.nytimes.com": "NYT",
-};
-const rss = (host) =>
-	`<?xml version="1.0"?><rss version="2.0"><channel><title>${PAPERS[host]}</title>` +
-	`<item><title><![CDATA[${PAPERS[host]} fixture headline: sand dunes grow a metre]]></title>` +
-	`<link>https://${host}/fixture-story</link></item></channel></rss>`;
-
 const RECIPE_HOSTS = {
 	"www.theguardian.com": "The Guardian",
 	"www.bbcgoodfood.com": "Good Food",
@@ -72,9 +60,24 @@ const HOSTS = {
 			? ["application/json", '{"total":1,"objectIDs":[436535]}']
 			: ["application/json", metObject()],
 	"images.metmuseum.org": () => ["image/png", png],
+	"iiif.micr.io": () => ["image/png", png],
+	"api.artic.edu": () => ["application/json", text("aic-search.json")],
+	"data.rijksmuseum.nl": () => [
+		"application/ld+json",
+		text("rijks-search.json"),
+	],
+	"id.rijksmuseum.nl": () => ["application/ld+json", text("rijks-object.json")],
 	"opentdb.com": () => ["application/json", text("opentdb.json")],
 	"zenquotes.io": () => ["application/json", text("zenquotes.json")],
 	"api.open-meteo.com": () => ["application/json", text("open-meteo.json")],
+	"air-quality-api.open-meteo.com": () => [
+		"application/json",
+		text("open-meteo-air.json"),
+	],
+	"marine-api.open-meteo.com": () => [
+		"application/json",
+		text("open-meteo-marine.json"),
+	],
 	"gpsgadget.buienradar.nl": () => ["text/plain", text("buienradar.txt")],
 	// both recorded on 2026-11-09
 	"ddapi20-waterwebservices.rijkswaterstaat.nl": () => [
@@ -85,21 +88,11 @@ const HOSTS = {
 		"text/html",
 		redated(text("paard.html"), "2026-11-09"),
 	],
-	"api.inaturalist.org": () => ["application/json", text("inaturalist.json")],
 	...Object.fromEntries(
-		Object.keys(PAPERS).map((h) => [
+		Object.keys(RECIPE_HOSTS).map((h) => [
 			h,
-			// the Guardian serves both the world feed and the recipes feed
-			(path) => [
-				"application/rss+xml",
-				path.includes("/recipes/") ? recipeRss(h) : rss(h),
-			],
+			() => ["application/rss+xml", recipeRss(h)],
 		]),
-	),
-	...Object.fromEntries(
-		Object.keys(RECIPE_HOSTS)
-			.filter((h) => !(h in PAPERS))
-			.map((h) => [h, () => ["application/rss+xml", recipeRss(h)]]),
 	),
 };
 

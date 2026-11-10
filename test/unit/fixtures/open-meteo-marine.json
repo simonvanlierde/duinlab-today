@@ -1,0 +1,21 @@
+{
+	"latitude": 52.125008,
+	"longitude": 4.1250153,
+	"generationtime_ms": 0.06198883056640625,
+	"utc_offset_seconds": 0,
+	"timezone": "GMT",
+	"timezone_abbreviation": "GMT",
+	"elevation": 0.0,
+	"current_units": {
+		"time": "iso8601",
+		"interval": "seconds",
+		"wave_height": "m",
+		"sea_surface_temperature": "°C"
+	},
+	"current": {
+		"time": "2026-11-10T11:45",
+		"interval": 900,
+		"wave_height": 0.1,
+		"sea_surface_temperature": 11.6
+	}
+}

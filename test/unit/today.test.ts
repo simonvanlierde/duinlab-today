@@ -11,7 +11,10 @@ const kv = {
 		store.set(key, value);
 	}),
 };
-vi.mock("cloudflare:workers", () => ({ env: { DAYS: kv, NASA_API_KEY: "" } }));
+vi.mock("cloudflare:workers", () => ({
+	env: { DAYS: kv, NASA_API_KEY: "" },
+	waitUntil: () => {},
+}));
 
 const buildDay = vi.fn();
 vi.mock("../../src/lib/build", async (importOriginal) => ({
@@ -22,12 +25,13 @@ vi.mock("../../src/lib/build", async (importOriginal) => ({
 const { refreshDay } = await import("../../src/lib/today");
 
 const NOW = new Date("2026-11-10T08:00:00Z");
-const KEY = "day/v1/2026-11-10";
+const KEY = "day/v2/2026-11-10";
 const day = (quiz: string) =>
 	({
 		date: "2026-11-10",
 		generatedAt: NOW.toISOString(),
 		didYouKnow: [],
+		pictures: [],
 		quiz: { questions: [], id: quiz },
 	}) as unknown as Day;
 const storedQuiz = () => JSON.parse(store.get(KEY) ?? "null")?.quiz.id;

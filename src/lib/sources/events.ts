@@ -98,3 +98,60 @@ export function parseEvents(html: string, date: string): Events | null {
 
 export const fetchEvents = (date: string) =>
 	safe("events", async () => parseEvents(await getText(AGENDA), date));
+
+/** One item of `agenda/v1` in KV, which a homelab job writes twice a month from Amare and denhaag.com. */
+interface AgendaItem {
+	venue: string;
+	name: string;
+	url: string;
+	/** YYYY-MM-DD, Europe/Amsterdam */
+	start: string;
+	time: string | null;
+	end: string | null;
+}
+
+/**
+ * Paard's week plus the agenda's events that start this week (`date` through date+6), sorted,
+ * at most MAX and two per venue when there are several. The credit names every venue that has an item.
+ */
+export function withAgenda(
+	paard: Events | null,
+	agenda: { items: AgendaItem[] } | null,
+	date: string,
+): Events | null {
+	const last = shift(date, 6);
+	const extra: Happening[] = (agenda?.items ?? [])
+		.filter((a) => a.start >= date && a.start <= last && httpsUrl(a.url))
+		.map((a) => ({
+			name: a.name,
+			day: a.start,
+			time: a.time,
+			venue: a.venue,
+			url: a.url,
+		}));
+	if (!paard && extra.length === 0) return null;
+	const all = [...(paard?.items ?? []), ...extra].sort((a, b) =>
+		`${a.day}T${a.time ?? "00:00"}`.localeCompare(
+			`${b.day}T${b.time ?? "00:00"}`,
+		),
+	);
+	// denhaag.com lists dozens a week: two per venue keeps one source from filling the list
+	const perVenue = new Set(all.map((i) => i.venue)).size > 1 ? 2 : MAX;
+	const taken = new Map<string, number>();
+	const items = all
+		.filter((i) => {
+			const n = taken.get(i.venue) ?? 0;
+			taken.set(i.venue, n + 1);
+			return n < perVenue;
+		})
+		.slice(0, MAX);
+	const venues = [...new Set(items.map((i) => i.venue))];
+	return {
+		items,
+		url: paard?.url ?? AGENDA,
+		credit: {
+			name: venues.join(", ") || "Paard",
+			url: paard?.credit.url ?? AGENDA,
+		},
+	};
+}

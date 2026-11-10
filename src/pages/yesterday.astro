@@ -1,0 +1,95 @@
+---
+import Cue from "../components/Cue.astro";
+import Pictures from "../components/Pictures.astro";
+import Plain from "../layouts/Plain.astro";
+import { longDate } from "../lib/format";
+import { getYesterday } from "../lib/today";
+
+const day = await getYesterday();
+const quiz = day?.quiz?.questions.length ? day.quiz : null;
+---
+
+<Plain
+	title="Yesterday · today.duinlab.nl"
+	description="Yesterday's page from The Hague: its pictures, facts, word and quiz answers."
+	label="yesterday"
+>
+	<Fragment slot="title">{day ? longDate(day.date) : "Yesterday"}</Fragment>
+
+	{
+		!day && (
+			<p>
+				Yesterday's paper is gone already: only today's is kept. <a href="/">Back to today</a>.
+			</p>
+		)
+	}
+	{day && day.pictures.length > 0 && <Pictures pictures={day.pictures} />}
+	{
+		day?.featured && (
+			<section aria-labelledby="h-featured">
+				<Cue id="h-featured">Featured article</Cue>
+				<p>
+					<a href={day.featured.url}><strong>{day.featured.title}</strong></a>. {day.featured.extract}
+				</p>
+			</section>
+		)
+	}
+	{
+		day && day.didYouKnow.length > 0 && (
+			<section aria-labelledby="h-dyk">
+				<Cue id="h-dyk">Did you know</Cue>
+				<ul>
+					{day.didYouKnow.map((f) => (
+						<li>
+							&hellip; that <a href={f.url}>{f.text}</a>
+						</li>
+					))}
+				</ul>
+			</section>
+		)
+	}
+	{
+		day?.word && (
+			<section aria-labelledby="h-word">
+				<Cue id="h-word">Word</Cue>
+				<p>
+					<a href={day.word.url}><strong lang="en">{day.word.word}</strong></a>
+					{day.word.partOfSpeech && <em> {day.word.partOfSpeech}</em>} {day.word.gloss}
+				</p>
+			</section>
+		)
+	}
+	{
+		quiz && (
+			<section aria-labelledby="h-quiz">
+				<Cue id="h-quiz">Quiz answers</Cue>
+				<ol>
+					{quiz.questions.map((q) => (
+						<li>
+							{q.question} <strong>{q.answers[q.correct]}</strong>
+						</li>
+					))}
+				</ol>
+				<p class="src"><a href={quiz.credit.url}>{quiz.credit.name}</a></p>
+			</section>
+		)
+	}
+	{
+		day?.onThisDay && (
+			<section aria-labelledby="h-otd">
+				<Cue id="h-otd">On this day</Cue>
+				<p>
+					<strong>{day.onThisDay.year}</strong> <a href={day.onThisDay.url}>{day.onThisDay.text}</a>
+				</p>
+			</section>
+		)
+	}
+	{
+		day?.quote && (
+			<figure class="quote">
+				<blockquote>&ldquo;{day.quote.text}&rdquo;</blockquote>
+				<figcaption>{day.quote.author}</figcaption>
+			</figure>
+		)
+	}
+</Plain>

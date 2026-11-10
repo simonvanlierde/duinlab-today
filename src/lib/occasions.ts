@@ -1,11 +1,15 @@
-/** Dutch public holidays and a few customs, for one line under the date. */
-interface Occasion {
+import { skyYear } from "./sky-events";
+
+/** Dutch public holidays and customs, and sky events, for one line under the date. */
+export interface Occasion {
 	/** YYYY-MM-DD */
 	date: string;
 	/** "Sint-Maarten", used in "Sint-Maarten in 5 days". */
 	name: string;
 	/** The line on the day itself. */
 	today: string;
+	/** A sky event, which a holiday on the same day outranks. */
+	sky?: true;
 }
 
 const iso = (y: number, m: number, d: number) =>
@@ -41,7 +45,7 @@ function nth(y: number, month: number, weekday: number, n: number): number {
 	return lastDay - ((last - weekday + 7) % 7);
 }
 
-function year(y: number): Occasion[] {
+function holidays(y: number): Occasion[] {
 	const [em, ed] = easter(y);
 	const e = (by: number) => iso(y, em, ed + by);
 	const kings = new Date(Date.UTC(y, 3, 27)).getUTCDay() === 0 ? 26 : 27;
@@ -125,8 +129,26 @@ function year(y: number): Occasion[] {
 	];
 }
 
-/** "Sint-Maarten in 5 days", "Pakjesavond tomorrow", the day's own line, or null. Looks 10 days ahead. */
-export function occasionLine(date: string): string | null {
+// astronomy-engine searches are not free, and a year never changes
+const years = new Map<number, Occasion[]>();
+function year(y: number): Occasion[] {
+	let all = years.get(y);
+	if (!all) {
+		const holiday = holidays(y);
+		const days = new Set(holiday.map((o) => o.date));
+		all = [...holiday, ...skyYear(y).filter((o) => !days.has(o.date))];
+		years.set(y, all);
+	}
+	return all;
+}
+
+/**
+ * "Sint-Maarten in 5 days", "Pakjesavond tomorrow", the day's own line, or null. Looks 10 days
+ * ahead. `sky` says the line is a sky event, not a Dutch holiday or custom.
+ */
+export function occasionLine(
+	date: string,
+): { text: string; sky: boolean } | null {
 	const y = Number(date.slice(0, 4));
 	const t = Date.parse(`${date}T00:00:00Z`);
 	const all = [...year(y), ...year(y + 1)].sort((a, b) =>
@@ -137,13 +159,17 @@ export function occasionLine(date: string): string | null {
 	const days = Math.round(
 		(Date.parse(`${next.date}T00:00:00Z`) - t) / 86400000,
 	);
+	const sky = !!next.sky;
 	// two occasions can share a day (Easter and summer time, 2027-03-28)
 	if (days === 0)
-		return all
-			.filter((o) => o.date === next.date)
-			.map((o) => o.today)
-			.join(". ");
-	if (days === 1) return `${next.name} tomorrow`;
-	if (days <= 10) return `${next.name} in ${days} days`;
+		return {
+			text: all
+				.filter((o) => o.date === next.date)
+				.map((o) => o.today)
+				.join(". "),
+			sky,
+		};
+	if (days === 1) return { text: `${next.name} tomorrow`, sky };
+	if (days <= 10) return { text: `${next.name} in ${days} days`, sky };
 	return null;
 }

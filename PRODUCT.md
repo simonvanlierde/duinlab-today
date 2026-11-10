@@ -20,7 +20,7 @@ frontend-stack ruling of 2026-11-04 (content site: Astro, Adopt; Svelte 5 island
 
 ## Product Purpose
 
-A daily "morning paper" for two curious people: today's picture, a few sourced facts, a word,
+A daily "morning paper" for two curious people: today's pictures, a few sourced facts, a word,
 a short quiz, and the daily web games they play, each with a played-today checkmark and a
 streak. Success: they open it most mornings, and it replaces a scattered bookmarks folder and
 a dozen open tabs.
@@ -28,8 +28,8 @@ a dozen open tabs.
 ## Positioning
 
 Hand-picked for two people rather than an aggregator: a short, fixed set of daily games, a
-quiz scored on the page, and facts from sourced feeds (Wikipedia, Wiktionary, NASA APOD, The
-Met), never generated text. The same `/today.json` feeds the household's email digests.
+quiz scored on the page, and facts and pictures from sourced feeds (Wikipedia, Wiktionary, NASA APOD, The
+Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The same `/today.json` feeds the household's email digests.
 
 ## Operating Context
 
@@ -41,21 +41,33 @@ Met), never generated text. The same `/today.json` feeds the household's email d
   Wordle, Raddle, Timdle, Metazooa.
 - Weather: Open-Meteo forecast for The Hague (52.08 N, 4.31 E), no key, credited; the weather
   line links to meteoblue's week forecast. The rain line comes from Buienradar's radar (5-minute
-  steps), with Open-Meteo as the fallback.
-- Headlines: the top story from NOS, NRC, the BBC, the Guardian and the New York Times,
-  below the paper. Five lines, not a news section.
+  steps), with Open-Meteo as the fallback. A line on air quality or pollen
+  (Open-Meteo air-quality API, no key, credited) shows only when the European AQI is 60 or more
+  or a pollen count is high.
 - Recipes: the newest recipe from the Guardian, BBC Good Food and Love and Lemons, title and
-  link only, beside the headlines. NYT Cooking is left out: it has no public feed.
+  link only, below the paper. NYT Cooking is left out: it has no public feed.
+- On a desktop screen shorter than 760 px, On this day and the quote start under the fold, so the
+  rest of the paper fits one screen.
+- Live feeds (weather, recipes) are cached and served stale while refreshed in the background, so a
+  cold view does not wait on them; weather is never served more than about 2 h past its 15 minutes.
 - Sources: Wikipedia featured feed (On this day, Did you know, the featured article), Wiktionary word of the day,
-  Open Trivia DB (five questions per day, CC BY-SA 4.0, credited), NASA APOD (API key), The
-  Met collection API (public-domain highlights, and the picture when APOD has none),
+  Open Trivia DB (three questions per day, CC BY-SA 4.0, credited), NASA APOD (API key), The
+  Met collection API (public-domain highlights), the Art Institute of Chicago and Rijksmuseum (public-domain
+  artworks, no key), the Wikipedia picture of the day (credited with its licence),
   ZenQuotes (credited).
 - Local Hague, below the paper: high and low water at Scheveningen (Rijkswaterstaat, in the
-  moon's popover), the three species seen most within 15 km this week (iNaturalist, research
-  grade, no photos since most need per-photo credit), and the next five shows at Paard.
+  moon's popover), and this week's shows and events from Paard, Amare and DenHaag.com, two per
+  venue. Amare and DenHaag.com block scripts, so a weekly homelab job reads them through a headless
+  browser and writes `agenda/v1` to Workers KV; the Worker merges it with Paard's.
+- Yesterday's paper at `/yesterday`: the stored day before today, read-only, quiz answers shown.
+- Sea: temperature and wave height off Scheveningen from Open-Meteo's marine API (keyless, credited),
+  in the almanac popover beside the tides, cached for an hour.
+- Sky: Astronomy Engine (MIT) gives the bright planets, full moons, solstices, equinoxes and
+  eclipses seen from The Hague; meteor shower peaks are fixed approximate dates.
 - Also on the page: the moon in its real phase, high in the sky, which opens the sun times,
-  golden hour, day length and moon phase; the games played in the phone's bar, Dutch holidays and customs ahead (a
-  static table), day length, a share
+  golden hour, day length, moon phase, the planets up tonight, the sea and the tides. At night
+  the bright planets are small named points in the sky like the moon; the games played in the phone's bar, Dutch holidays and customs ahead (a
+  static table) and sky events (full moons, meteor peaks, solstices, equinoxes, eclipses; a holiday wins), day length, a share
   line for the quiz score and games played, and an About page (privacy, accessibility,
   sources, code).
 
@@ -63,7 +75,7 @@ Met), never generated text. The same `/today.json` feeds the household's email d
 
 - Public, no accounts, nothing personal on the server. Checkmarks and streaks live in each
   browser (`localStorage`) and must survive their absence (private windows).
-- Each source fails on its own: a missing source drops its section, never the page.
+- Each source fails on its own: a missing source drops its section, never the page. The pictures are a swipe strip of up to five, one per source, each with its own caption and credit; a source that fails drops only its slide.
 - The page must read fully without JavaScript; only checkmarks, streaks and the quiz need it.
 - English only.
 - Open decision: a shared view of each other's progress, later, which would need server state.
@@ -78,7 +90,7 @@ Met), never generated text. The same `/today.json` feeds the household's email d
 
 ## Evidence on Hand
 
-No logo, photography or brand assets exist. Daily imagery comes from APOD and The Met; credit
+No logo, photography or brand assets exist. Daily imagery comes from APOD, The Met, Wikipedia, the Art Institute and the Rijksmuseum; credit
 lines come with each source. There are no users, metrics or testimonials to cite.
 
 ## Product Principles

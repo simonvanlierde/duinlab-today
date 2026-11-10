@@ -9,8 +9,15 @@ interface Props {
 	description: string;
 	/** The sky to show: day for the about page, night for a missing page. */
 	sky?: "day" | "night";
+	/** The word in the top bar beside the site name. */
+	label?: string;
 }
-const { title, description, sky = "day" } = Astro.props;
+const {
+	title,
+	description,
+	sky = "day",
+	label = sky === "night" ? "below the horizon" : "about",
+} = Astro.props;
 const s = skyAt(PHASE_SUN[sky].alt, true, SKY);
 const style = Object.entries(s.vars)
 	.map(([k, v]) => `${k}:${v}`)
@@ -32,7 +39,7 @@ const style = Object.entries(s.vars)
 		<p class="bar">
 			<span class="wrap bar-in">
 				<a href="/">today.duinlab.nl</a>
-				<span>{sky === "night" ? "below the horizon" : "about"}</span>
+				<span>{label}</span>
 			</span>
 		</p>
 		<header class="sky sky-slim">

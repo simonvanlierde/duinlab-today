@@ -1,5 +1,5 @@
 import { allPlayed, amsterdamDay } from "../lib/day";
-import { moonNow, starNow } from "../lib/moon";
+import { moonNow, planetsAt, starNow } from "../lib/moon";
 import { phaseAt, type SkyPhase, sunAltitude } from "../lib/sun";
 import type { Sun } from "../lib/types";
 import {
@@ -13,6 +13,13 @@ import {
 } from "./sky";
 
 /** The functions the page runs, inlined by their source: each must be self-contained. */
+/** Planets by how bright they usually look, so the brighter one keeps its place. */
+const BRIGHTEST_FIRST = ["Venus", "Jupiter", "Mars", "Saturn", "Mercury"];
+
+/** Whether two boxes share any area. */
+export const overlap = (a: DOMRectReadOnly, b: DOMRectReadOnly) =>
+	a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+
 const INLINED = {
 	phaseAt,
 	sunAltitude,
@@ -20,7 +27,9 @@ const INLINED = {
 	bodiesAt,
 	moonNow,
 	starNow,
+	planetsAt,
 	moonPath,
+	overlap,
 	amsterdamDay,
 	allPlayed,
 };
@@ -34,6 +43,8 @@ type Cfg = {
 	key: string;
 	table: typeof SKY;
 	phaseSun: typeof PHASE_SUN;
+	planets: [string, number, number][];
+	brightest: string[];
 } & typeof INLINED;
 
 // Same rules as the server: the sky follows the sun's altitude on the browser clock, and
@@ -112,12 +123,31 @@ const boot = (cfg: Cfg) => {
 			sun.alt,
 			cfg.moonNow,
 			cfg.starNow,
+			(t) => cfg.planetsAt(cfg.planets, t),
 		);
 		for (const el of document.querySelectorAll<HTMLElement>("[data-orb]")) {
 			const b = sky2[el.dataset.orb as "sun" | "moon" | "star"];
 			el.hidden = !b.show;
 			el.style.setProperty("--x", b.x.toFixed(4));
 			el.style.setProperty("--alt", b.alt.toFixed(2));
+		}
+		for (const el of document.querySelectorAll<HTMLElement>("[data-planet]")) {
+			const b = sky2.planets.find((p) => p.name === el.dataset.planet);
+			el.hidden = !b?.show;
+			if (!b) continue;
+			el.style.setProperty("--x", b.x.toFixed(4));
+			el.style.setProperty("--alt", b.alt.toFixed(2));
+		}
+		// two bodies close in the sky would stack their buttons: the dimmer planet gives way
+		const taken = [
+			...document.querySelectorAll<HTMLElement>("[data-orb]:not([hidden])"),
+		].map((el) => el.getBoundingClientRect());
+		for (const name of cfg.brightest) {
+			const el = document.querySelector<HTMLElement>(`[data-planet="${name}"]`);
+			if (!el || el.hidden) continue;
+			const r = el.getBoundingClientRect();
+			if (taken.some((t) => cfg.overlap(t, r))) el.hidden = true;
+			else taken.push(r);
 		}
 		const m = sky2.moon;
 		for (const el of document.querySelectorAll("[data-moon-path]"))
@@ -207,6 +237,8 @@ export function skyBootScript(day: {
 	/** The `?phase=` the page keeps, or null to follow the clock. */
 	forced: SkyPhase | null;
 	ids: string[];
+	/** Name, right ascension and declination in degrees, from `planetPositions`. */
+	planets?: [string, number, number][];
 }): string {
 	const cfg = {
 		sun: day.sun,
@@ -217,6 +249,8 @@ export function skyBootScript(day: {
 		key: "today.games.v1",
 		table: SKY,
 		phaseSun: PHASE_SUN,
+		planets: day.planets ?? [],
+		brightest: BRIGHTEST_FIRST,
 	};
 	const fns = Object.entries(INLINED)
 		.map(([name, fn]) => `${JSON.stringify(name)}:${fn.toString()}`)

@@ -72,7 +72,7 @@ export function saveQuiz(
 export const quizStreak = (done: string[], day = amsterdamDay()) =>
 	streak((d) => done.includes(d), day);
 
-/** " · quiz 3/5" when today's quiz score is saved, else "": for the share line. */
+/** " · quiz 2/3" when today's quiz score is saved, else "": for the share line. */
 export function sharedScore(day = amsterdamDay()): string {
 	try {
 		const q = JSON.parse(localStorage.getItem(KEY) ?? "null");

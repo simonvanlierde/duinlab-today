@@ -1,6 +1,5 @@
 import { fetchEvents } from "./sources/events";
-import { fetchNearYou } from "./sources/nature";
-import { fetchPicture, preferredPicture } from "./sources/picture";
+import { fetchPictures, mergePictures } from "./sources/picture";
 import { fetchQuote } from "./sources/quote";
 import { fetchTides } from "./sources/tides";
 import { fetchQuiz } from "./sources/trivia";
@@ -9,8 +8,8 @@ import { fetchWord } from "./sources/wiktionary";
 import { moonAt, sunTimes } from "./sun";
 import type { Today } from "./types";
 
-/** The day's sources, fetched in parallel, each failing on its own. Weather, news, recipes and games are added on read. */
-export type Day = Omit<Today, "weather" | "news" | "recipes" | "games">;
+/** The day's sources, fetched in parallel, each failing on its own. Weather, sea, recipes and games are added on read. */
+export type Day = Omit<Today, "weather" | "sea" | "recipes" | "games">;
 
 /**
  * A rebuild passes the stored day as `prev` and fetches only the sections it lacks: asking a
@@ -27,37 +26,33 @@ export async function buildDay(
 		have ? Promise.resolve(have) : fetch();
 	const wikiDone =
 		prev && prev.didYouKnow.length > 0 && prev.onThisDay && prev.featured;
-	// The Met standing in for APOD is fetched again until APOD publishes
-	const pictureDone =
-		prev?.picture &&
-		!(
-			apiKey &&
-			preferredPicture(date) === "apod" &&
-			prev.picture.kind === "met"
-		);
-	const [wiki, picture, word, quote, quiz, tides, nearYou, events] =
-		await Promise.all([
-			wikiDone
-				? Promise.resolve({
-						didYouKnow: prev.didYouKnow,
-						onThisDay: prev.onThisDay,
-						featured: prev.featured,
-					})
-				: fetchWikipedia(date),
-			pictureDone ? Promise.resolve(prev.picture) : fetchPicture(date, apiKey),
-			keep(prev?.word, () => fetchWord(date)),
-			keep(prev?.quote, () => fetchQuote()),
-			keep(prev?.quiz, () => fetchQuiz(date)),
-			keep(prev?.tides, () => fetchTides(date)),
-			keep(prev?.nearYou, () => fetchNearYou(date)),
-			keep(prev?.events, () => fetchEvents(date)),
-		]);
+	const have = prev?.pictures ?? [];
+	const [wiki, pictures, word, quote, quiz, tides, events] = await Promise.all([
+		wikiDone
+			? Promise.resolve({
+					didYouKnow: prev.didYouKnow,
+					onThisDay: prev.onThisDay,
+					featured: prev.featured,
+					image: null,
+				})
+			: fetchWikipedia(date),
+		fetchPictures(
+			date,
+			apiKey,
+			have.map((p) => p.kind),
+		),
+		keep(prev?.word, () => fetchWord(date)),
+		keep(prev?.quote, () => fetchQuote()),
+		keep(prev?.quiz, () => fetchQuiz(date)),
+		keep(prev?.tides, () => fetchTides(date)),
+		keep(prev?.events, () => fetchEvents(date)),
+	]);
 	return {
 		date,
 		generatedAt: now.toISOString(),
 		sun: sunTimes(date),
 		moon: moonAt(new Date(`${date}T12:00:00Z`)),
-		picture,
+		pictures: mergePictures(have, pictures, wiki.image ? [wiki.image] : []),
 		didYouKnow: wiki.didYouKnow,
 		onThisDay: wiki.onThisDay,
 		featured: wiki.featured,
@@ -65,7 +60,6 @@ export async function buildDay(
 		quote,
 		quiz,
 		tides,
-		nearYou,
 		events,
 	};
 }
@@ -75,14 +69,13 @@ export async function buildDay(
  * day stored before it existed is undefined: missing, so the next run fills it in.
  */
 const sections = (d: Day) => [
-	d.picture,
+	d.pictures.length > 0 ? d.pictures : null,
 	d.onThisDay,
 	d.featured,
 	d.word,
 	d.quote,
 	d.quiz,
 	d.tides,
-	d.nearYou,
 	d.events,
 	d.didYouKnow.length > 0 ? d.didYouKnow : null,
 ];
@@ -91,31 +84,23 @@ const missingSections = (d: Day) => sections(d).filter((s) => !s).length;
 
 export const allFailed = (d: Day) => sections(d).every((s) => !s);
 
-/** Not final yet: a source is missing, or The Met stands in for APOD, which publishes at 06:00. */
+/** Not final yet: a source is missing, or APOD, which publishes at 06:00, is not in yet. */
 export function incomplete(d: Day, hasApodKey: boolean): boolean {
 	return (
 		missingSections(d) > 0 ||
-		(hasApodKey &&
-			preferredPicture(d.date) === "apod" &&
-			d.picture?.kind === "met")
+		(hasApodKey && !d.pictures.some((p) => p.kind === "apod"))
 	);
 }
 
 /**
  * A rebuild keeps every section the earlier build already had, so the quiz never changes under
- * someone halfway through it. The picture switches only to the day's preferred source.
+ * someone halfway through it. Pictures merge per source: a stored one is never replaced.
  */
 export function mergeDay(prev: Day | null, fresh: Day): Day {
 	if (!prev || prev.date !== fresh.date) return fresh;
-	const preferred = preferredPicture(fresh.date);
 	return {
 		...fresh,
-		picture:
-			prev.picture?.kind === preferred
-				? prev.picture
-				: fresh.picture?.kind === preferred
-					? fresh.picture
-					: (prev.picture ?? fresh.picture),
+		pictures: mergePictures(prev.pictures ?? [], fresh.pictures),
 		didYouKnow: prev.didYouKnow.length > 0 ? prev.didYouKnow : fresh.didYouKnow,
 		onThisDay: prev.onThisDay ?? fresh.onThisDay,
 		featured: prev.featured ?? fresh.featured,
@@ -123,7 +108,6 @@ export function mergeDay(prev: Day | null, fresh: Day): Day {
 		quote: prev.quote ?? fresh.quote,
 		quiz: prev.quiz ?? fresh.quiz,
 		tides: prev.tides ?? fresh.tides,
-		nearYou: prev.nearYou ?? fresh.nearYou,
 		events: prev.events ?? fresh.events,
 	};
 }

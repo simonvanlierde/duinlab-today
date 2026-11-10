@@ -1,6 +1,6 @@
 // The day's data, as rendered by the page and served at /today.json. When a source fails its
-// section is dropped: `didYouKnow` is [], and picture, onThisDay, featured, word, quote, quiz,
-// tides, nearYou, events and weather are null. Instants are ISO strings (`generatedAt` and `fetchedAt` in UTC, `sun`
+// section is dropped: `didYouKnow` and `pictures` are [], and onThisDay, featured, word, quote, quiz,
+// tides, events, weather and sea are null. Instants are ISO strings (`generatedAt` and `fetchedAt` in UTC, `sun`
 // with the Amsterdam offset); `rainNext2h` times are bare HH:MM on the Amsterdam clock.
 
 /** Where an item came from, shown as its credit line. */
@@ -10,7 +10,7 @@ export interface Credit {
 }
 
 export interface Picture {
-	kind: "apod" | "met";
+	kind: "apod" | "met" | "wikipedia" | "aic" | "rijks";
 	title: string;
 	/** Artist or photographer, when the source names one. */
 	by: string | null;
@@ -101,6 +101,8 @@ export interface Weather {
 	rainNext2h: { time: string; mm: number }[];
 	/** Which of the two `rainNext2h` comes from. */
 	rainCredit: Credit;
+	/** "Air quality poor (AQI 64)" or "Grass pollen high today"; null when both are fine or the air feed failed. */
+	air: string | null;
 	/** ISO instant the forecast was fetched; weather is cached for 15 minutes. */
 	fetchedAt: string;
 	credit: Credit;
@@ -132,11 +134,11 @@ export interface Game {
 	blurb: string;
 }
 
-/** A paper's top story or a cooking site's newest recipe, linked to the source. */
-export interface Headline {
+/** A cooking site's newest recipe, linked to the source. */
+export interface Recipe {
 	title: string;
 	url: string;
-	/** The source's short name ("NOS", "BBC", "Good Food"). */
+	/** The source's short name ("The Guardian", "Good Food"). */
 	source: string;
 }
 
@@ -148,17 +150,10 @@ export interface Tides {
 	url: string;
 }
 
-export interface Sighting {
-	/** English common name, else the scientific name. */
-	name: string;
-	scientific: string;
-	count: number;
-	url: string;
-}
-
-export interface NearYou {
-	species: Sighting[];
-	url: string;
+/** Sea temperature and wave height off Scheveningen (Open-Meteo marine model, about 10 km cells). */
+export interface Sea {
+	temperatureC: number | null;
+	waveHeightM: number | null;
 	credit: Credit;
 }
 
@@ -185,7 +180,8 @@ export interface Today {
 	generatedAt: string;
 	sun: Sun;
 	moon: Moon;
-	picture: Picture | null;
+	/** Up to five, in the order of PICTURE_ORDER; [] when every source failed. */
+	pictures: Picture[];
 	didYouKnow: Fact[];
 	onThisDay: OnThisDay | null;
 	featured: Featured | null;
@@ -193,12 +189,11 @@ export interface Today {
 	quote: Quote | null;
 	quiz: Quiz | null;
 	tides: Tides | null;
-	nearYou: NearYou | null;
 	events: Events | null;
 	weather: Weather | null;
-	/** Up to five, one per paper; [] when every feed failed. Cached for 30 minutes. */
-	news: Headline[];
+	/** Cached for an hour; null when the marine feed failed. */
+	sea: Sea | null;
 	/** Up to three, one per site (a recipe, not a paper's story); [] when every feed failed. Cached for 3 hours. */
-	recipes: Headline[];
+	recipes: Recipe[];
 	games: Game[];
 }

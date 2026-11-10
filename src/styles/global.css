@@ -221,13 +221,13 @@ summary,
 	min-height: 40px;
 	font-variant-numeric: tabular-nums;
 }
-/* the toggle needs the boot script, so a page without JavaScript has none */
-html:not(.js) .mode {
-	display: none;
-}
 .mode {
 	display: inline-flex;
 	gap: 4px;
+}
+/* the toggle needs the boot script, so a page without JavaScript has none */
+html:not(.js) .mode {
+	display: none;
 }
 .mode button {
 	min-height: 28px;
@@ -245,7 +245,7 @@ html:not(.js) .mode {
 	color: var(--bar);
 }
 /* train: the weather (in the masthead), one fact and the games */
-[data-mode="train"] :is(.pic, .feat, .otd, .quote, .quiz, .local, .news),
+[data-mode="train"] :is(.pic, .feat, .otd, .quote, .quiz, .local, .recipes),
 [data-mode="train"] .sec:has(#h-word) {
 	display: none;
 }
@@ -492,6 +492,46 @@ h1 {
 .star:hover {
 	scale: 1.15;
 }
+/* a planet: a point, with its name above it on a dark chip so the name reads on any night sky */
+.planet {
+	/* on a phone the name above the point must stay in the band under the text */
+	--top: 30px;
+	width: 32px;
+	height: 32px;
+	color: #fff;
+}
+.planet .pt {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 6px;
+	height: 6px;
+	translate: -50% -50%;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 0 6px 2px rgb(255 255 255 / 0.45);
+}
+.planet .tag {
+	position: absolute;
+	bottom: calc(50% + 7px);
+	left: 50%;
+	translate: -50% 0;
+	padding: 0 6px;
+	border-radius: 8px;
+	background: rgb(8 10 32 / 0.72);
+	font-size: 0.6875rem;
+	line-height: 1.5;
+	letter-spacing: 0.02em;
+	white-space: nowrap;
+}
+.planet:hover .pt {
+	scale: 1.4;
+}
+/* a name shown all the time sits on the masthead text: it shows on hover or focus, and the
+   point keeps it as its label */
+.planet:not(:hover, :focus-visible) .tag {
+	display: none;
+}
 @media (min-width: 900px) {
 	.mast {
 		grid-template-columns: minmax(0, 1fr) auto;
@@ -503,6 +543,16 @@ h1 {
 	}
 	.strip {
 		text-align: right;
+	}
+	/* here the full height of the sky is the sky: 90 degrees reaches the top, not a 28px band */
+	.moon,
+	.planet,
+	.star {
+		bottom: clamp(
+			-24px,
+			calc(16px + var(--alt, 10) * (100% - 76px) / 90),
+			calc(100% - 32px)
+		);
 	}
 }
 
@@ -558,6 +608,20 @@ h1 {
 		grid-template-areas: "read otd games" "read quote games";
 	}
 }
+/* on a short desktop screen the games stop above the last row, so On this day and the quote
+   start under the fold and the rest of the paper fits */
+@media (min-width: 1100px) and (max-height: 760px) {
+	.front,
+	.front:not(:has(.pic)) {
+		grid-template-rows: auto;
+	}
+	.front {
+		grid-template-areas: "pic read games" "feat read games" "otd quote quote";
+	}
+	.front:not(:has(.pic)) {
+		grid-template-areas: "feat read games" "otd quote quote";
+	}
+}
 
 .cue {
 	display: flex;
@@ -567,33 +631,123 @@ h1 {
 	color: var(--mute);
 }
 
-/* picture */
+/* pictures: a scroll-snap strip, one slide per source. Every image gets the same box, so the
+   strip does not change height as it moves. */
 .pic {
+	--pic-h: min(60svh, 24rem);
 	padding-block: 12px;
 }
-.pic img {
-	width: auto;
-	height: auto;
-	max-width: 100%;
-	max-height: 70svh;
-	background: var(--ground-2);
-}
 @media (min-width: 1100px) {
-	.pic img {
-		max-height: max(240px, calc(100svh - 520px));
+	.pic {
+		--pic-h: max(240px, calc(100svh - 520px));
 	}
 }
-/* the featured article sits under the picture on wide screens: on a tall one the full masthead
-   is back too, so the picture gives up the room */
+/* the featured article sits under the pictures on wide screens: on a tall one the full masthead
+   is back too, so the pictures give up the room */
 @media (min-width: 1100px) and (min-height: 941px) {
-	.front:has(.feat) .pic img {
-		max-height: calc(100svh - 620px);
+	.front:has(.feat) .pic {
+		--pic-h: calc(100svh - 620px);
 	}
+}
+.reel {
+	position: relative;
+}
+.slides {
+	display: flex;
+	overflow-x: auto;
+	scroll-snap-type: x mandatory;
+	overscroll-behavior-x: contain;
+}
+/* with JavaScript the arrows and dots replace the scrollbar */
+html.js .slides {
+	scrollbar-width: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+	.slides {
+		scroll-behavior: smooth;
+	}
+}
+.slide {
+	flex: 0 0 100%;
+	min-width: 0;
+	scroll-snap-align: start;
+}
+.pic img {
+	display: block;
+	width: 100%;
+	height: var(--pic-h);
+	object-fit: contain;
+	background: var(--ground-2);
 }
 .pic figcaption {
 	margin-top: 8px;
 	font-size: 0.9375rem;
 	max-width: 62ch;
+}
+/* arrows and dots sit on the picture in the page's own ground colour, so they hold contrast in
+   every sky */
+.arrow,
+.dots {
+	position: absolute;
+	background: color-mix(in oklab, var(--ground) 90%, transparent);
+	color: var(--ink);
+	border: 1px solid var(--rule);
+}
+.arrow {
+	top: calc(var(--pic-h) / 2 - 22px);
+	display: none;
+	width: 44px;
+	height: 44px;
+	border-radius: 50%;
+	font: inherit;
+	font-size: 1.75rem;
+	line-height: 1;
+	cursor: pointer;
+}
+.arrow:disabled {
+	opacity: 0.4;
+	cursor: default;
+}
+.prev {
+	left: 8px;
+}
+.next {
+	right: 8px;
+}
+@media (hover: hover) and (pointer: fine) {
+	.arrow {
+		display: block;
+	}
+}
+.dots {
+	top: calc(var(--pic-h) - 36px);
+	left: 50%;
+	display: flex;
+	translate: -50% 0;
+	border-radius: 999px;
+}
+.dot {
+	display: grid;
+	place-items: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: 0;
+	background: none;
+	cursor: pointer;
+}
+.dot::before {
+	content: "";
+	width: 10px;
+	height: 10px;
+	border: 1.5px solid var(--ink);
+	border-radius: 50%;
+}
+.dot[aria-current] {
+	cursor: default;
+}
+.dot[aria-current]::before {
+	background: var(--ink);
 }
 
 /* reading */
@@ -776,7 +930,7 @@ summary {
 	}
 }
 
-/* below the paper: what was seen near you, and this week's shows */
+/* below the paper: this week's shows */
 .local {
 	padding-block: 12px 4px;
 }
@@ -796,38 +950,26 @@ summary {
 	font-variant-numeric: tabular-nums;
 	color: var(--mute);
 }
-/* headlines and recipes side by side: one top story per newspaper, one recipe per site */
-.newsrow {
-	display: grid;
-	gap: 0 32px;
-}
-@media (min-width: 900px) {
-	.newsrow {
-		grid-template-columns: 3fr 2fr;
-	}
-	.newsrow:has(> :only-child) {
-		grid-template-columns: 1fr;
-	}
-}
-.news {
+/* the newest recipe of each site, below the paper */
+.recipes {
 	padding-block: 12px 4px;
 }
-.news ul {
+.recipes ul {
 	display: grid;
 	gap: 6px 32px;
 	padding-top: 10px;
 	border-top: 1px solid var(--rule);
 }
 @media (min-width: 900px) {
-	.news ul {
+	.recipes ul {
 		grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
 	}
 }
-.news li {
+.recipes ul > li {
 	font-size: 0.9375rem;
 	text-wrap: pretty;
 }
-.news .paper {
+.recipes .paper {
 	margin-right: 4px;
 	font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
 	font-weight: 600;
@@ -890,7 +1032,7 @@ code {
 		grid-template-areas: "pic read" "otd quote";
 	}
 	.pic img {
-		max-height: 9cm;
+		height: 9cm;
 		animation: none;
 	}
 	.sec a[href^="http"]::after {

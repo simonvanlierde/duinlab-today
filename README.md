@@ -1,7 +1,7 @@
 # duinlab-today
 
-A small daily page at <https://today.duinlab.nl>: the day's picture, a few sourced facts, the
-weather in The Hague, a five-question quiz, five headlines and a short list of daily web
+A small daily page at <https://today.duinlab.nl>: up to five pictures in a swipe strip, a few sourced facts, the
+weather in The Hague, a three-question quiz and a short list of daily web
 games with played-today marks and streaks. The sky at the top follows the sun's position over
 The Hague, minute by minute. Checkmarks and streaks stay in your browser; the server keeps
 nothing beyond Cloudflare's request logs.
@@ -15,24 +15,30 @@ flowchart LR
     build["refreshDay<br/>fetch the sources,<br/>keep what the day had"]
     page["Astro page<br/>and /today.json"]
   end
-  sources[("Wikipedia, Wiktionary,<br/>APOD, The Met,<br/>Open Trivia DB, ZenQuotes,<br/>Rijkswaterstaat, iNaturalist, Paard")] --> build
-  build -- "day/v1/date" --> kv[("Workers KV")]
+  sources[("Wikipedia, Wiktionary,<br/>APOD, The Met, Art Institute,<br/>Rijksmuseum, Open Trivia DB, ZenQuotes,<br/>Rijkswaterstaat, Paard")] --> build
+  build -- "day/v2/date" --> kv[("Workers KV")]
   kv --> page
-  live[("Open-Meteo, Buienradar,<br/>news and recipe feeds")] -- "Cache API,<br/>15 min to 3 h" --> page
+  live[("Open-Meteo, Buienradar,<br/>recipe feeds")] -- "Cache API,<br/>15 min to 3 h,<br/>stale while revalidating" --> page
   page -- "HTML with the data in it" --> browser["Browser: sky script,<br/>games and quiz islands"]
   browser <--> ls[("localStorage:<br/>ticks, streaks, quiz")]
 ```
 
 One Worker serves everything ([`src/worker.ts`](src/worker.ts)).
 
-- **The day** (picture, facts, featured article, word, quote, quiz, tides, wildlife and
+- **The day** (pictures, facts, featured article, word, quote, quiz, tides and
   events) is built by a cron run at five past every hour and stored in Workers KV, the same for every Cloudflare location. The run after
   midnight builds the new day. Later runs only touch a day that is incomplete: they retry a
   failed source and pick up APOD once it publishes at 06:00 Amsterdam time. A rebuild keeps
-  every section the day already had, so the quiz never changes under you. A request that finds
+  every section the day already had, so the quiz never changes under you, and every picture it
+  already has (each source picks its artwork from the date). A request that finds
   no day builds it itself ([`src/lib/today.ts`](src/lib/today.ts)).
-- **Weather, headlines and recipes** change during the day, so each request reads them through the
-  Workers cache: 15 minutes for the weather, 30 for the news, 3 hours for the recipes.
+- **Weather, sea and recipes** change during the day, so each request reads them through the
+  Workers cache: 15 minutes for the weather, an hour for the sea, 3 hours for the recipes. An entry
+  past that is still served while the request refreshes it in the background (`waitUntil`): for 2
+  hours more for the weather, 6 for the sea and the recipes. Older than that, the request fetches it itself.
+- **Planets and sky events** are worked out on the server with Astronomy Engine for each request:
+  the planets tonight in the almanac, the sky events in the line under the date. The browser gets
+  each planet's position for the day and works out altitude itself, like the moon and the bright star.
 - **The page** is rendered on the server with all of this in it, so it reads fine without
   JavaScript. In the browser, a small inline script moves the sky with the clock, and two
   Svelte islands keep the games and the quiz in `localStorage`. Nothing goes back to the
@@ -56,9 +62,9 @@ against a production build, including an axe scan of the home, about and 404 pag
 reads every source from a local fixture server ([`e2e/fixture-server.mjs`](e2e/fixture-server.mjs))
 through the `FIXTURE_ORIGIN` variable, so the tests run offline and give the same page every time.
 
-For the NASA picture, put a line `NASA_API_KEY=<your key>` in `.dev.vars` for local runs. In
+For the NASA slide, put a line `NASA_API_KEY=<your key>` in `.dev.vars` for local runs. In
 production it is a Worker secret (`pnpm wrangler secret put NASA_API_KEY`). Without a key the
-picture comes from The Met. The tests don't need it.
+strip simply has no NASA slide. The tests don't need it.
 
 ## Data
 
@@ -72,9 +78,9 @@ are:
 | `generatedAt` | ISO instant (UTC) the day was built | always present |
 | `sun`, `moon` | worked out locally | always present |
 | `games` | the daily games | always present |
-| `picture`, `onThisDay`, `featured`, `word`, `quote`, `quiz`, `tides`, `nearYou`, `events`, `weather` | objects | `null` |
+| `onThisDay`, `featured`, `word`, `quote`, `quiz`, `tides`, `events`, `weather`, `sea` | objects | `null` |
 | `didYouKnow` | a list of facts | `[]` |
-| `news` | up to five headlines, one per paper | `[]` |
+| `pictures` | up to five, in this order: APOD, The Met, Wikipedia picture of the day, Art Institute of Chicago, Rijksmuseum; one per source | `[]` |
 | `recipes` | up to three recipes (`title`, `url`, `source`), one per site | `[]` |
 
 Sun times carry the Amsterdam offset. `weather.rainNext2h[].time` is `HH:MM` on the
@@ -87,11 +93,10 @@ Worker itself fails, it answers 503 with `{"error": ...}`.
 ## Sources
 
 Wikipedia (On this day, Did you know, the featured article), Wiktionary (word of the day),
-NASA APOD, The Metropolitan Museum of Art (public-domain works), Open Trivia DB (CC BY-SA 4.0),
-ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), iNaturalist (species seen within
-15 km this week), Paard (this week's shows), Open-Meteo, Buienradar (the rain radar), and the
-front-page RSS feeds of NOS, NRC,
-the BBC, the Guardian and the New York Times, and the recipe feeds of the Guardian, BBC Good Food and
+NASA APOD, The Metropolitan Museum of Art, the Art Institute of Chicago and the Rijksmuseum (public-domain works), the Wikipedia picture of the day (credited with its licence), Open Trivia DB (CC BY-SA 4.0),
+ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), Paard, Amare and DenHaag.com (this week's shows and events; the last two through a weekly homelab job that writes `agenda/v1` to KV), Open-Meteo (weather, air quality, pollen and the sea off Scheveningen), Buienradar (the rain radar),
+Astronomy Engine (planets, full moons, eclipses; an npm package, not a feed), and the
+recipe feeds of the Guardian, BBC Good Food and
 Love and Lemons. Each item on the page links to its source.
 
 ## Licence

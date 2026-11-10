@@ -38,8 +38,11 @@ export async function getText(
 	return res.text();
 }
 
-export async function getJson<T>(url: string): Promise<T> {
-	return JSON.parse(await getText(url, "application/json")) as T;
+export async function getJson<T>(
+	url: string,
+	accept = "application/json",
+): Promise<T> {
+	return JSON.parse(await getText(url, accept)) as T;
 }
 
 /** Runs a source; any failure (network, timeout, unexpected shape) becomes null. */

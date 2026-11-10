@@ -3,6 +3,7 @@ import Cue from "../components/Cue.astro";
 import Dune from "../components/Dune.astro";
 import Foot from "../components/Foot.astro";
 import Games from "../components/Games.svelte";
+import Pictures from "../components/Pictures.astro";
 import Quiz from "../components/Quiz.svelte";
 import {
 	bodiesAt,
@@ -21,8 +22,9 @@ import {
 	weekday,
 	windLine,
 } from "../lib/format";
-import { moonNow, starNow } from "../lib/moon";
+import { moonNow, planetsAt, starNow } from "../lib/moon";
 import { occasionLine } from "../lib/occasions";
+import { planetPositions, planetsTonight } from "../lib/planets";
 import { PHASES, phaseAt, type SkyPhase, sunAltitude } from "../lib/sun";
 import { getToday } from "../lib/today";
 
@@ -31,11 +33,11 @@ const today = await getToday(now);
 const asked = Astro.url.searchParams.get("phase");
 const forced = PHASES.includes(asked as SkyPhase);
 const phase = forced ? (asked as SkyPhase) : phaseAt(today.sun, now.getTime());
-const { picture, word, quote, quiz, weather, onThisDay } = today;
+const { pictures, word, quote, quiz, weather, onThisDay } = today;
+const sea = today.sea;
 // days stored before the featured article existed have no such key
 const featured = today.featured ?? null;
 const tides = today.tides ?? null;
-const nearYou = today.nearYou?.species.length ? today.nearYou : null;
 const events = today.events?.items.length ? today.events : null;
 const tideTimes = (kind: "high" | "low") =>
 	(tides?.events ?? [])
@@ -50,25 +52,24 @@ const FORECAST =
 	"https://www.meteoblue.com/en/weather/week/the-hague_netherlands_2747373";
 const almanac = sunLines(today);
 // the moon, sun and star where they are right now; the sky script keeps them current
+const planets = planetPositions(now);
+const planetsLine = planetsTonight(today.date, now);
 const bodies = bodiesAt(
 	today.sun,
 	now.getTime(),
 	forced ? PHASE_SUN[phase].alt : sunAltitude(now.getTime()),
 	moonNow,
 	starNow,
+	(t) => planetsAt(planets, t),
 );
 const orb = (b: { x: number; alt: number }) =>
 	`--x:${b.x.toFixed(4)};--alt:${b.alt.toFixed(2)}`;
 const occasion = occasionLine(today.date);
+const SKY_EVENTS =
+	"https://www.timeanddate.com/astronomy/netherlands/the-hague";
 const HOLIDAYS =
 	"https://calendar.google.com/calendar/embed?src=en.dutch%23holiday%40group.v.calendar.google.com&ctz=Europe%2FAmsterdam";
-const lists = (
-	[
-		["h-news", "Headlines", today.news],
-		["h-recipes", "Recipes", today.recipes],
-	] as const
-).filter(([, , items]) => items.length > 0);
-const what = `A daily page from The Hague: the weather, one picture, a few sourced facts, a word, a quiz and ${today.games.length} daily games.`;
+const what = `A daily page from The Hague: the weather, a few pictures, sourced facts, a word, a quiz and ${today.games.length} daily games.`;
 ---
 
 <Base
@@ -76,6 +77,7 @@ const what = `A daily page from The Hague: the weather, one picture, a few sourc
 	phase={phase}
 	forced={forced}
 	saturation={saturation(weather)}
+	planets={planets}
 	title={`today.duinlab.nl - ${heading}`}
 	description={what}
 >
@@ -97,7 +99,7 @@ const what = `A daily page from The Hague: the weather, one picture, a few sourc
 				{
 					occasion && (
 						<p class="occasion">
-							<a href={HOLIDAYS} title="Dutch holidays on Google Calendar">{occasion}<span class="sr"> (Dutch holidays on Google Calendar)</span></a>
+							<a href={occasion.sky ? SKY_EVENTS : HOLIDAYS} title={occasion.sky ? "Sky events in The Hague on timeanddate.com" : "Dutch holidays on Google Calendar"}>{occasion.text}<span class="sr"> ({occasion.sky ? "Sky events on timeanddate.com" : "Dutch holidays on Google Calendar"})</span></a>
 						</p>
 					)
 				}
@@ -120,6 +122,12 @@ const what = `A daily page from The Hague: the weather, one picture, a few sourc
 									</a>
 								</>
 							)}
+							{weather.air && (
+								<>
+									{" · "}
+									<a href="https://open-meteo.com/en/docs/air-quality-api" title="Air quality and pollen: Open-Meteo">{weather.air}<span class="sr"> (Open-Meteo)</span></a>
+								</>
+							)}
 						</li>
 					</ul>
 				)
@@ -133,16 +141,33 @@ const what = `A daily page from The Hague: the weather, one picture, a few sourc
 			</svg>
 		</button>
 		<button class="orb star" type="button" popovertarget="almanac" data-orb="star" data-star-label hidden={!bodies.star.show} style={orb(bodies.star)} aria-label={`${bodies.star.name}: sun, moon and tide times`}></button>
+		{
+			bodies.planets.map((p) => (
+				<button class="orb planet" type="button" popovertarget="almanac" data-planet={p.name} hidden={!p.show} style={orb(p)} aria-label={`${p.name}: planets, sun, moon and tide times`}>
+					<span class="pt"></span><span class="tag" aria-hidden="true">{p.name}</span>
+				</button>
+			))
+		}
 		<div id="almanac" class="almanac" popover>
 			<p>Sun up <b>{almanac.sunrise}</b>, down <b>{almanac.sunset}</b></p>
 			<p>Golden hour from <b>{almanac.golden}</b></p>
 			<p>{almanac.daylight}</p>
 			<p data-moon-line>{bodies.moon.line}</p>
+			{planetsLine && <p>Tonight: {planetsLine}</p>}
 			{
 				tides && (
 					<p>
 						High water <b>{tideTimes("high")}</b>, low <b>{tideTimes("low")}</b> at{" "}
 						<a href={tides.url}>Scheveningen</a>
+					</p>
+				)
+			}
+			{
+				sea && (
+					<p>
+						Sea at Scheveningen{" "}
+						<b>{[sea.temperatureC !== null && `${sea.temperatureC.toFixed(1)} °C`, sea.waveHeightM !== null && `waves ${sea.waveHeightM.toFixed(1)} m`].filter(Boolean).join(", ")}</b>{" "}
+						<span class="src"><a href={sea.credit.url}>{sea.credit.name}</a></span>
 					</p>
 				)
 			}
@@ -161,29 +186,7 @@ const what = `A daily page from The Hague: the weather, one picture, a few sourc
 				</section>
 			)
 		}
-		{
-			picture && (
-				<section class="pic" aria-labelledby="h-picture">
-					<Cue id="h-picture" sr>Picture</Cue>
-					<figure>
-						<img
-							src={picture.imageUrl}
-							alt={picture.alt}
-							width={picture.width ?? undefined}
-							height={picture.height ?? undefined}
-							fetchpriority="high"
-							decoding="async"
-						/>
-						<figcaption>
-							<a href={picture.pageUrl}><em>{picture.title}</em></a>
-							{picture.by && <>, {picture.by}</>}
-							{picture.date && <>, {picture.date}</>}.{" "}
-							<span class="src"><a href={picture.credit.url}>{picture.credit.name}</a></span>
-						</figcaption>
-					</figure>
-				</section>
-			)
-		}
+		{pictures.length > 0 && <Pictures pictures={pictures} />}
 			{
 				featured && (
 					<section class="sec feat" aria-labelledby="h-featured">
@@ -269,38 +272,17 @@ const what = `A daily page from The Hague: the weather, one picture, a few sourc
 	</main>
 
 	{
-		nearYou && (
-			<section class="wrap local" aria-labelledby="h-near">
-				<Cue id="h-near">Spotted near you this week</Cue>
+		today.recipes.length > 0 && (
+			<section class="wrap recipes" aria-labelledby="h-recipes">
+				<Cue id="h-recipes">Recipes</Cue>
 				<ul class="plain">
-					{nearYou.species.map((s) => (
+					{today.recipes.map((r) => (
 						<li>
-							<a href={s.url}>{s.name}</a>{" "}
-							<span class="mute">{s.count === 1 ? "1 sighting" : `${s.count} sightings`}</span>
+							<span class="paper">{r.source}</span> <a href={r.url}>{r.title}</a>
 						</li>
 					))}
 				</ul>
-				<p class="src"><a href={nearYou.url}>{nearYou.credit.name}</a>, within 15 km</p>
 			</section>
-		)
-	}
-
-	{
-		lists.length > 0 && (
-			<div class="wrap newsrow">
-				{lists.map(([id, title, items]) => (
-					<section class="news" aria-labelledby={id}>
-						<Cue id={id}>{title}</Cue>
-						<ul class="plain">
-							{items.map((h) => (
-								<li>
-									<span class="paper">{h.source}</span> <a href={h.url}>{h.title}</a>
-								</li>
-							))}
-						</ul>
-					</section>
-				))}
-			</div>
 		)
 	}
 
@@ -321,5 +303,5 @@ const what = `A daily page from The Hague: the weather, one picture, a few sourc
 		)
 	}
 
-	<Foot>New every midnight. <a href="/about">About</a> &middot;</Foot>
+	<Foot>New every midnight. <a href="/yesterday">Yesterday's paper</a> &middot; <a href="/about">About</a> &middot;</Foot>
 </Base>
