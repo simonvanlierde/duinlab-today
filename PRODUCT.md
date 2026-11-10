@@ -56,7 +56,10 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
   artworks, no key), the Wikipedia picture of the day (credited with its licence),
   ZenQuotes (credited).
 - Local Hague, below the paper: high and low water at Scheveningen (Rijkswaterstaat, in the
-  moon's popover), and the next five shows at Paard.
+  moon's popover), and this week's shows and events from Paard, Amare and DenHaag.com, two per
+  venue. Amare and DenHaag.com block scripts, so a weekly homelab job reads them through a headless
+  browser and writes `agenda/v1` to Workers KV; the Worker merges it with Paard's.
+- Yesterday's paper at `/yesterday`: the stored day before today, read-only, quiz answers shown.
 - Sea: temperature and wave height off Scheveningen from Open-Meteo's marine API (keyless, credited),
   in the almanac popover beside the tides, cached for an hour.
 - Sky: Astronomy Engine (MIT) gives the bright planets, full moons, solstices, equinoxes and

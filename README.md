@@ -94,7 +94,7 @@ Worker itself fails, it answers 503 with `{"error": ...}`.
 
 Wikipedia (On this day, Did you know, the featured article), Wiktionary (word of the day),
 NASA APOD, The Metropolitan Museum of Art, the Art Institute of Chicago and the Rijksmuseum (public-domain works), the Wikipedia picture of the day (credited with its licence), Open Trivia DB (CC BY-SA 4.0),
-ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), Paard (this week's shows), Open-Meteo (weather, air quality, pollen and the sea off Scheveningen), Buienradar (the rain radar),
+ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), Paard, Amare and DenHaag.com (this week's shows and events; the last two through a weekly homelab job that writes `agenda/v1` to KV), Open-Meteo (weather, air quality, pollen and the sea off Scheveningen), Buienradar (the rain radar),
 Astronomy Engine (planets, full moons, eclipses; an npm package, not a feed), and the
 recipe feeds of the Guardian, BBC Good Food and
 Love and Lemons. Each item on the page links to its source.
