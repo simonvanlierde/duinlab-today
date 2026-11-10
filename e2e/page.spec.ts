@@ -88,10 +88,6 @@ test("renders the sky, every section from the fixtures, and the ten games", asyn
 	);
 	await expect(page.locator(".wx")).toContainText(/5°\s*overcast, 9° \/ 2°/);
 	await expect(page.locator(".strip")).toContainText("dry until 10:15");
-	await expect(section("h-near").locator("li")).toHaveCount(3);
-	await expect(section("h-near").locator("li").first()).toContainText(
-		"November Tubic 4 sightings",
-	);
 	await expect(section("h-events").locator("li")).toHaveCount(5);
 	await expect(section("h-events").locator("li").first()).toContainText(
 		/^Tomorrow 19:20 Takuya Kuroda/,

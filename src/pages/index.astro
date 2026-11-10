@@ -36,7 +36,6 @@ const { pictures, word, quote, quiz, weather, onThisDay } = today;
 // days stored before the featured article existed have no such key
 const featured = today.featured ?? null;
 const tides = today.tides ?? null;
-const nearYou = today.nearYou?.species.length ? today.nearYou : null;
 const events = today.events?.items.length ? today.events : null;
 const tideTimes = (kind: "high" | "low") =>
 	(tides?.events ?? [])
@@ -240,23 +239,6 @@ const what = `A small daily page: a few pictures, sourced facts, a word, a quiz 
 			)
 		}
 	</main>
-
-	{
-		nearYou && (
-			<section class="wrap local" aria-labelledby="h-near">
-				<Cue id="h-near">Spotted near you this week</Cue>
-				<ul class="plain">
-					{nearYou.species.map((s) => (
-						<li>
-							<a href={s.url}>{s.name}</a>{" "}
-							<span class="mute">{s.count === 1 ? "1 sighting" : `${s.count} sightings`}</span>
-						</li>
-					))}
-				</ul>
-				<p class="src"><a href={nearYou.url}>{nearYou.credit.name}</a>, within 15 km</p>
-			</section>
-		)
-	}
 
 	{
 		today.recipes.length > 0 && (

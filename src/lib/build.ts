@@ -1,5 +1,4 @@
 import { fetchEvents } from "./sources/events";
-import { fetchNearYou } from "./sources/nature";
 import { fetchPictures, mergePictures } from "./sources/picture";
 import { fetchQuote } from "./sources/quote";
 import { fetchTides } from "./sources/tides";
@@ -28,28 +27,26 @@ export async function buildDay(
 	const wikiDone =
 		prev && prev.didYouKnow.length > 0 && prev.onThisDay && prev.featured;
 	const have = prev?.pictures ?? [];
-	const [wiki, pictures, word, quote, quiz, tides, nearYou, events] =
-		await Promise.all([
-			wikiDone
-				? Promise.resolve({
-						didYouKnow: prev.didYouKnow,
-						onThisDay: prev.onThisDay,
-						featured: prev.featured,
-						image: null,
-					})
-				: fetchWikipedia(date),
-			fetchPictures(
-				date,
-				apiKey,
-				have.map((p) => p.kind),
-			),
-			keep(prev?.word, () => fetchWord(date)),
-			keep(prev?.quote, () => fetchQuote()),
-			keep(prev?.quiz, () => fetchQuiz(date)),
-			keep(prev?.tides, () => fetchTides(date)),
-			keep(prev?.nearYou, () => fetchNearYou(date)),
-			keep(prev?.events, () => fetchEvents(date)),
-		]);
+	const [wiki, pictures, word, quote, quiz, tides, events] = await Promise.all([
+		wikiDone
+			? Promise.resolve({
+					didYouKnow: prev.didYouKnow,
+					onThisDay: prev.onThisDay,
+					featured: prev.featured,
+					image: null,
+				})
+			: fetchWikipedia(date),
+		fetchPictures(
+			date,
+			apiKey,
+			have.map((p) => p.kind),
+		),
+		keep(prev?.word, () => fetchWord(date)),
+		keep(prev?.quote, () => fetchQuote()),
+		keep(prev?.quiz, () => fetchQuiz(date)),
+		keep(prev?.tides, () => fetchTides(date)),
+		keep(prev?.events, () => fetchEvents(date)),
+	]);
 	return {
 		date,
 		generatedAt: now.toISOString(),
@@ -63,7 +60,6 @@ export async function buildDay(
 		quote,
 		quiz,
 		tides,
-		nearYou,
 		events,
 	};
 }
@@ -80,7 +76,6 @@ const sections = (d: Day) => [
 	d.quote,
 	d.quiz,
 	d.tides,
-	d.nearYou,
 	d.events,
 	d.didYouKnow.length > 0 ? d.didYouKnow : null,
 ];
@@ -113,7 +108,6 @@ export function mergeDay(prev: Day | null, fresh: Day): Day {
 		quote: prev.quote ?? fresh.quote,
 		quiz: prev.quiz ?? fresh.quiz,
 		tides: prev.tides ?? fresh.tides,
-		nearYou: prev.nearYou ?? fresh.nearYou,
 		events: prev.events ?? fresh.events,
 	};
 }

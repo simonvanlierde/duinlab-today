@@ -15,7 +15,7 @@ flowchart LR
     build["refreshDay<br/>fetch the sources,<br/>keep what the day had"]
     page["Astro page<br/>and /today.json"]
   end
-  sources[("Wikipedia, Wiktionary,<br/>APOD, The Met, Art Institute,<br/>Rijksmuseum, Open Trivia DB, ZenQuotes,<br/>Rijkswaterstaat, iNaturalist, Paard")] --> build
+  sources[("Wikipedia, Wiktionary,<br/>APOD, The Met, Art Institute,<br/>Rijksmuseum, Open Trivia DB, ZenQuotes,<br/>Rijkswaterstaat, Paard")] --> build
   build -- "day/v2/date" --> kv[("Workers KV")]
   kv --> page
   live[("Open-Meteo, Buienradar,<br/>recipe feeds")] -- "Cache API,<br/>15 min to 3 h" --> page
@@ -25,7 +25,7 @@ flowchart LR
 
 One Worker serves everything ([`src/worker.ts`](src/worker.ts)).
 
-- **The day** (pictures, facts, featured article, word, quote, quiz, tides, wildlife and
+- **The day** (pictures, facts, featured article, word, quote, quiz, tides and
   events) is built by a cron run at five past every hour and stored in Workers KV, the same for every Cloudflare location. The run after
   midnight builds the new day. Later runs only touch a day that is incomplete: they retry a
   failed source and pick up APOD once it publishes at 06:00 Amsterdam time. A rebuild keeps
@@ -73,7 +73,7 @@ are:
 | `generatedAt` | ISO instant (UTC) the day was built | always present |
 | `sun`, `moon` | worked out locally | always present |
 | `games` | the daily games | always present |
-| `onThisDay`, `featured`, `word`, `quote`, `quiz`, `tides`, `nearYou`, `events`, `weather` | objects | `null` |
+| `onThisDay`, `featured`, `word`, `quote`, `quiz`, `tides`, `events`, `weather` | objects | `null` |
 | `didYouKnow` | a list of facts | `[]` |
 | `pictures` | up to five, in this order: APOD, The Met, Wikipedia picture of the day, Art Institute of Chicago, Rijksmuseum; one per source | `[]` |
 | `recipes` | up to three recipes (`title`, `url`, `source`), one per site | `[]` |
@@ -89,8 +89,7 @@ Worker itself fails, it answers 503 with `{"error": ...}`.
 
 Wikipedia (On this day, Did you know, the featured article), Wiktionary (word of the day),
 NASA APOD, The Metropolitan Museum of Art, the Art Institute of Chicago and the Rijksmuseum (public-domain works), the Wikipedia picture of the day (credited with its licence), Open Trivia DB (CC BY-SA 4.0),
-ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), iNaturalist (species seen within
-15 km this week), Paard (this week's shows), Open-Meteo, Buienradar (the rain radar), and the
+ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), Paard (this week's shows), Open-Meteo, Buienradar (the rain radar), and the
 recipe feeds of the Guardian, BBC Good Food and
 Love and Lemons. Each item on the page links to its source.
 

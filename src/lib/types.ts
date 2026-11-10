@@ -1,6 +1,6 @@
 // The day's data, as rendered by the page and served at /today.json. When a source fails its
 // section is dropped: `didYouKnow` and `pictures` are [], and onThisDay, featured, word, quote, quiz,
-// tides, nearYou, events and weather are null. Instants are ISO strings (`generatedAt` and `fetchedAt` in UTC, `sun`
+// tides, events and weather are null. Instants are ISO strings (`generatedAt` and `fetchedAt` in UTC, `sun`
 // with the Amsterdam offset); `rainNext2h` times are bare HH:MM on the Amsterdam clock.
 
 /** Where an item came from, shown as its credit line. */
@@ -148,20 +148,6 @@ export interface Tides {
 	url: string;
 }
 
-export interface Sighting {
-	/** English common name, else the scientific name. */
-	name: string;
-	scientific: string;
-	count: number;
-	url: string;
-}
-
-export interface NearYou {
-	species: Sighting[];
-	url: string;
-	credit: Credit;
-}
-
 export interface Happening {
 	name: string;
 	/** YYYY-MM-DD, Europe/Amsterdam */
@@ -194,7 +180,6 @@ export interface Today {
 	quote: Quote | null;
 	quiz: Quiz | null;
 	tides: Tides | null;
-	nearYou: NearYou | null;
 	events: Events | null;
 	weather: Weather | null;
 	/** Up to three, one per site (a recipe, not a paper's story); [] when every feed failed. Cached for 3 hours. */

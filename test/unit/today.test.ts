@@ -22,7 +22,7 @@ vi.mock("../../src/lib/build", async (importOriginal) => ({
 const { refreshDay } = await import("../../src/lib/today");
 
 const NOW = new Date("2026-11-10T08:00:00Z");
-const KEY = "day/v1/2026-11-10";
+const KEY = "day/v2/2026-11-10";
 const day = (quiz: string) =>
 	({
 		date: "2026-11-10",

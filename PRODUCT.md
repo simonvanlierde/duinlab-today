@@ -50,8 +50,7 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
   artworks, no key), the Wikipedia picture of the day (credited with its licence),
   ZenQuotes (credited).
 - Local Hague, below the paper: high and low water at Scheveningen (Rijkswaterstaat, in the
-  moon's popover), the three species seen most within 15 km this week (iNaturalist, research
-  grade, no photos since most need per-photo credit), and the next five shows at Paard.
+  moon's popover), and the next five shows at Paard.
 - Also on the page: the moon in its real phase, high in the sky, which opens the sun times,
   golden hour, day length and moon phase; the games played in the phone's bar, Dutch holidays and customs ahead (a
   static table), day length, a share

@@ -80,7 +80,6 @@ const HOSTS = {
 		"text/html",
 		redated(text("paard.html"), "2026-11-09"),
 	],
-	"api.inaturalist.org": () => ["application/json", text("inaturalist.json")],
 	...Object.fromEntries(
 		Object.keys(RECIPE_HOSTS).map((h) => [
 			h,

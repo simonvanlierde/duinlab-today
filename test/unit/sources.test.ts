@@ -441,26 +441,24 @@ describe("day assembly and cache", () => {
 			quote: { text: "q" },
 			quiz: { questions: [] },
 			tides: { events: [] },
-			nearYou: null,
-			events: { items: [] },
+			events: null,
 		} as unknown as Parameters<typeof buildDay>[3];
 		const day = await buildDay("2026-11-06", new Date(), "k", prev);
 		// the sources that no stored picture covers are asked too
-		expect(hosts.filter((h) => h !== "api.inaturalist.org").sort()).toEqual([
+		expect(hosts.sort()).toEqual([
 			"api.artic.edu",
 			"collectionapi.metmuseum.org",
 			"data.rijksmuseum.nl",
+			"www.paard.nl",
 		]);
 		expect(day.quiz).toBe(prev?.quiz);
 		// APOD missing from the stored pictures is asked again
 		hosts.length = 0;
 		await buildDay("2026-11-06", new Date(), "k", {
 			...prev,
-			nearYou: { species: [] },
 			pictures: [{ kind: "met" }],
 		} as unknown as typeof prev);
 		expect(hosts).toContain("api.nasa.gov");
-		expect(hosts).not.toContain("api.inaturalist.org");
 	});
 
 	it("drops a failing section without throwing, and flags a total failure", async () => {
@@ -487,7 +485,6 @@ describe("day assembly and cache", () => {
 			"featured",
 			"generatedAt",
 			"moon",
-			"nearYou",
 			"onThisDay",
 			"pictures",
 			"quiz",
@@ -583,7 +580,6 @@ describe("hardening", () => {
 			quote: { text: "old" },
 			quiz: { questions: [{ question: "first draw" }] },
 			tides: { events: [] },
-			nearYou: { species: [] },
 			events: { items: [] },
 			didYouKnow: [{ text: "a" }],
 		} as unknown as NonNullable<Parameters<typeof mergeDay>[0]>;
