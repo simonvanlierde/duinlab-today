@@ -266,17 +266,33 @@ const what = `A small daily page: one picture, a few sourced facts, a word, a qu
 	}
 
 	{
-		today.news.length > 0 && (
-			<section class="wrap news" aria-labelledby="h-news">
-				<Cue id="h-news">Headlines</Cue>
-				<ul class="plain">
-					{today.news.map((h) => (
-						<li>
-							<span class="paper">{h.source}</span> <a href={h.url}>{h.title}</a>
-						</li>
-					))}
-				</ul>
-			</section>
+		(today.news.length > 0 || today.recipes.length > 0) && (
+			<div class="wrap newsrow">
+				{today.news.length > 0 && (
+					<section class="news" aria-labelledby="h-news">
+						<Cue id="h-news">Headlines</Cue>
+						<ul class="plain">
+							{today.news.map((h) => (
+								<li>
+									<span class="paper">{h.source}</span> <a href={h.url}>{h.title}</a>
+								</li>
+							))}
+						</ul>
+					</section>
+				)}
+				{today.recipes.length > 0 && (
+					<section class="news" aria-labelledby="h-recipes">
+						<Cue id="h-recipes">Recipes</Cue>
+						<ul class="plain">
+							{today.recipes.map((h) => (
+								<li>
+									<span class="paper">{h.source}</span> <a href={h.url}>{h.title}</a>
+								</li>
+							))}
+						</ul>
+					</section>
+				)}
+			</div>
 		)
 	}
 

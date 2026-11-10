@@ -744,7 +744,7 @@ summary {
 	}
 }
 
-/* headlines: below the paper, one top story per newspaper */
+/* below the paper: what was seen near you, and this week's shows */
 .local {
 	padding-block: 12px 4px;
 }
@@ -763,6 +763,19 @@ summary {
 .local .when {
 	font-variant-numeric: tabular-nums;
 	color: var(--mute);
+}
+/* headlines and recipes side by side: one top story per newspaper, one recipe per site */
+.newsrow {
+	display: grid;
+	gap: 0 32px;
+}
+@media (min-width: 900px) {
+	.newsrow {
+		grid-template-columns: 3fr 2fr;
+	}
+	.newsrow:has(> :only-child) {
+		grid-template-columns: 1fr;
+	}
 }
 .news {
 	padding-block: 12px 4px;

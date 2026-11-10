@@ -18,7 +18,7 @@ flowchart LR
   sources[("Wikipedia, Wiktionary,<br/>APOD, The Met,<br/>Open Trivia DB, ZenQuotes,<br/>Rijkswaterstaat, iNaturalist, Paard")] --> build
   build -- "day/v1/date" --> kv[("Workers KV")]
   kv --> page
-  live[("Open-Meteo, Buienradar,<br/>news feeds")] -- "Cache API,<br/>15 and 30 min" --> page
+  live[("Open-Meteo, Buienradar,<br/>news and recipe feeds")] -- "Cache API,<br/>15 min to 3 h" --> page
   page -- "HTML with the data in it" --> browser["Browser: sky script,<br/>games and quiz islands"]
   browser <--> ls[("localStorage:<br/>ticks, streaks, quiz")]
 ```
@@ -31,8 +31,8 @@ One Worker serves everything ([`src/worker.ts`](src/worker.ts)).
   failed source and pick up APOD once it publishes at 06:00 Amsterdam time. A rebuild keeps
   every section the day already had, so the quiz never changes under you. A request that finds
   no day builds it itself ([`src/lib/today.ts`](src/lib/today.ts)).
-- **Weather and headlines** change during the day, so each request reads them through the
-  Workers cache: 15 minutes for the weather, 30 for the news.
+- **Weather, headlines and recipes** change during the day, so each request reads them through the
+  Workers cache: 15 minutes for the weather, 30 for the news, 3 hours for the recipes.
 - **The page** is rendered on the server with all of this in it, so it reads fine without
   JavaScript. In the browser, a small inline script moves the sky with the clock, and two
   Svelte islands keep the games and the quiz in `localStorage`. Nothing goes back to the
@@ -75,6 +75,7 @@ are:
 | `picture`, `onThisDay`, `featured`, `word`, `quote`, `quiz`, `tides`, `nearYou`, `events`, `weather` | objects | `null` |
 | `didYouKnow` | a list of facts | `[]` |
 | `news` | up to five headlines, one per paper | `[]` |
+| `recipes` | up to three recipes (`title`, `url`, `source`), one per site | `[]` |
 
 Sun times carry the Amsterdam offset. `weather.rainNext2h[].time` is `HH:MM` on the
 Amsterdam clock, and `mm` is mm per hour: 5-minute steps from Buienradar's radar, or 15-minute
@@ -90,7 +91,8 @@ NASA APOD, The Metropolitan Museum of Art (public-domain works), Open Trivia DB 
 ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), iNaturalist (species seen within
 15 km this week), Paard (this week's shows), Open-Meteo, Buienradar (the rain radar), and the
 front-page RSS feeds of NOS, NRC,
-the BBC, the Guardian and the New York Times. Each item on the page links to its source.
+the BBC, the Guardian and the New York Times, and the recipe feeds of the Guardian, BBC Good Food and
+Love and Lemons. Each item on the page links to its source.
 
 ## Licence
 

@@ -505,6 +505,12 @@ describe("hardening", () => {
 		expect(parseTopItem("<rss></rss>", "X")).toBeNull();
 	});
 
+	it("takes the first item whose link matches, for mixed feeds", () => {
+		const rss = `<item><title>Best pans</title><link>https://gf.test/review/pans</link></item><item><title>Premium</title><link>https://gf.test/premium/x</link></item><item><title>Salad</title><link>https://gf.test/recipes/salad</link></item>`;
+		expect(parseTopItem(rss, "Good Food", /\/recipes\//)?.title).toBe("Salad");
+		expect(parseTopItem(rss, "Good Food", /\/nope\//)).toBeNull();
+	});
+
 	it("builds and serves the value when the cache throws", async () => {
 		const cache = {
 			match: async () => {
