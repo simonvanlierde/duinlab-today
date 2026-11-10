@@ -12,7 +12,7 @@ import {
 	parseRijks,
 } from "../../src/lib/sources/picture";
 import { parseQuote } from "../../src/lib/sources/quote";
-import { parseTopItem } from "../../src/lib/sources/recipes";
+import { parseRecipes } from "../../src/lib/sources/recipes";
 import { parseSea } from "../../src/lib/sources/sea";
 import { parseQuiz } from "../../src/lib/sources/trivia";
 import {
@@ -703,26 +703,31 @@ describe("hardening", () => {
 		expect(mergeDay(stored, fresh).tides).toEqual(fresh.tides);
 	});
 
-	it("takes the top headline of an RSS feed, CDATA or not", () => {
+	it("reads RSS recipe titles, CDATA or not", () => {
 		const rss = `<rss><channel><title>Feed</title><item><title><![CDATA[Dykes &amp; dunes <b>hold</b>]]></title><link>https://nos.nl/a/1</link></item><item><title>Second</title><link>https://nos.nl/a/2</link></item></channel></rss>`;
-		expect(parseTopItem(rss, "NOS")).toEqual({
-			title: "Dykes & dunes hold",
-			url: "https://nos.nl/a/1",
-			source: "NOS",
-		});
+		expect(parseRecipes(rss, "NOS")).toEqual([
+			{
+				title: "Dykes & dunes hold",
+				url: "https://nos.nl/a/1",
+				source: "NOS",
+			},
+			{ title: "Second", url: "https://nos.nl/a/2", source: "NOS" },
+		]);
 		expect(
-			parseTopItem(
+			parseRecipes(
 				"<item><title>x</title><link>javascript:alert(1)</link></item>",
 				"X",
 			),
-		).toBeNull();
-		expect(parseTopItem("<rss></rss>", "X")).toBeNull();
+		).toEqual([]);
+		expect(parseRecipes("<rss></rss>", "X")).toEqual([]);
 	});
 
 	it("takes the first item whose link matches, for mixed feeds", () => {
 		const rss = `<item><title>Best pans</title><link>https://gf.test/review/pans</link></item><item><title>Premium</title><link>https://gf.test/premium/x</link></item><item><title>Salad</title><link>https://gf.test/recipes/salad</link></item>`;
-		expect(parseTopItem(rss, "Good Food", /\/recipes\//)?.title).toBe("Salad");
-		expect(parseTopItem(rss, "Good Food", /\/nope\//)).toBeNull();
+		expect(parseRecipes(rss, "Good Food", /\/recipes\//)[0]?.title).toBe(
+			"Salad",
+		);
+		expect(parseRecipes(rss, "Good Food", /\/nope\//)).toEqual([]);
 	});
 
 	it("builds and serves the value when the cache throws", async () => {
@@ -790,5 +795,25 @@ describe("imageSize", () => {
 		expect(
 			imageSize(new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10])),
 		).toBeNull();
+	});
+});
+
+describe("recipe lists", () => {
+	it("keeps three distinct recipes and skips invalid or duplicate links", () => {
+		const rss = [
+			"javascript:alert(1)",
+			"https://food.test/one",
+			"https://food.test/one",
+			"https://food.test/two",
+			"https://food.test/three",
+			"https://food.test/four",
+		]
+			.map((url) => `<item><title>Soup</title><link>${url}</link></item>`)
+			.join("");
+		expect(parseRecipes(rss, "Food").map((r) => r.url)).toEqual([
+			"https://food.test/one",
+			"https://food.test/two",
+			"https://food.test/three",
+		]);
 	});
 });

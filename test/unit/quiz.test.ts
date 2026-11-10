@@ -4,7 +4,6 @@ import {
 	loadQuiz,
 	quizStreak,
 	saveQuiz,
-	sharedScore,
 	signature,
 } from "../../src/components/quiz";
 import type { Quiz } from "../../src/lib/types";
@@ -63,7 +62,7 @@ describe("quiz store", () => {
 		expect(loadQuiz(quiz, day)).toEqual({ picks: [null, null], done: [] });
 	});
 
-	it("saves the score, and adds today to the finished days once all are answered", () => {
+	it("saves the picks, and adds today to the finished days once all are answered", () => {
 		const store = stubStorage();
 		vi.stubGlobal("localStorage", store);
 		expect(saveQuiz(quiz, [1, null], ["2026-11-05"], day)).toEqual([
@@ -78,10 +77,7 @@ describe("quiz store", () => {
 			sig: "One?\nTwo?",
 			picks: [1, 2],
 			done: ["2026-11-05", day],
-			score: 1,
 		});
-		expect(sharedScore(day)).toBe(" · quiz 1/2");
-		expect(sharedScore("2026-11-07")).toBe("");
 		expect(quizStreak(["2026-11-05", day], day)).toBe(2);
 		expect(quizStreak(["2026-11-05"], day)).toBe(1);
 	});

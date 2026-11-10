@@ -87,12 +87,6 @@ export function mark(id: string) {
 	syncSky();
 }
 
-export function unmark(id: string) {
-	store.played[id] = (store.played[id] ?? []).filter((d) => d !== store.day);
-	save();
-	syncSky();
-}
-
 export function playedCount(): number {
 	return store.ids.filter((id) => isPlayed(id)).length;
 }

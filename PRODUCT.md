@@ -44,8 +44,8 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
   steps), with Open-Meteo as the fallback. A line on air quality or pollen
   (Open-Meteo air-quality API, no key, credited) shows only when the European AQI is 60 or more
   or a pollen count is high.
-- Recipes: the newest recipe from the Guardian, BBC Good Food and Love and Lemons, title and
-  link only, below the paper. NYT Cooking is left out: it has no public feed.
+- Recipes: the three newest recipes from the Guardian, BBC Good Food and Love and Lemons, title
+  and link only. One per source is visible; More recipes expands the rest. NYT Cooking is left out: it has no public feed.
 - On a desktop screen shorter than 760 px, On this day and the quote start under the fold, so the
   rest of the paper fits one screen.
 - Live feeds (weather, recipes) are cached and served stale while refreshed in the background, so a
@@ -56,8 +56,9 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
   artworks, no key), the Wikipedia picture of the day (credited with its licence),
   ZenQuotes (credited).
 - Local Hague, below the paper: high and low water at Scheveningen (Rijkswaterstaat, in the
-  moon's popover), and this week's shows and events from Paard, Amare and DenHaag.com, two per
-  site. Amare and DenHaag.com block scripts, so a weekly homelab job reads them through a headless
+  moon's popover), and this week's shows and events from Paard, Amare and DenHaag.com. The five-item preview
+  takes at most two per site when several are available; More events expands the rest.
+  Palace Noordeinde, Namuso Gallery, Laan van Meerdervoort 7B and Pulchri Studio are excluded. Amare and DenHaag.com block scripts, so a weekly homelab job reads them through a headless
   browser and writes `agenda/v1` to Workers KV; the Worker merges it with Paard's.
 - Yesterday's paper at `/yesterday`: the stored day before today, read-only, quiz answers shown.
 - Sea: temperature and wave height off Scheveningen from Open-Meteo's marine API (keyless, credited),
@@ -66,9 +67,8 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
   eclipses seen from The Hague; meteor shower peaks are fixed approximate dates.
 - Also on the page: the moon in its real phase, high in the sky, which opens the sun times,
   golden hour, day length, moon phase, the planets up tonight, the sea and the tides. At night
-  the bright planets are small named points in the sky like the moon; the games played in the phone's bar, Dutch holidays and customs ahead (a
-  static table) and sky events (full moons, meteor peaks, solstices, equinoxes, eclipses; a holiday wins), day length, a share
-  line for the quiz score and games played, and an About page (privacy, accessibility,
+  the bright planets are small named points in the sky like the moon; Dutch holidays and customs ahead (a
+  static table) and sky events (full moons, meteor peaks, solstices, equinoxes, eclipses; a holiday wins), day length, and an About page (privacy, accessibility,
   sources, code).
 
 ## Capabilities and Constraints
@@ -95,8 +95,13 @@ lines come with each source. There are no users, metrics or testimonials to cite
 
 ## Product Principles
 
-- Morning paper first: the day's picture and reading lead, games are one section of it.
+- Morning paper first: the day's picture and reading lead, followed by games on phones;
+  desktop keeps the games in a side rail.
 - Nothing personal leaves the browser.
+- The date and time share a masthead row. Recipes and events sit side by side on desktop.
+- Phone pictures keep a short, stable frame and show the whole image. Sun and moon remain
+  the quiet controls for the almanac.
+- Games mark on opening; the page has no un-mark controls, score sharing or reading modes.
 - Sourced facts only; every item links to where it came from.
 - One Worker, no other backend.
 - Phone and desktop are equal: one column that earns its width, not a mobile afterthought.

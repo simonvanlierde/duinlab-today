@@ -91,42 +91,32 @@ test("renders the sky, every section from the fixtures, and the ten games", asyn
 	await expect(page.locator(".strip")).toContainText(
 		"Grass pollen high today · Air quality poor (AQI 64)",
 	);
-	await expect(section("h-events").locator("li")).toHaveCount(5);
+	await expect(section("h-events").locator(":scope > ul > li")).toHaveCount(5);
 	await expect(section("h-events").locator("li").first()).toContainText(
 		/^Tomorrow 19:20 Takuya Kuroda/,
 	);
-	await expect(section("h-recipes").locator(".paper")).toHaveText([
+	await expect(section("h-recipes").locator(":scope > ul .paper")).toHaveText([
 		"The Guardian",
 		"Good Food",
 		"Love and Lemons",
 	]);
-	await expect(section("h-recipes").locator("li")).toHaveText([
+	await expect(section("h-recipes").locator(":scope > ul > li")).toHaveText([
 		/The Guardian fixture recipe: dune bread/,
 		/Good Food fixture recipe: dune bread/,
 		/Love and Lemons fixture recipe: dune bread/,
 	]);
 });
 
-test("train keeps the weather, one fact and the games, and stays after a reload", async ({
-	page,
-}) => {
-	await page.goto("/");
-	const train = page.getByRole("button", { name: "Train" });
-	await expect(page.getByRole("button", { name: "Coffee" })).toHaveAttribute(
-		"aria-pressed",
-		"true",
+test("an old train preference no longer hides the paper", async ({ page }) => {
+	await page.addInitScript(() =>
+		localStorage.setItem("today.mode.v1", "train"),
 	);
-	await train.click();
-	await expect(train).toHaveAttribute("aria-pressed", "true");
-	for (const hidden of [".pic", ".quote", "#h-recipes", "section.quiz"])
-		await expect(page.locator(hidden)).toBeHidden();
-	await expect(page.locator("#h-dyk")).toBeVisible();
-	await expect(page.locator(".games .game").first()).toBeVisible();
-	await expect(page.locator(".wx")).toBeVisible();
-	await page.reload();
-	await expect(page.locator(".pic")).toBeHidden();
-	await page.getByRole("button", { name: "Coffee" }).click();
-	await expect(page.locator(".pic")).toBeVisible();
+	await page.goto("/");
+	for (const visible of [".pic", ".quote", "#h-recipes", "section.quiz"])
+		await expect(page.locator(visible)).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: /^(Coffee|Train)$/ }),
+	).toHaveCount(0);
 });
 
 // whichever of sun, moon and star is up right now
@@ -238,9 +228,21 @@ test.describe("the sky without JavaScript", () => {
 	});
 });
 
-test("the games are visible without scrolling", async ({ page }) => {
+test("the paper leads on phones and games stay visible on desktop", async ({
+	page,
+}, testInfo) => {
 	await page.goto("/");
 	const box = await page.locator(".games").boundingBox();
+	if (testInfo.project.name === "phone") {
+		await expect(page.locator("#paper > :first-child")).toHaveClass("pic");
+		for (const selector of [".reading", ".feat", ".otd", ".quote"]) {
+			const reading = await page.locator(selector).boundingBox();
+			expect(
+				box && reading && reading.y + reading.height <= box.y,
+			).toBeTruthy();
+		}
+		return;
+	}
 	const view = page.viewportSize();
 	expect(box && view && box.y + box.height <= view.height).toBe(true);
 });
@@ -365,7 +367,7 @@ test("the quiz asks one question at a time and keeps the score", async ({
 	await expect(quiz.locator(".score")).toContainText(`of ${total}.`);
 });
 
-test("opening a game marks it, un-mark undoes it, and state survives a reload", async ({
+test("opening a game marks it and state survives a reload", async ({
 	page,
 }) => {
 	await page.goto("/");
@@ -386,10 +388,9 @@ test("opening a game marks it, un-mark undoes it, and state survives a reload", 
 	await page.reload();
 	await expect(page.locator(".count")).toContainText("1 of 10 played");
 
-	await page.locator(".streaks summary").click();
-	await page.getByRole("button", { name: "Un-mark Wordle as played" }).click();
-	await expect(page.locator(".count")).toContainText("0 of 10 played");
-	await expect(row.locator(".name")).toContainText(", not yet");
+	await expect(
+		page.getByRole("button", { name: /un-mark|share today/i }),
+	).toHaveCount(0);
 });
 
 test("all ten played lights the white-out, and it persists", async ({
@@ -405,12 +406,9 @@ test("all ten played lights the white-out, and it persists", async ({
 	await expect(page.locator("html")).toHaveAttribute("data-whiteout", "");
 	await page.reload();
 	await expect(page.locator("html")).toHaveAttribute("data-whiteout", "");
-	await page.locator(".streaks summary").click();
-	await page
-		.getByRole("button", { name: /un-mark/i })
-		.first()
-		.click();
-	await expect(page.locator("html")).not.toHaveAttribute("data-whiteout", "");
+	await expect(
+		page.getByRole("button", { name: /un-mark|share today/i }),
+	).toHaveCount(0);
 });
 
 test("a streak counts consecutive days", async ({ page }) => {
