@@ -112,7 +112,8 @@ interface AgendaItem {
 
 /**
  * Paard's week plus the agenda's events that start this week (`date` through date+6), sorted,
- * at most MAX and two per venue when there are several. The credit names every venue that has an item.
+ * at most MAX and two per site (Paard, Amare, DenHaag.com) when there are several. The credit names
+ * every venue that has an item.
  */
 export function withAgenda(
 	paard: Events | null,
@@ -135,14 +136,15 @@ export function withAgenda(
 			`${b.day}T${b.time ?? "00:00"}`,
 		),
 	);
-	// denhaag.com lists dozens a week: two per venue keeps one source from filling the list
-	const perVenue = new Set(all.map((i) => i.venue)).size > 1 ? 2 : MAX;
+	// DenHaag.com lists dozens a week at many venues: two per site keeps it from filling the list
+	const site = (i: Happening) => new URL(i.url).hostname;
+	const perSite = new Set(all.map(site)).size > 1 ? 2 : MAX;
 	const taken = new Map<string, number>();
 	const items = all
 		.filter((i) => {
-			const n = taken.get(i.venue) ?? 0;
-			taken.set(i.venue, n + 1);
-			return n < perVenue;
+			const n = taken.get(site(i)) ?? 0;
+			taken.set(site(i), n + 1);
+			return n < perSite;
 		})
 		.slice(0, MAX);
 	const venues = [...new Set(items.map((i) => i.venue))];

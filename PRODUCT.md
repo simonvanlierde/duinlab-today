@@ -57,7 +57,7 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
   ZenQuotes (credited).
 - Local Hague, below the paper: high and low water at Scheveningen (Rijkswaterstaat, in the
   moon's popover), and this week's shows and events from Paard, Amare and DenHaag.com, two per
-  venue. Amare and DenHaag.com block scripts, so a weekly homelab job reads them through a headless
+  site. Amare and DenHaag.com block scripts, so a weekly homelab job reads them through a headless
   browser and writes `agenda/v1` to Workers KV; the Worker merges it with Paard's.
 - Yesterday's paper at `/yesterday`: the stored day before today, read-only, quiz answers shown.
 - Sea: temperature and wave height off Scheveningen from Open-Meteo's marine API (keyless, credited),
