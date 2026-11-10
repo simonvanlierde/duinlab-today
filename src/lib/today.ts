@@ -26,11 +26,29 @@ const hasApodKey = () => !!env.NASA_API_KEY;
  * Builds the day, keeps what an earlier build of it already had, and stores it in KV. A complete
  * stored day is returned untouched. Called hourly by the cron and by a request that finds no day.
  */
-export async function refreshDay(now: Date): Promise<Day> {
+export function refreshDay(now: Date): Promise<Day> {
 	const date = amsterdamDay(now);
+	let build = building.get(date);
+	if (!build) {
+		build = rebuild(date, now).finally(() => building.delete(date));
+		building.set(date, build);
+	}
+	return build;
+}
+
+/** One build per day at a time in this isolate, so a burst of requests does not each rebuild. */
+const building = new Map<string, Promise<Day>>();
+
+async function rebuild(date: string, now: Date): Promise<Day> {
 	const prev = await readDay(date);
 	if (prev && !incomplete(prev, hasApodKey())) return prev;
-	const day = mergeDay(prev, await buildDay(date, now, env.NASA_API_KEY, prev));
+	const built = mergeDay(
+		prev,
+		await buildDay(date, now, env.NASA_API_KEY, prev),
+	);
+	// another isolate (the cron or a request) may have stored the day during the build: its
+	// sections win, so the quiz never changes under someone halfway through it
+	const day = mergeDay(await readDay(date), built);
 	try {
 		await env.DAYS.put(keyFor(date), JSON.stringify(day), {
 			// a total outage is kept a minute only, so the next request tries again
