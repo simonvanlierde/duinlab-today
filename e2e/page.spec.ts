@@ -439,6 +439,18 @@ test("the about page says what is kept and links the source", async ({
 	await expect(page.locator("h1")).toHaveText("Below the horizon");
 });
 
+test("yesterday's paper shows the stored day with the quiz answers", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page.getByRole("link", { name: "Yesterday's paper" }).click();
+	await expect(page.getByText("Which planet is red?")).toBeVisible();
+	await expect(page.locator("strong", { hasText: "Mars" })).toBeVisible();
+	await expect(page.getByText("Yesterday's quote.")).toBeVisible();
+	await page.getByRole("link", { name: "Today's paper" }).click();
+	await expect(page).toHaveURL(/\/$/);
+});
+
 test("security headers and a CSP that the page keeps to", async ({
 	page,
 	request,
@@ -496,6 +508,7 @@ const PHASES = ["night", "first-light", "dawn", "day", "dusk"];
 for (const path of [
 	...PHASES.map((p) => `/?phase=${p}`),
 	"/about",
+	"/yesterday",
 	"/no-such-page",
 ]) {
 	test(`no axe violations (WCAG 2.2 AA) on ${path}`, async ({ page }) => {

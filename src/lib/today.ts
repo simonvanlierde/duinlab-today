@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 import { allFailed, buildDay, type Day, incomplete, mergeDay } from "./build";
 import { cached } from "./cache";
-import { amsterdamDay } from "./day";
+import { amsterdamDay, shift } from "./day";
 import { games } from "./games";
 import { withAgenda } from "./sources/events";
 import { fetchNews, fetchRecipes } from "./sources/news";
@@ -68,6 +68,10 @@ async function readDay(date: string): Promise<Day | null> {
 		return null;
 	}
 }
+
+/** Yesterday's stored day, or null once KV has dropped it (it keeps two days). */
+export const getYesterday = (now: Date = new Date()) =>
+	readDay(shift(amsterdamDay(now), -1));
 
 async function getDay(now: Date): Promise<Day> {
 	const stored = await readDay(amsterdamDay(now));
