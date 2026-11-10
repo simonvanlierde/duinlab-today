@@ -133,15 +133,18 @@ describe("withAgenda", () => {
 		).toBeNull();
 	});
 
-	it("takes at most two per venue when there are several", () => {
-		const many = ["2026-11-10", "2026-11-11", "2026-11-12"].map((d) =>
-			item(d, "09:00", "DenHaag.com"),
-		);
+	it("takes at most two per site when there are several, whatever their venues", () => {
+		const many = ["2026-11-10", "2026-11-11", "2026-11-12"].map((d, n) => ({
+			...item(d, "09:00", `Venue ${n}`),
+			url: `https://denhaag.com/en/agenda/${d}`,
+		}));
 		const r = withAgenda(paard, { items: many }, "2026-11-10");
 		expect(r?.items.map((i) => i.venue)).toEqual([
-			"DenHaag.com",
-			"DenHaag.com",
+			"Venue 0",
+			"Venue 1",
 			"Paard",
 		]);
+		// the credit names the sites, not the dozens of venues DenHaag.com lists
+		expect(r?.credit.name).toBe("DenHaag.com, Paard");
 	});
 });

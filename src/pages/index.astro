@@ -289,12 +289,12 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 	{
 		events && (
 			<section class="wrap local" aria-labelledby="h-events">
-				<Cue id="h-events">This week at {events.credit.name}</Cue>
+				<Cue id="h-events">This week in The Hague</Cue>
 				<ul class="plain">
 					{events.items.map((e) => (
 						<li>
 							<span class="when">{weekday(e.day, today.date)}{e.time && ` ${e.time}`}</span>{" "}
-							<a href={e.url}>{e.name}</a>
+							<a href={e.url}>{e.name}</a> <span class="mute">{e.venue}</span>
 						</li>
 					))}
 				</ul>
