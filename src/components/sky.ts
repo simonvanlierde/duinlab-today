@@ -82,7 +82,7 @@ export function bodiesAt<
  * ground is dark. Each table has a dark/light ground pair 0.01 degrees apart, so the ground
  * jumps past the middle greys where neither ink reaches AA instead of fading through them.
  */
-export interface SkyStop {
+interface SkyStop {
 	alt: number;
 	k: [string, string, string, string];
 	g: string;
