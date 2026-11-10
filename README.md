@@ -9,6 +9,10 @@ and cached feeds, alongside Cloudflare's request logs; it stores no personal pro
 Tap the moon or a planet to see its details first in the almanac, followed by the sun times,
 other planets, tides and sea conditions. Without JavaScript, the same controls open the complete overview.
 
+Tap a picture to open a larger view, zoom into details and browse the day's images. Captions and
+source links stay within reach. Close the viewer to return to the paper; without JavaScript,
+the picture links directly to its image.
+
 ## How it works
 
 ```mermaid
