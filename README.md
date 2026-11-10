@@ -1,7 +1,7 @@
 # duinlab-today
 
 A small daily page at <https://today.duinlab.nl>: up to five pictures in a swipe strip, a few sourced facts, the
-weather in The Hague, a five-question quiz, five headlines and a short list of daily web
+weather in The Hague, a five-question quiz and a short list of daily web
 games with played-today marks and streaks. The sky at the top follows the sun's position over
 The Hague, minute by minute. Checkmarks and streaks stay in your browser; the server keeps
 nothing beyond Cloudflare's request logs.
@@ -18,7 +18,7 @@ flowchart LR
   sources[("Wikipedia, Wiktionary,<br/>APOD, The Met, Art Institute,<br/>Rijksmuseum, Open Trivia DB, ZenQuotes,<br/>Rijkswaterstaat, iNaturalist, Paard")] --> build
   build -- "day/v2/date" --> kv[("Workers KV")]
   kv --> page
-  live[("Open-Meteo, Buienradar,<br/>news and recipe feeds")] -- "Cache API,<br/>15 min to 3 h" --> page
+  live[("Open-Meteo, Buienradar,<br/>recipe feeds")] -- "Cache API,<br/>15 min to 3 h" --> page
   page -- "HTML with the data in it" --> browser["Browser: sky script,<br/>games and quiz islands"]
   browser <--> ls[("localStorage:<br/>ticks, streaks, quiz")]
 ```
@@ -32,8 +32,8 @@ One Worker serves everything ([`src/worker.ts`](src/worker.ts)).
   every section the day already had, so the quiz never changes under you, and every picture it
   already has (each source picks its artwork from the date). A request that finds
   no day builds it itself ([`src/lib/today.ts`](src/lib/today.ts)).
-- **Weather, headlines and recipes** change during the day, so each request reads them through the
-  Workers cache: 15 minutes for the weather, 30 for the news, 3 hours for the recipes.
+- **Weather and recipes** change during the day, so each request reads them through the
+  Workers cache: 15 minutes for the weather, 3 hours for the recipes.
 - **The page** is rendered on the server with all of this in it, so it reads fine without
   JavaScript. In the browser, a small inline script moves the sky with the clock, and two
   Svelte islands keep the games and the quiz in `localStorage`. Nothing goes back to the
@@ -76,7 +76,6 @@ are:
 | `onThisDay`, `featured`, `word`, `quote`, `quiz`, `tides`, `nearYou`, `events`, `weather` | objects | `null` |
 | `didYouKnow` | a list of facts | `[]` |
 | `pictures` | up to five, in this order: APOD, The Met, Wikipedia picture of the day, Art Institute of Chicago, Rijksmuseum; one per source | `[]` |
-| `news` | up to five headlines, one per paper | `[]` |
 | `recipes` | up to three recipes (`title`, `url`, `source`), one per site | `[]` |
 
 Sun times carry the Amsterdam offset. `weather.rainNext2h[].time` is `HH:MM` on the
@@ -92,8 +91,7 @@ Wikipedia (On this day, Did you know, the featured article), Wiktionary (word of
 NASA APOD, The Metropolitan Museum of Art, the Art Institute of Chicago and the Rijksmuseum (public-domain works), the Wikipedia picture of the day (credited with its licence), Open Trivia DB (CC BY-SA 4.0),
 ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), iNaturalist (species seen within
 15 km this week), Paard (this week's shows), Open-Meteo, Buienradar (the rain radar), and the
-front-page RSS feeds of NOS, NRC,
-the BBC, the Guardian and the New York Times, and the recipe feeds of the Guardian, BBC Good Food and
+recipe feeds of the Guardian, BBC Good Food and
 Love and Lemons. Each item on the page links to its source.
 
 ## Licence

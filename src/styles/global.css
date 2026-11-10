@@ -245,7 +245,7 @@ html:not(.js) .mode {
 	color: var(--bar);
 }
 /* train: the weather (in the masthead), one fact and the games */
-[data-mode="train"] :is(.pic, .feat, .otd, .quote, .quiz, .local, .news),
+[data-mode="train"] :is(.pic, .feat, .otd, .quote, .quiz, .local, .recipes),
 [data-mode="train"] .sec:has(#h-word) {
 	display: none;
 }
@@ -886,38 +886,26 @@ summary {
 	font-variant-numeric: tabular-nums;
 	color: var(--mute);
 }
-/* headlines and recipes side by side: one top story per newspaper, one recipe per site */
-.newsrow {
-	display: grid;
-	gap: 0 32px;
-}
-@media (min-width: 900px) {
-	.newsrow {
-		grid-template-columns: 3fr 2fr;
-	}
-	.newsrow:has(> :only-child) {
-		grid-template-columns: 1fr;
-	}
-}
-.news {
+/* the newest recipe of each site, below the paper */
+.recipes {
 	padding-block: 12px 4px;
 }
-.news ul {
+.recipes ul {
 	display: grid;
 	gap: 6px 32px;
 	padding-top: 10px;
 	border-top: 1px solid var(--rule);
 }
 @media (min-width: 900px) {
-	.news ul {
+	.recipes ul {
 		grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
 	}
 }
-.news li {
+.recipes li {
 	font-size: 0.9375rem;
 	text-wrap: pretty;
 }
-.news .paper {
+.recipes .paper {
 	margin-right: 4px;
 	font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
 	font-weight: 600;

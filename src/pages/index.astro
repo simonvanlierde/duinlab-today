@@ -63,12 +63,6 @@ const orb = (b: { x: number; alt: number }) =>
 const occasion = occasionLine(today.date);
 const HOLIDAYS =
 	"https://calendar.google.com/calendar/embed?src=en.dutch%23holiday%40group.v.calendar.google.com&ctz=Europe%2FAmsterdam";
-const lists = (
-	[
-		["h-news", "Headlines", today.news],
-		["h-recipes", "Recipes", today.recipes],
-	] as const
-).filter(([, , items]) => items.length > 0);
 const what = `A small daily page: a few pictures, sourced facts, a word, a quiz and ${today.games.length} daily games.`;
 ---
 
@@ -265,21 +259,17 @@ const what = `A small daily page: a few pictures, sourced facts, a word, a quiz 
 	}
 
 	{
-		lists.length > 0 && (
-			<div class="wrap newsrow">
-				{lists.map(([id, title, items]) => (
-					<section class="news" aria-labelledby={id}>
-						<Cue id={id}>{title}</Cue>
-						<ul class="plain">
-							{items.map((h) => (
-								<li>
-									<span class="paper">{h.source}</span> <a href={h.url}>{h.title}</a>
-								</li>
-							))}
-						</ul>
-					</section>
-				))}
-			</div>
+		today.recipes.length > 0 && (
+			<section class="wrap recipes" aria-labelledby="h-recipes">
+				<Cue id="h-recipes">Recipes</Cue>
+				<ul class="plain">
+					{today.recipes.map((r) => (
+						<li>
+							<span class="paper">{r.source}</span> <a href={r.url}>{r.title}</a>
+						</li>
+					))}
+				</ul>
+			</section>
 		)
 	}
 

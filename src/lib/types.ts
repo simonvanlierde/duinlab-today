@@ -132,7 +132,7 @@ export interface Game {
 	blurb: string;
 }
 
-/** A paper's top story or a cooking site's newest recipe, linked to the source. */
+/** A cooking site's newest recipe, linked to the source. */
 export interface Headline {
 	title: string;
 	url: string;
@@ -197,8 +197,6 @@ export interface Today {
 	nearYou: NearYou | null;
 	events: Events | null;
 	weather: Weather | null;
-	/** Up to five, one per paper; [] when every feed failed. Cached for 30 minutes. */
-	news: Headline[];
 	/** Up to three, one per site (a recipe, not a paper's story); [] when every feed failed. Cached for 3 hours. */
 	recipes: Headline[];
 	games: Game[];

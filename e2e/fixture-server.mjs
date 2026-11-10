@@ -35,18 +35,6 @@ function redated(body, base) {
 	);
 }
 
-const PAPERS = {
-	"feeds.nos.nl": "NOS",
-	"www.nrc.nl": "NRC",
-	"feeds.bbci.co.uk": "BBC",
-	"www.theguardian.com": "The Guardian",
-	"rss.nytimes.com": "NYT",
-};
-const rss = (host) =>
-	`<?xml version="1.0"?><rss version="2.0"><channel><title>${PAPERS[host]}</title>` +
-	`<item><title><![CDATA[${PAPERS[host]} fixture headline: sand dunes grow a metre]]></title>` +
-	`<link>https://${host}/fixture-story</link></item></channel></rss>`;
-
 const RECIPE_HOSTS = {
 	"www.theguardian.com": "The Guardian",
 	"www.bbcgoodfood.com": "Good Food",
@@ -94,19 +82,10 @@ const HOSTS = {
 	],
 	"api.inaturalist.org": () => ["application/json", text("inaturalist.json")],
 	...Object.fromEntries(
-		Object.keys(PAPERS).map((h) => [
+		Object.keys(RECIPE_HOSTS).map((h) => [
 			h,
-			// the Guardian serves both the world feed and the recipes feed
-			(path) => [
-				"application/rss+xml",
-				path.includes("/recipes/") ? recipeRss(h) : rss(h),
-			],
+			() => ["application/rss+xml", recipeRss(h)],
 		]),
-	),
-	...Object.fromEntries(
-		Object.keys(RECIPE_HOSTS)
-			.filter((h) => !(h in PAPERS))
-			.map((h) => [h, () => ["application/rss+xml", recipeRss(h)]]),
 	),
 };
 

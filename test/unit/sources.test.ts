@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { allFailed, buildDay, incomplete, mergeDay } from "../../src/lib/build";
 import { cached } from "../../src/lib/cache";
 import { rainLine } from "../../src/lib/format";
-import { parseTopItem } from "../../src/lib/sources/news";
 import {
 	fetchPictures,
 	imageSize,
@@ -13,6 +12,7 @@ import {
 	parseRijks,
 } from "../../src/lib/sources/picture";
 import { parseQuote } from "../../src/lib/sources/quote";
+import { parseTopItem } from "../../src/lib/sources/recipes";
 import { parseQuiz } from "../../src/lib/sources/trivia";
 import {
 	beaufort,

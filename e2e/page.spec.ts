@@ -96,16 +96,6 @@ test("renders the sky, every section from the fixtures, and the ten games", asyn
 	await expect(section("h-events").locator("li").first()).toContainText(
 		/^Tomorrow 19:20 Takuya Kuroda/,
 	);
-	await expect(section("h-news").locator(".paper")).toHaveText([
-		"NOS",
-		"NRC",
-		"BBC",
-		"The Guardian",
-		"NYT",
-	]);
-	await expect(section("h-news").locator("li").first()).toContainText(
-		"NOS fixture headline: sand dunes grow a metre",
-	);
 	await expect(section("h-recipes").locator(".paper")).toHaveText([
 		"The Guardian",
 		"Good Food",
@@ -129,13 +119,7 @@ test("train keeps the weather, one fact and the games, and stays after a reload"
 	);
 	await train.click();
 	await expect(train).toHaveAttribute("aria-pressed", "true");
-	for (const hidden of [
-		".pic",
-		".quote",
-		"#h-news",
-		"#h-recipes",
-		"section.quiz",
-	])
+	for (const hidden of [".pic", ".quote", "#h-recipes", "section.quiz"])
 		await expect(page.locator(hidden)).toBeHidden();
 	await expect(page.locator("#h-dyk")).toBeVisible();
 	await expect(page.locator(".games .game").first()).toBeVisible();
@@ -271,7 +255,7 @@ test("the desktop page fits one screen", async ({ page }) => {
 	]) {
 		await page.setViewportSize({ width, height });
 		await page.goto("/");
-		// the paper itself; the headlines and the footer follow below the fold
+		// the paper itself; the recipes and the footer follow below the fold
 		const tall = await page.evaluate(
 			() =>
 				document.querySelector("#paper")?.getBoundingClientRect().bottom ?? 0,

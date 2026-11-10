@@ -4,12 +4,11 @@ import { cached } from "./cache";
 import { amsterdamDay, shift } from "./day";
 import { games } from "./games";
 import { withAgenda } from "./sources/events";
-import { fetchNews, fetchRecipes } from "./sources/news";
+import { fetchRecipes } from "./sources/recipes";
 import { fetchWeather } from "./sources/weather";
 import type { Today } from "./types";
 
 const WEATHER_TTL = 15 * 60;
-const NEWS_TTL = 30 * 60;
 const RECIPES_TTL = 3 * 60 * 60;
 /** A failed fetch is retried after a minute, not on every request. */
 const FAILED_TTL = 60;
@@ -96,7 +95,7 @@ async function readAgenda() {
 
 export async function getToday(now: Date = new Date()): Promise<Today> {
 	const cache = (caches as unknown as { default: Cache }).default;
-	const [day, agenda, weather, news, recipes] = await Promise.all([
+	const [day, agenda, weather, recipes] = await Promise.all([
 		getDay(now),
 		readAgenda(),
 		cached(
@@ -104,12 +103,6 @@ export async function getToday(now: Date = new Date()): Promise<Today> {
 			"weather",
 			() => fetchWeather(now),
 			(w) => (w ? WEATHER_TTL : FAILED_TTL),
-		),
-		cached(
-			cache,
-			"news",
-			() => fetchNews(),
-			(n) => (n.length > 0 ? NEWS_TTL : FAILED_TTL),
 		),
 		cached(
 			cache,
@@ -124,7 +117,6 @@ export async function getToday(now: Date = new Date()): Promise<Today> {
 		events: withAgenda(day.events, agenda, day.date),
 		games,
 		weather,
-		news,
 		recipes,
 	};
 }
