@@ -3,7 +3,6 @@ import { onMount, tick } from "svelte";
 import type { Game } from "../lib/types";
 import {
 	allPlayed,
-	anyHistory,
 	init,
 	isPlayed,
 	mark,
@@ -90,10 +89,6 @@ async function unfold() {
 	{/each}
 </ol>
 
-{#if live && !anyHistory()}
-	<p class="first-visit">0 days. Everyone starts in the dark.</p>
-{/if}
-
 <style>
 	.games-head {
 		display: flex;
@@ -113,12 +108,6 @@ async function unfold() {
 	}
 	.count .some {
 		color: var(--lit-text);
-	}
-	.first-visit {
-		margin-top: 10px;
-		font-size: 0.9375rem;
-		font-style: italic;
-		color: var(--mute);
 	}
 	.games {
 		display: grid;

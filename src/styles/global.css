@@ -940,7 +940,7 @@ code {
 	font-size: 0.875em;
 }
 
-/* the paper on paper: one page, black on white, links spelled out */
+/* Print every picture with its caption, in black on white. */
 @media print {
 	:root {
 		--ground: #fff;
@@ -948,6 +948,9 @@ code {
 	}
 	.bar,
 	.skip,
+	.arrow,
+	.dots,
+	.more,
 	.orb,
 	.rail,
 	.quiz,
@@ -964,9 +967,24 @@ code {
 	.occasion {
 		color: #333;
 	}
-	.front {
-		grid-template-columns: 1fr 1fr;
-		grid-template-areas: "pic read" "otd quote";
+	.front,
+	.extras,
+	.slides {
+		display: block;
+	}
+	.slides {
+		overflow: visible;
+	}
+	.slide {
+		break-inside: avoid;
+		margin-bottom: 16px;
+	}
+	.date-time time {
+		color: inherit;
+	}
+	.feat p {
+		display: block;
+		overflow: visible;
 	}
 	.pic img {
 		height: 9cm;

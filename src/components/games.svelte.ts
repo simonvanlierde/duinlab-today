@@ -102,7 +102,3 @@ export function ticks(id: string): boolean[] {
 export function streak(id: string): number {
 	return run((day) => isPlayed(id, day), store.day);
 }
-
-export function anyHistory(): boolean {
-	return store.ids.some((id) => (store.played[id]?.length ?? 0) > 0);
-}
