@@ -160,7 +160,7 @@ test.describe("pictures without JavaScript", () => {
 		});
 		await expect(opener).toHaveAttribute(
 			"href",
-			/^https:\/\/images.metmuseum.org\//,
+			/^https:\/\/images\.metmuseum\.org\//,
 		);
 		await expect(page.locator(".slide figcaption").first()).toContainText(
 			"Vincent van Gogh",
