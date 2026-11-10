@@ -263,6 +263,32 @@ test("the desktop page fits one screen", async ({ page }) => {
 	}
 });
 
+test("on a short desktop the picture, reading and games fit, and the quote waits under the fold", async ({
+	page,
+}) => {
+	for (const [width, height] of [
+		[1100, 700],
+		[1280, 700],
+	]) {
+		await page.setViewportSize({ width, height });
+		await page.goto("/");
+		const edges = await page.evaluate(() => {
+			const box = (s: string) =>
+				document.querySelector(s)?.getBoundingClientRect();
+			return {
+				above: [".pic", ".feat", ".reading", ".rail"].map(
+					(s) => box(s)?.bottom ?? 0,
+				),
+				rail: box(".rail")?.bottom ?? 0,
+				quote: box(".quote")?.top ?? 0,
+			};
+		});
+		for (const bottom of edges.above)
+			expect(bottom).toBeLessThanOrEqual(height);
+		expect(edges.quote).toBeGreaterThan(edges.rail);
+	}
+});
+
 test("the quiz asks one question at a time and keeps the score", async ({
 	page,
 }) => {

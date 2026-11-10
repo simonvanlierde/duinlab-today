@@ -46,6 +46,8 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
   or a pollen count is high.
 - Recipes: the newest recipe from the Guardian, BBC Good Food and Love and Lemons, title and
   link only, below the paper. NYT Cooking is left out: it has no public feed.
+- On a desktop screen shorter than 760 px, On this day and the quote start under the fold, so the
+  rest of the paper fits one screen.
 - Live feeds (weather, recipes) are cached and served stale while refreshed in the background, so a
   cold view does not wait on them; weather is never served more than about 2 h past its 15 minutes.
 - Sources: Wikipedia featured feed (On this day, Did you know, the featured article), Wiktionary word of the day,

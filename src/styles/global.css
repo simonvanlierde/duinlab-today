@@ -558,6 +558,20 @@ h1 {
 		grid-template-areas: "read otd games" "read quote games";
 	}
 }
+/* on a short desktop screen the games stop above the last row, so On this day and the quote
+   start under the fold and the rest of the paper fits */
+@media (min-width: 1100px) and (max-height: 760px) {
+	.front,
+	.front:not(:has(.pic)) {
+		grid-template-rows: auto;
+	}
+	.front {
+		grid-template-areas: "pic read games" "feat read games" "otd quote quote";
+	}
+	.front:not(:has(.pic)) {
+		grid-template-areas: "feat read games" "otd quote quote";
+	}
+}
 
 .cue {
 	display: flex;
