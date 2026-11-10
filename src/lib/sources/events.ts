@@ -99,6 +99,12 @@ export function parseEvents(html: string, date: string): Events | null {
 export const fetchEvents = (date: string) =>
 	safe("events", async () => parseEvents(await getText(AGENDA), date));
 
+const SITE_NAMES: Record<string, string> = {
+	"www.paard.nl": "Paard",
+	"www.amare.nl": "Amare",
+	"denhaag.com": "DenHaag.com",
+};
+
 /** One item of `agenda/v1` in KV, which a homelab job writes twice a month from Amare and denhaag.com. */
 interface AgendaItem {
 	venue: string;
@@ -113,7 +119,7 @@ interface AgendaItem {
 /**
  * Paard's week plus the agenda's events that start this week (`date` through date+6), sorted,
  * at most MAX and two per site (Paard, Amare, DenHaag.com) when there are several. The credit names
- * every venue that has an item.
+ * each site that has an item; the venue stays on the item.
  */
 export function withAgenda(
 	paard: Events | null,
@@ -147,12 +153,12 @@ export function withAgenda(
 			return n < perSite;
 		})
 		.slice(0, MAX);
-	const venues = [...new Set(items.map((i) => i.venue))];
+	const sites = [...new Set(items.map((i) => SITE_NAMES[site(i)] ?? site(i)))];
 	return {
 		items,
 		url: paard?.url ?? AGENDA,
 		credit: {
-			name: venues.join(", ") || "Paard",
+			name: sites.join(", ") || "Paard",
 			url: paard?.credit.url ?? AGENDA,
 		},
 	};

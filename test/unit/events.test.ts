@@ -144,5 +144,7 @@ describe("withAgenda", () => {
 			"Venue 1",
 			"Paard",
 		]);
+		// the credit names the sites, not the dozens of venues DenHaag.com lists
+		expect(r?.credit.name).toBe("DenHaag.com, Paard");
 	});
 });
