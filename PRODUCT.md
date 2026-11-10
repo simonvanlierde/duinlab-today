@@ -41,7 +41,9 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
   Wordle, Raddle, Timdle, Metazooa.
 - Weather: Open-Meteo forecast for The Hague (52.08 N, 4.31 E), no key, credited; the weather
   line links to meteoblue's week forecast. The rain line comes from Buienradar's radar (5-minute
-  steps), with Open-Meteo as the fallback.
+  steps), with Open-Meteo as the fallback. A line on air quality or pollen
+  (Open-Meteo air-quality API, no key, credited) shows only when the European AQI is 60 or more
+  or a pollen count is high.
 - Recipes: the newest recipe from the Guardian, BBC Good Food and Love and Lemons, title and
   link only, below the paper. NYT Cooking is left out: it has no public feed.
 - Sources: Wikipedia featured feed (On this day, Did you know, the featured article), Wiktionary word of the day,

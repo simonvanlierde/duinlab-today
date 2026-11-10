@@ -70,6 +70,10 @@ const HOSTS = {
 	"opentdb.com": () => ["application/json", text("opentdb.json")],
 	"zenquotes.io": () => ["application/json", text("zenquotes.json")],
 	"api.open-meteo.com": () => ["application/json", text("open-meteo.json")],
+	"air-quality-api.open-meteo.com": () => [
+		"application/json",
+		text("open-meteo-air.json"),
+	],
 	"gpsgadget.buienradar.nl": () => ["text/plain", text("buienradar.txt")],
 	// both recorded on 2026-11-09
 	"ddapi20-waterwebservices.rijkswaterstaat.nl": () => [

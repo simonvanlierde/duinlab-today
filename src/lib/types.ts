@@ -101,6 +101,8 @@ export interface Weather {
 	rainNext2h: { time: string; mm: number }[];
 	/** Which of the two `rainNext2h` comes from. */
 	rainCredit: Credit;
+	/** "Air quality poor (AQI 64)" or "Grass pollen high today"; null when both are fine or the air feed failed. */
+	air: string | null;
 	/** ISO instant the forecast was fetched; weather is cached for 15 minutes. */
 	fetchedAt: string;
 	credit: Credit;

@@ -15,6 +15,7 @@ import { parseQuote } from "../../src/lib/sources/quote";
 import { parseTopItem } from "../../src/lib/sources/recipes";
 import { parseQuiz } from "../../src/lib/sources/trivia";
 import {
+	airLine,
 	beaufort,
 	compass,
 	fetchWeather,
@@ -308,6 +309,25 @@ describe("parsers", () => {
 		expect(fallback?.rainCredit.name).toBe("Open-Meteo");
 		expect(fallback?.rainNext2h).toHaveLength(8);
 		warn.mockRestore();
+	});
+
+	it("flags poor air and high pollen, and nothing below the thresholds", () => {
+		const air = (current: Record<string, number | null>) =>
+			airLine({ current });
+		expect(
+			air({ european_aqi: 59, grass_pollen: 20, birch_pollen: 100 }),
+		).toBeNull();
+		expect(air({ european_aqi: 60 })).toBe("Air quality poor (AQI 60)");
+		expect(air({ european_aqi: 30, grass_pollen: 21 })).toBe(
+			"Grass pollen high today",
+		);
+		expect(
+			air({ birch_pollen: 101, alder_pollen: 400, grass_pollen: null }),
+		).toBe("Birch and alder pollen high today");
+		expect(air({ european_aqi: 72, mugwort_pollen: 25 })).toBe(
+			"Mugwort pollen high today · Air quality poor (AQI 72)",
+		);
+		expect(air({})).toBeNull();
 	});
 
 	it("maps weather to plain words, Beaufort and compass points", () => {

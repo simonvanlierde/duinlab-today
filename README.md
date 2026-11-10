@@ -89,7 +89,7 @@ Worker itself fails, it answers 503 with `{"error": ...}`.
 
 Wikipedia (On this day, Did you know, the featured article), Wiktionary (word of the day),
 NASA APOD, The Metropolitan Museum of Art, the Art Institute of Chicago and the Rijksmuseum (public-domain works), the Wikipedia picture of the day (credited with its licence), Open Trivia DB (CC BY-SA 4.0),
-ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), Paard (this week's shows), Open-Meteo, Buienradar (the rain radar), and the
+ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), Paard (this week's shows), Open-Meteo (weather, air quality and pollen), Buienradar (the rain radar), and the
 recipe feeds of the Guardian, BBC Good Food and
 Love and Lemons. Each item on the page links to its source.
 
