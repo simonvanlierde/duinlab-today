@@ -49,6 +49,19 @@ import zen from "./fixtures/zenquotes.json";
 afterEach(() => vi.unstubAllGlobals());
 
 describe("parsers", () => {
+	it.each([null, undefined, Number.NaN])(
+		"rejects invalid current weather number %s",
+		(temperature) => {
+			const invalid = structuredClone(meteo);
+			invalid.current.temperature_2m = temperature as number;
+			expect(() => parseWeather(invalid, new Date())).toThrow();
+		},
+	);
+	it("rejects missing daily weather numbers", () => {
+		const invalid = structuredClone(meteo);
+		invalid.daily.temperature_2m_max = [];
+		expect(() => parseWeather(invalid, new Date())).toThrow();
+	});
 	it("takes two did-you-know items with the hook's article link", () => {
 		const facts = parseFacts(wikipedia);
 		expect(facts).toHaveLength(2);
@@ -273,6 +286,14 @@ describe("parsers", () => {
 		expect(parseFeatured({})).toBeNull();
 	});
 
+	it("keeps initials inside featured article sentences", () => {
+		const sentence =
+			"Regulus is an oil painting by the English artist J. M. W. Turner, first exhibited in 1828.";
+		expect(
+			shortExtract(`${sentence} It depicts a harbour. A third sentence.`),
+		).toBe(`${sentence} It depicts a harbour.`);
+	});
+
 	it("reads Buienradar's radar text as mm per hour, skipping bad lines", () => {
 		expect(parseRaintext(raintext)).toEqual([
 			{ time: "10:05", mm: 0 },
@@ -281,7 +302,9 @@ describe("parsers", () => {
 			{ time: "10:20", mm: 10 },
 			{ time: "10:25", mm: 0.1 },
 		]);
-		expect(rainLine(parseRaintext(raintext))).toBe("Dry until 10:15");
+		expect(rainLine(parseRaintext(raintext))).toBe(
+			"Rain expected around 10:15",
+		);
 		// Buienradar ends its lines with CRLF; git stores the fixture with LF
 		expect(parseRaintext("000|10:05\r\n141|10:10\r\n")).toEqual([
 			{ time: "10:05", mm: 0 },
@@ -488,6 +511,7 @@ describe("day assembly and cache", () => {
 		// the sources that no stored picture covers are asked too
 		expect(hosts.sort()).toEqual([
 			"api.artic.edu",
+			"api.wikimedia.org",
 			"collectionapi.metmuseum.org",
 			"data.rijksmuseum.nl",
 			"www.paard.nl",
@@ -653,8 +677,15 @@ describe("hardening", () => {
 		const step = (time: string, mm: number) => ({ time, mm });
 		expect(rainLine([step("10:00", 0.3), step("10:15", 0)])).toBe("Rain now");
 		expect(rainLine([step("10:00", 0), step("10:15", 0.2)])).toBe(
-			"Dry until 10:15",
+			"Rain expected around 10:15",
 		);
+	});
+
+	it("limits a dry forecast to the next two hours", () => {
+		expect(rainLine([{ time: "23:30", mm: 0 }])).toBe(
+			"No rain expected in the next 2 hours",
+		);
+		expect(rainLine([])).toBe("");
 	});
 
 	it("rebuilds an incomplete day without losing what it had", () => {
@@ -672,7 +703,7 @@ describe("hardening", () => {
 			didYouKnow: [{ text: "a" }],
 		} as unknown as NonNullable<Parameters<typeof mergeDay>[0]>;
 		expect(incomplete(base, true)).toBe(true); // word missing, and APOD is not in
-		expect(incomplete({ ...base, word: {} as never }, false)).toBe(false);
+		expect(incomplete({ ...base, word: {} as never }, false)).toBe(true);
 		const fresh = {
 			...base,
 			generatedAt: "2026-11-06T06:05:00Z",
@@ -693,7 +724,34 @@ describe("hardening", () => {
 		expect(merged.word?.word).toBe("dune");
 		expect(merged.quote?.text).toBe("old");
 		expect(merged.generatedAt).toBe("2026-11-06T06:05:00Z");
-		expect(incomplete(merged, true)).toBe(false);
+		expect(incomplete(merged, true)).toBe(true);
+		const complete = {
+			...merged,
+			pictures: ["apod", "met", "wikipedia", "aic", "rijks"].map((kind) => ({
+				kind,
+			})),
+		} as typeof merged;
+		expect(incomplete(complete, true)).toBe(false);
+		for (const missing of complete.pictures) {
+			expect(
+				incomplete(
+					{
+						...complete,
+						pictures: complete.pictures.filter((p) => p.kind !== missing.kind),
+					},
+					true,
+				),
+			).toBe(true);
+		}
+		expect(
+			incomplete(
+				{
+					...complete,
+					pictures: complete.pictures.filter((p) => p.kind !== "apod"),
+				},
+				false,
+			),
+		).toBe(false);
 		expect(mergeDay({ ...base, date: "2026-11-05" }, fresh)).toBe(fresh);
 
 		// a day stored before tides existed has no such key: the next run fills it in

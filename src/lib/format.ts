@@ -67,7 +67,9 @@ export function rainLine(steps: Weather["rainNext2h"]): string {
 	// the first step is the current one: 5 minutes from Buienradar, 15 from Open-Meteo
 	if ((steps[0]?.mm ?? 0) > 0) return "Rain now";
 	const wet = steps.find((s) => s.mm > 0);
-	return wet ? `Dry until ${wet.time}` : "Dry for 2 hours";
+	return wet
+		? `Rain expected around ${wet.time}`
+		: "No rain expected in the next 2 hours";
 }
 
 /** "9 h 18 min of daylight, 3 min less than yesterday": the day's length and its change. */

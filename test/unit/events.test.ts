@@ -15,6 +15,16 @@ const ev = (name: string, startDate: string, extra = "") =>
 	`{"@type":"Event","name":"${name}","url":"https://www.paard.nl/event/x/","startDate":"${startDate}"${extra}}`;
 
 describe("parseEvents", () => {
+	it.each([
+		{ items: {} },
+		{ items: [null] },
+		{ items: [{ start: "2026-11-11" }] },
+	])("ignores malformed agenda data %j", (agenda) => {
+		const existing = parseEvents(paard, "2026-11-10");
+		expect(withAgenda(existing, agenda as never, "2026-11-10")?.items).toEqual(
+			existing?.items,
+		);
+	});
 	it("takes the next week of shows, sorted", () => {
 		const r = parseEvents(paard, "2026-11-10");
 		expect(r?.items.length).toBeGreaterThan(5);

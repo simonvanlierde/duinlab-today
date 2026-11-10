@@ -58,9 +58,15 @@ export function parseOnThisDay(feed: Feed): OnThisDay | null {
 
 /** Up to two whole sentences within MAX_EXTRACT; a longer first sentence is cut at a word. */
 export function shortExtract(text: string): string {
-	const sentences = [
-		...new Intl.Segmenter("en", { granularity: "sentence" }).segment(text),
-	].map((s) => s.segment);
+	const sentences: string[] = [];
+	for (const { segment } of new Intl.Segmenter("en", {
+		granularity: "sentence",
+	}).segment(text)) {
+		// Sentence segmentation can separate an author's initials from their surname.
+		if (sentences.length && /\b[A-Z]\.\s*$/.test(sentences.at(-1) ?? ""))
+			sentences[sentences.length - 1] += segment;
+		else sentences.push(segment);
+	}
 	let out = "";
 	for (const s of sentences.slice(0, 2)) {
 		if ((out + s).trim().length > MAX_EXTRACT) break;

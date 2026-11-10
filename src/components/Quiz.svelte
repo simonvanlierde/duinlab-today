@@ -109,8 +109,12 @@ const score = $derived(
 				{#each quiz.questions as question, i (i)}
 					<li>
 						<p class="review-question">{question.question}</p>
-						<p>Your answer: {question.answers[picks[i]!]}</p>
-						<p>Correct answer: {question.answers[question.correct]}</p>
+						{#if picks[i] === question.correct}
+							<p>Correct: {question.answers[question.correct]}</p>
+						{:else}
+							<p>Your answer: {question.answers[picks[i]!]}</p>
+							<p>Correct answer: {question.answers[question.correct]}</p>
+						{/if}
 					</li>
 				{/each}
 			</ol>

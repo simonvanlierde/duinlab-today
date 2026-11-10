@@ -193,7 +193,7 @@ export interface Today {
 	weather: Weather | null;
 	/** Cached for an hour; null when the marine feed failed. */
 	sea: Sea | null;
-	/** Up to three, one per site (a recipe, not a paper's story); [] when every feed failed. Cached for 3 hours. */
+	/** Up to nine, three per site (a recipe, not a paper's story); [] when every feed failed. Cached for 3 hours. */
 	recipes: Recipe[];
 	games: Game[];
 }

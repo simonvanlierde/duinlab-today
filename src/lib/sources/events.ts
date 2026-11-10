@@ -129,9 +129,18 @@ export function withAgenda(
 	date: string,
 ): Events | null {
 	const last = shift(date, 6);
-	const extra: Happening[] = (agenda?.items ?? [])
+	const extra: Happening[] = (Array.isArray(agenda?.items) ? agenda.items : [])
 		.filter(
 			(a) =>
+				a &&
+				typeof a.name === "string" &&
+				a.name.trim() &&
+				typeof a.venue === "string" &&
+				typeof a.start === "string" &&
+				/^\d{4}-\d{2}-\d{2}$/.test(a.start) &&
+				(a.time === null ||
+					(typeof a.time === "string" &&
+						/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(a.time))) &&
 				a.start >= date &&
 				a.start <= last &&
 				httpsUrl(a.url) &&

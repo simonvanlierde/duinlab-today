@@ -1,6 +1,8 @@
 import { handle } from "@astrojs/cloudflare/handler";
 import { refreshDay } from "./lib/today";
 
+export { DayCoordinator } from "./lib/day-coordinator";
+
 export default {
 	fetch: handle,
 	// Hourly at :05 (wrangler.jsonc). It builds the day just after midnight, fills sources that

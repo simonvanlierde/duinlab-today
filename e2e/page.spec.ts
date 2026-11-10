@@ -1,5 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
+import { amsterdamDay, shift } from "../src/lib/day";
+import type { Quiz } from "../src/lib/types";
 
 const KEY = "today.games.v1";
 const PICTURE_HOSTS =
@@ -87,7 +89,9 @@ test("renders the sky, every section from the fixtures, and the ten games", asyn
 		"Robert Kiyosaki",
 	);
 	await expect(page.locator(".wx")).toContainText(/5°\s*overcast, 9° \/ 2°/);
-	await expect(page.locator(".strip")).toContainText("dry until 10:15");
+	await expect(page.locator(".strip")).toContainText(
+		"rain expected around 10:15",
+	);
 	await expect(page.locator(".strip")).toContainText(
 		"Grass pollen high today · Air quality poor (AQI 64)",
 	);
@@ -121,6 +125,46 @@ test("an old train preference no longer hides the paper", async ({ page }) => {
 
 // whichever of sun, moon and star is up right now
 const orbs = (page: Page) => page.locator("[data-orb]:not([hidden])");
+
+test("the almanac has an explicit close control", async ({
+	page,
+}, testInfo) => {
+	await page.goto("/");
+	const opener = orbs(page).first();
+	await opener.click();
+	await page.locator("#almanac").screenshot({
+		path: `test-results/almanac-close-${testInfo.project.name}.png`,
+	});
+	await page
+		.locator("#almanac")
+		.getByRole("button", { name: "Close", exact: true })
+		.click();
+	await expect(page.locator("#almanac")).toBeHidden();
+	await expect(opener).toBeFocused();
+});
+
+test("sky controls provide 44px targets", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto("/?phase=night");
+	const boxes = [];
+	for (const control of await page.locator(".orb:not([hidden])").all()) {
+		const box = await control.boundingBox();
+		expect(box?.width).toBeGreaterThanOrEqual(44);
+		expect(box?.height).toBeGreaterThanOrEqual(44);
+		if (box) boxes.push(box);
+	}
+	for (let i = 0; i < boxes.length; i++) {
+		for (const b of boxes.slice(i + 1)) {
+			const a = boxes[i];
+			expect(
+				a.x < b.x + b.width &&
+					a.x + a.width > b.x &&
+					a.y < b.y + b.height &&
+					a.y + a.height > b.y,
+			).toBe(false);
+		}
+	}
+});
 
 test("the sky's bright body opens the sun, moon and tide times, and Escape closes them", async ({
 	page,
@@ -358,22 +402,26 @@ test("the quiz asks one question at a time and keeps the score", async ({
 	const questions = [];
 	const choices = [];
 	const correct = [];
+	const source: Quiz = (await (await page.request.get("/today.json")).json())
+		.quiz;
 	const total = Number(
 		(await quiz.locator(".qn").textContent())?.match(/of (\d+)/)?.[1],
 	);
 	for (let i = 0; i < total; i++) {
+		const question = source.questions[i];
+		const pick =
+			i === 0
+				? question.correct
+				: (question.correct + 1) % question.answers.length;
 		questions.push((await quiz.locator(".q").textContent()) ?? "");
-		choices.push(await quiz.locator(".answer").first().textContent());
-		await quiz.locator(".answer").first().click();
-		correct.push(
-			((await quiz.locator(".answer.right").textContent()) ?? "")
-				.trim()
-				.replace(/\s*right$/, ""),
-		);
+		choices.push(question.answers[pick]);
+		await quiz.locator(".answer").nth(pick).click();
+		correct.push(question.answers[question.correct]);
 		await expect(quiz.locator(".answer").first()).toBeDisabled();
 		await quiz.locator(".next").click();
 	}
 	await expect(quiz.locator(".score")).toContainText(`of ${total}.`);
+	await expect(quiz.locator(".score .figure")).toHaveText("1");
 	const saved = await page.evaluate(() =>
 		localStorage.getItem("today.quiz.v1"),
 	);
@@ -385,8 +433,15 @@ test("the quiz asks one question at a time and keeps the score", async ({
 	for (let i = 0; i < total; i++) {
 		await expect(review.nth(i)).toBeVisible();
 		await expect(review.nth(i)).toContainText(questions[i]);
-		await expect(review.nth(i)).toContainText(`Your answer: ${choices[i]}`);
-		await expect(review.nth(i)).toContainText(`Correct answer: ${correct[i]}`);
+		if (choices[i]?.trim() === correct[i]) {
+			await expect(review.nth(i)).toContainText(`Correct: ${correct[i]}`);
+			await expect(review.nth(i)).not.toContainText("Your answer:");
+		} else {
+			await expect(review.nth(i)).toContainText(`Your answer: ${choices[i]}`);
+			await expect(review.nth(i)).toContainText(
+				`Correct answer: ${correct[i]}`,
+			);
+		}
 	}
 	await quiz.screenshot({
 		path: `test-results/quiz-review-${testInfo.project.name}.png`,
@@ -401,8 +456,30 @@ test("the quiz asks one question at a time and keeps the score", async ({
 	await expect(review.first()).toBeHidden();
 	await page.reload();
 	await expect(quiz.locator(".score")).toContainText(`of ${total}.`);
+	await expect(quiz.locator(".score .figure")).toHaveText("1");
 	await quiz.getByText("Review answers", { exact: true }).click();
-	await expect(review.first()).toContainText(`Your answer: ${choices[0]}`);
+	await expect(review.first()).toContainText(choices[0] ?? "");
+});
+
+test("long game streaks survive another game's save and a reload", async ({
+	page,
+}) => {
+	const today = amsterdamDay();
+	const history = Array.from({ length: 64 }, (_, i) => shift(today, i - 64));
+	await page.addInitScript(
+		({ history, key }) => {
+			if (!localStorage.getItem(key))
+				localStorage.setItem(key, JSON.stringify({ wordle: history }));
+		},
+		{ history, key: KEY },
+	);
+	await page.goto("/");
+	await play(page, "Wordle");
+	await play(page, "Connections");
+	await page.reload();
+	await expect(
+		page.locator(".game", { hasText: "Wordle" }).locator(".streak .figure"),
+	).toHaveText("65");
 });
 
 test("opening a game marks it and state survives a reload", async ({
@@ -522,11 +599,19 @@ test.describe("without JavaScript", () => {
 
 test("the about page says what is kept and links the source", async ({
 	page,
-}) => {
+}, testInfo) => {
 	await page.goto("/");
 	await expect(page.locator(".wx")).toHaveAttribute("href", /meteoblue\.com/);
 	await page.getByRole("link", { name: "About", exact: true }).click();
 	await expect(page.locator("h1")).toHaveText("About this page");
+	await expect(
+		page.locator("footer").getByRole("link", { name: "Simon van Lierde" }),
+	).toHaveAttribute("href", "https://simonvanlierde.com");
+	await expect(page.locator("footer")).not.toContainText("duinlab.nl");
+	await page.screenshot({
+		path: testInfo.outputPath("about.png"),
+		fullPage: true,
+	});
 	await expect(
 		page.getByRole("link", { name: /github\.com\/simonvanlierde/ }),
 	).toBeVisible();

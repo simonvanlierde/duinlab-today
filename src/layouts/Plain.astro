@@ -3,11 +3,12 @@ import "../styles/global.css";
 import Dune from "../components/Dune.astro";
 import Foot from "../components/Foot.astro";
 import { PHASE_SUN, SKY, skyAt } from "../components/sky";
+import { sunAltitude } from "../lib/sun";
 
 interface Props {
 	title: string;
 	description: string;
-	/** The sky to show: day for the about page, night for a missing page. */
+	/** Override the current sky for a missing page. */
 	sky?: "day" | "night";
 	/** The word in the top bar beside the site name. */
 	label?: string;
@@ -15,10 +16,13 @@ interface Props {
 const {
 	title,
 	description,
-	sky = "day",
+	sky,
 	label = sky === "night" ? "below the horizon" : "about",
 } = Astro.props;
-const s = skyAt(PHASE_SUN[sky].alt, true, SKY);
+const now = Date.now();
+const s = sky
+	? skyAt(PHASE_SUN[sky].alt, true, SKY)
+	: skyAt(sunAltitude(now), sunAltitude(now + 600000) > sunAltitude(now), SKY);
 const style = Object.entries(s.vars)
 	.map(([k, v]) => `${k}:${v}`)
 	.join(";");

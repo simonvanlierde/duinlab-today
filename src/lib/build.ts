@@ -1,5 +1,5 @@
 import { fetchEvents } from "./sources/events";
-import { fetchPictures, mergePictures } from "./sources/picture";
+import { fetchPictures, mergePictures, PICTURE_ORDER } from "./sources/picture";
 import { fetchQuote } from "./sources/quote";
 import { fetchTides } from "./sources/tides";
 import { fetchQuiz } from "./sources/trivia";
@@ -25,7 +25,11 @@ export async function buildDay(
 	const keep = <T>(have: T | null | undefined, fetch: () => Promise<T>) =>
 		have ? Promise.resolve(have) : fetch();
 	const wikiDone =
-		prev && prev.didYouKnow.length > 0 && prev.onThisDay && prev.featured;
+		prev &&
+		prev.didYouKnow.length > 0 &&
+		prev.onThisDay &&
+		prev.featured &&
+		prev.pictures.some((p) => p.kind === "wikipedia");
 	const have = prev?.pictures ?? [];
 	const [wiki, pictures, word, quote, quiz, tides, events] = await Promise.all([
 		wikiDone
@@ -84,11 +88,15 @@ const missingSections = (d: Day) => sections(d).filter((s) => !s).length;
 
 export const allFailed = (d: Day) => sections(d).every((s) => !s);
 
-/** Not final yet: a source is missing, or APOD, which publishes at 06:00, is not in yet. */
+/** Not final yet: a section or an enabled picture source is missing. */
 export function incomplete(d: Day, hasApodKey: boolean): boolean {
 	return (
 		missingSections(d) > 0 ||
-		(hasApodKey && !d.pictures.some((p) => p.kind === "apod"))
+		PICTURE_ORDER.some(
+			(kind) =>
+				(kind !== "apod" || hasApodKey) &&
+				!d.pictures.some((p) => p.kind === kind),
+		)
 	);
 }
 

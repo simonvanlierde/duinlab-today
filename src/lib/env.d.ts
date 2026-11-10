@@ -1,11 +1,7 @@
-// Only the binding this app reads; `.dev.vars` supplies it locally and `wrangler secret put` in production.
-declare module "cloudflare:workers" {
-	export const env: {
+declare namespace Cloudflare {
+	interface Env {
 		NASA_API_KEY?: string;
-		/** e2e only: getText fetches from this fixture server in place of the upstream hosts. */
+		/** e2e only: fetch source fixtures in place of upstream hosts. */
 		FIXTURE_ORIGIN?: string;
-		DAYS: KVNamespace;
-	};
-	/** Runs `promise` to completion after the response is sent. */
-	export function waitUntil(promise: Promise<unknown>): void;
+	}
 }
