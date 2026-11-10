@@ -75,7 +75,7 @@ test("renders the sky, every section from the fixtures, and the ten games", asyn
 	);
 	await expect(section("h-events").locator("li")).toHaveCount(5);
 	await expect(section("h-events").locator("li").first()).toContainText(
-		/^Tomorrow 19:20 TAKUYA KURODA/,
+		/^Tomorrow 19:20 Takuya Kuroda/,
 	);
 	await expect(section("h-news").locator(".paper")).toHaveText([
 		"NOS",

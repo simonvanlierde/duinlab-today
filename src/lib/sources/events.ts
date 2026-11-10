@@ -1,5 +1,5 @@
 import { isoAmsterdam, shift } from "../day";
-import type { Credit, Events, Happening } from "../types";
+import type { Events, Happening } from "../types";
 import { decodeEntities, getText, httpsUrl, safe } from "../util";
 
 // The /event/ archive lists every upcoming show with its JSON-LD in one GET; the home and
@@ -10,6 +10,20 @@ const BLOCK = /<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/g;
 const LOCAL = /^(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2}))?/;
 
 type Node = Record<string, unknown>;
+
+/**
+ * Paard writes most show names in capitals: those become title case ("MACY GRAY" to "Macy
+ * Gray"). Names with any lower case are the venue's own styling and stay as they are.
+ */
+export function titleCase(name: string): string {
+	if (name !== name.toUpperCase()) return name;
+	return name
+		.toLowerCase()
+		.replace(
+			/(^|[\s\-/(&+])(\p{L})/gu,
+			(_, sep: string, c: string) => sep + c.toUpperCase(),
+		);
+}
 
 /** Every Event node in one JSON-LD value: a single object, an array, or an @graph. */
 function eventNodes(v: unknown): Node[] {
@@ -37,10 +51,14 @@ function amsterdamStart(
 	return m ? { day: m[1] as string, time: m[2] ?? null } : null;
 }
 
-/** The next week of shows (`date` through date+6) from the page's JSON-LD; null when none. */
+/**
+ * The next week of shows (`date` through date+6) from the page's JSON-LD: `items` is [] in a
+ * week without shows, and the result is null when the page lists no shows at all.
+ */
 export function parseEvents(html: string, date: string): Events | null {
 	const last = shift(date, 6);
 	const found: (Happening & { start: string })[] = [];
+	let shows = 0;
 	for (const m of html.matchAll(BLOCK)) {
 		let nodes: Node[];
 		try {
@@ -51,10 +69,11 @@ export function parseEvents(html: string, date: string): Events | null {
 		for (const n of nodes) {
 			if (typeof n.name !== "string" || typeof n.startDate !== "string")
 				continue;
+			shows++;
 			if (String(n.eventStatus ?? "").endsWith("EventCancelled")) continue;
 			const start = amsterdamStart(n.startDate);
 			const url = httpsUrl(typeof n.url === "string" ? n.url : undefined);
-			const name = decodeEntities(n.name).trim();
+			const name = titleCase(decodeEntities(n.name).trim());
 			if (!start || !url || !name || start.day < date || start.day > last)
 				continue;
 			found.push({
@@ -67,7 +86,8 @@ export function parseEvents(html: string, date: string): Events | null {
 			});
 		}
 	}
-	if (!found.length) return null;
+	// no shows at all means the page changed; none this week (a summer break) is a real answer
+	if (shows === 0) return null;
 	found.sort((a, b) => a.start.localeCompare(b.start));
 	return {
 		items: found.slice(0, MAX).map(({ start: _, ...h }) => h),

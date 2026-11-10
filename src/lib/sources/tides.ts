@@ -1,4 +1,4 @@
-import type { Credit, Tides } from "../types";
+import type { Tides } from "../types";
 import { getText, safe } from "../util";
 
 const URL_PAGE = "https://waterinfo.rws.nl/";

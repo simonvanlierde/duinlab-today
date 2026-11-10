@@ -710,21 +710,19 @@ summary {
 
 /* headlines: below the paper, one top story per newspaper */
 .local {
-	display: grid;
-	gap: 16px 32px;
 	padding-block: 12px 4px;
-}
-@media (min-width: 900px) {
-	.local {
-		grid-template-columns: 1fr 1fr;
-	}
 }
 .local ul {
 	display: grid;
-	gap: 6px;
+	gap: 6px 32px;
 	padding-block: 10px 6px;
 	border-top: 1px solid var(--rule);
 	font-size: 0.9375rem;
+}
+@media (min-width: 900px) {
+	.local ul {
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+	}
 }
 .local .when {
 	font-variant-numeric: tabular-nums;

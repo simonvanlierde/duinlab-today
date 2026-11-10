@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseEvents } from "../../src/lib/sources/events";
+import { parseEvents, titleCase } from "../../src/lib/sources/events";
 import paard from "./fixtures/paard.html?raw";
 
 const page = (...blocks: string[]) =>
@@ -21,7 +21,7 @@ describe("parseEvents", () => {
 		expect(r?.items[0]).toMatchObject({
 			day: "2026-11-10",
 			time: "19:20",
-			name: "TAKUYA KURODA",
+			name: "Takuya Kuroda",
 		});
 		expect(r?.url).toBe("https://www.paard.nl/event/");
 	});
@@ -32,11 +32,11 @@ describe("parseEvents", () => {
 		const wide = parseEvents(paard, "2026-11-12");
 		expect(wide?.items.every((i) => !i.name.includes("&#"))).toBe(true);
 		expect(
-			parseEvents(page(ev("Late", "2026-11-17T20:00")), "2026-11-10"),
-		).toBeNull();
+			parseEvents(page(ev("Late", "2026-11-17T20:00")), "2026-11-10")?.items,
+		).toEqual([]);
 		expect(
-			parseEvents(page(ev("Past", "2026-11-09T20:00")), "2026-11-10"),
-		).toBeNull();
+			parseEvents(page(ev("Past", "2026-11-09T20:00")), "2026-11-10")?.items,
+		).toEqual([]);
 	});
 
 	it("handles @graph, arrays and single objects, and https urls only", () => {
@@ -66,8 +66,21 @@ describe("parseEvents", () => {
 		expect(r?.items.map((i) => i.name)).toEqual(["Ok"]);
 	});
 
-	it("returns null when there are no events", () => {
+	it("returns null when the page lists no shows, and no items for a week without any", () => {
 		expect(parseEvents("<html></html>", "2026-11-10")).toBeNull();
 		expect(parseEvents(page('{"@type":"WebPage"}'), "2026-11-10")).toBeNull();
+		expect(parseEvents(paard, "2027-07-01")?.items).toEqual([]);
+	});
+});
+
+describe("titleCase", () => {
+	it("title-cases names in capitals and leaves mixed case alone", () => {
+		expect(titleCase("MACY GRAY")).toBe("Macy Gray");
+		expect(titleCase("QUEEN’S PLEASURE")).toBe("Queen’s Pleasure");
+		expect(titleCase("HAAGSCH COLLEGE: MINDER TELEFOON")).toBe(
+			"Haagsch College: Minder Telefoon",
+		);
+		expect(titleCase("SEA-FOAM (LIVE)")).toBe("Sea-Foam (Live)");
+		expect(titleCase("Paardcafé: Club Pony!")).toBe("Paardcafé: Club Pony!");
 	});
 });
