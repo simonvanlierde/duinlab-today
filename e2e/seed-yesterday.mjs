@@ -8,7 +8,20 @@ const credit = { name: "Wikipedia", url: "https://en.wikipedia.org/" };
 const day = {
 	date,
 	generatedAt: new Date().toISOString(),
-	pictures: [],
+	pictures: [
+		{
+			imageUrl:
+				"https://images.metmuseum.org/CRDImages/ep/web-large/DP-42549-001.jpg",
+			pageUrl: "https://www.metmuseum.org/art/collection/search/436535",
+			title: "Wheat Field with Cypresses",
+			alt: "Wheat Field with Cypresses, by Vincent van Gogh",
+			by: "Vincent van Gogh",
+			credit: {
+				name: "The Metropolitan Museum of Art",
+				url: "https://www.metmuseum.org/",
+			},
+		},
+	],
 	didYouKnow: [
 		{
 			text: "moss grows on the north side",

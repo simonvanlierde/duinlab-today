@@ -6,6 +6,10 @@ games with played-today marks and streaks. The sky at the top follows the sun's 
 The Hague, minute by minute. Checkmarks and streaks stay in your browser. The server stores two days of public content
 and cached feeds, alongside Cloudflare's request logs; it stores no personal progress.
 
+Tap a picture to open a larger view, zoom into details and browse the day's images. Captions and
+source links stay within reach. Close the viewer to return to the paper; without JavaScript,
+the picture links directly to its image.
+
 ## How it works
 
 ```mermaid

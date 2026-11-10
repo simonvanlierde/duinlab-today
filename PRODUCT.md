@@ -101,6 +101,8 @@ lines come with each source. There are no users, metrics or testimonials to cite
 - The date and time share a masthead row. Recipes and events sit side by side on desktop.
 - Phone pictures keep a short, stable frame and show the whole image. Sun and moon remain
   the quiet controls for the almanac.
+- Pictures open in a larger viewer with zoom, touch and keyboard navigation, and their existing
+  captions and source links. Closing returns to the same place in the paper.
 - Games mark on opening; the page has no un-mark controls, score sharing or reading modes.
 - Sourced facts only; every item links to where it came from.
 - One Worker, no other backend.

@@ -21,15 +21,18 @@ const { pictures } = Astro.props;
 			{
 				pictures.map((p, i) => (
 					<figure class="slide" role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${pictures.length}`}>
-						<img
-							src={p.imageUrl}
-							alt={p.alt}
-							width={p.width ?? undefined}
-							height={p.height ?? undefined}
-							loading={i === 0 ? "eager" : "lazy"}
-							fetchpriority={i === 0 ? "high" : undefined}
-							decoding="async"
-						/>
+						<a class="picture-open" href={p.imageUrl} aria-label={`Look closer: ${p.title}`}>
+							<img
+								src={p.imageUrl}
+								alt={p.alt}
+								width={p.width ?? undefined}
+								height={p.height ?? undefined}
+								loading={i === 0 ? "eager" : "lazy"}
+								fetchpriority={i === 0 ? "high" : undefined}
+								decoding="async"
+							/>
+							<span class="picture-hint" aria-hidden="true">Look closer</span>
+						</a>
 						<figcaption>
 							<a href={p.pageUrl}><em>{p.title}</em></a>
 							{p.by && <>, {p.by}</>}
@@ -42,6 +45,25 @@ const { pictures } = Astro.props;
 		</div>
 	</div>
 </section>
+
+<dialog class="picture-viewer" aria-label="Picture viewer">
+	<div class="viewer-tools">
+		<span class="viewer-count" aria-live="polite"></span>
+		<button type="button" data-viewer-zoom aria-pressed="false">Zoom in</button>
+		<button type="button" data-viewer-close aria-label="Close viewer">Close</button>
+	</div>
+	<figure class="viewer-figure">
+		<div class="viewer-stage" role="region" aria-label="Enlarged picture" tabindex="0">
+			{pictures[0] && <img src={pictures[0].imageUrl} alt={pictures[0].alt} loading="lazy" decoding="async" />}
+			<p class="viewer-error" hidden>This image couldn’t load. Try its source below.</p>
+		</div>
+		<figcaption aria-live="polite"></figcaption>
+	</figure>
+	<div class="viewer-nav">
+		<button type="button" data-viewer-prev>Previous picture</button>
+		<button type="button" data-viewer-next>Next picture</button>
+	</div>
+</dialog>
 
 <script>
 	// Arrows and dots are built here, so a page without JavaScript has no dead buttons.
@@ -94,5 +116,94 @@ const { pictures } = Astro.props;
 		});
 		strip.parentElement?.append(prev, next, dots);
 		sync();
+	}
+
+	const viewer = document.querySelector<HTMLDialogElement>(".picture-viewer");
+	const image = viewer?.querySelector("img");
+	const caption = viewer?.querySelector("figcaption");
+	const stage = viewer?.querySelector<HTMLElement>(".viewer-stage");
+	const count = viewer?.querySelector(".viewer-count");
+	const error = viewer?.querySelector<HTMLElement>(".viewer-error");
+	const zoom = viewer?.querySelector<HTMLButtonElement>("[data-viewer-zoom]");
+	const close = viewer?.querySelector<HTMLButtonElement>("[data-viewer-close]");
+	const prev = viewer?.querySelector<HTMLButtonElement>("[data-viewer-prev]");
+	const next = viewer?.querySelector<HTMLButtonElement>("[data-viewer-next]");
+	if (viewer && image && caption && stage && count && error && zoom && close && prev && next) {
+		let at = 0;
+		let opener: HTMLAnchorElement;
+		const fit = () => {
+			stage.classList.remove("zoomed");
+			stage.scrollTo(0, 0);
+			zoom.textContent = "Zoom in";
+			zoom.setAttribute("aria-pressed", "false");
+		};
+		const show = (index: number) => {
+			at = Math.max(0, Math.min(slides.length - 1, index));
+			const source = slides[at].querySelector("img");
+			const credit = slides[at].querySelector("figcaption");
+			if (!source || !credit) return;
+			fit();
+			error.hidden = true;
+			image.hidden = false;
+			zoom.disabled = false;
+			image.alt = source.alt;
+			image.src = source.src;
+			caption.replaceChildren(...[...credit.childNodes].map((node) => node.cloneNode(true)));
+			count.textContent = `${at + 1} of ${slides.length}`;
+			if ((document.activeElement === prev && at === 0) ||
+				(document.activeElement === next && at === slides.length - 1)) {
+				stage.focus({ preventScroll: true });
+			}
+			prev.disabled = at === 0;
+			next.disabled = at === slides.length - 1;
+		};
+		slides.forEach((slide, i) => {
+			const link = slide.querySelector<HTMLAnchorElement>(".picture-open");
+			link?.addEventListener("click", (event) => {
+				if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+				event.preventDefault();
+				opener = link;
+				show(i);
+				viewer.showModal();
+				close.focus();
+			});
+		});
+		close.addEventListener("click", () => viewer.close());
+		viewer.addEventListener("close", () => opener?.focus({ preventScroll: true }));
+		prev.addEventListener("click", () => show(at - 1));
+		next.addEventListener("click", () => show(at + 1));
+		zoom.addEventListener("click", () => {
+			if (stage.classList.contains("zoomed")) return fit();
+			stage.classList.add("zoomed");
+			stage.scrollTo((stage.scrollWidth - stage.clientWidth) / 2, (stage.scrollHeight - stage.clientHeight) / 2);
+			zoom.textContent = "Fit picture";
+			zoom.setAttribute("aria-pressed", "true");
+		});
+		viewer.addEventListener("keydown", (event) => {
+			if (stage.classList.contains("zoomed")) return;
+			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+			event.preventDefault();
+			show(at + (event.key === "ArrowRight" ? 1 : -1));
+		});
+		let touch: { x: number; y: number; id: number } | null = null;
+		stage.addEventListener("pointerdown", (event) => {
+			if (event.pointerType === "touch" && !stage.classList.contains("zoomed")) {
+				touch = { x: event.clientX, y: event.clientY, id: event.pointerId };
+			}
+		});
+		stage.addEventListener("pointercancel", () => { touch = null; });
+		stage.addEventListener("pointerup", (event) => {
+			if (!touch || touch.id !== event.pointerId) return;
+			const dx = event.clientX - touch.x;
+			const dy = event.clientY - touch.y;
+			touch = null;
+			if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) show(at + (dx < 0 ? 1 : -1));
+		});
+		image.addEventListener("error", () => {
+			image.hidden = true;
+			error.hidden = false;
+			if (document.activeElement === zoom) stage.focus({ preventScroll: true });
+			zoom.disabled = true;
+		});
 	}
 </script>
