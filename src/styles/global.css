@@ -492,7 +492,7 @@ h1 {
 .star:hover {
 	scale: 1.15;
 }
-/* a planet: a point with its name above it, on a dark chip so the name reads on any night sky */
+/* a planet: a point, with its name above it on a dark chip so the name reads on any night sky */
 .planet {
 	/* on a phone the name above the point must stay in the band under the text */
 	--top: 30px;
@@ -500,7 +500,7 @@ h1 {
 	height: 32px;
 	color: #fff;
 }
-.planet .dot {
+.planet .pt {
 	position: absolute;
 	top: 50%;
 	left: 50%;
@@ -524,8 +524,13 @@ h1 {
 	letter-spacing: 0.02em;
 	white-space: nowrap;
 }
-.planet:hover .dot {
+.planet:hover .pt {
 	scale: 1.4;
+}
+/* a name shown all the time sits on the masthead text: it shows on hover or focus, and the
+   point keeps it as its label */
+.planet:not(:hover, :focus-visible) .tag {
+	display: none;
 }
 @media (min-width: 900px) {
 	.mast {

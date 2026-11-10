@@ -144,7 +144,7 @@ const what = `A small daily page: a few pictures, sourced facts, a word, a quiz 
 		{
 			bodies.planets.map((p) => (
 				<button class="orb planet" type="button" popovertarget="almanac" data-planet={p.name} hidden={!p.show} style={orb(p)} aria-label={`${p.name}: planets, sun, moon and tide times`}>
-					<span class="dot"></span><span class="tag" aria-hidden="true">{p.name}</span>
+					<span class="pt"></span><span class="tag" aria-hidden="true">{p.name}</span>
 				</button>
 			))
 		}
