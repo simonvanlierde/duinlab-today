@@ -132,4 +132,16 @@ describe("withAgenda", () => {
 			withAgenda(null, { items: [item("2026-11-30", null)] }, "2026-11-10"),
 		).toBeNull();
 	});
+
+	it("takes at most two per venue when there are several", () => {
+		const many = ["2026-11-10", "2026-11-11", "2026-11-12"].map((d) =>
+			item(d, "09:00", "DenHaag.com"),
+		);
+		const r = withAgenda(paard, { items: many }, "2026-11-10");
+		expect(r?.items.map((i) => i.venue)).toEqual([
+			"DenHaag.com",
+			"DenHaag.com",
+			"Paard",
+		]);
+	});
 });
