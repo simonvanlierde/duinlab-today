@@ -89,6 +89,28 @@ test("renders the sky, every section from the fixtures, and the ten games", asyn
 	);
 });
 
+test("train keeps the weather, one fact and the games, and stays after a reload", async ({
+	page,
+}) => {
+	await page.goto("/");
+	const train = page.getByRole("button", { name: "Train" });
+	await expect(page.getByRole("button", { name: "Coffee" })).toHaveAttribute(
+		"aria-pressed",
+		"true",
+	);
+	await train.click();
+	await expect(train).toHaveAttribute("aria-pressed", "true");
+	for (const hidden of [".pic", ".quote", ".news", "section.quiz"])
+		await expect(page.locator(hidden)).toBeHidden();
+	await expect(page.locator("#h-dyk")).toBeVisible();
+	await expect(page.locator(".games .game").first()).toBeVisible();
+	await expect(page.locator(".wx")).toBeVisible();
+	await page.reload();
+	await expect(page.locator(".pic")).toBeHidden();
+	await page.getByRole("button", { name: "Coffee" }).click();
+	await expect(page.locator(".pic")).toBeVisible();
+});
+
 test("the moon opens the sun and moon times, and Escape closes them", async ({
 	page,
 }) => {
