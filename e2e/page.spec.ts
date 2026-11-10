@@ -153,9 +153,12 @@ test("the sky's bright body opens the sun, moon and tide times, and Escape close
 	// which planets show depends on the date: the line is there only when one is up tonight
 	const tonight = almanac.locator("p", { hasText: /^Tonight:/ });
 	if (await tonight.count())
-		await expect(tonight).toHaveText(
-			/^Tonight: (\w+ in the [a-z-]+( (from|until) \d\d:\d\d)*( all night)?(, )?)+$/,
-		);
+		for (const part of (await tonight.innerText())
+			.replace(/^Tonight: /, "")
+			.split(", "))
+			expect(part).toMatch(
+				/^\w+ in the [a-z-]+(?: (?:from|until) \d\d:\d\d){0,2}(?: all night)?$/,
+			);
 	await page.keyboard.press("Escape");
 	await expect(almanac).toBeHidden();
 });
