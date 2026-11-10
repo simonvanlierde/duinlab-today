@@ -317,14 +317,14 @@ describe("parsers", () => {
 		const air = (current: Record<string, number | null>) =>
 			airLine({ current });
 		expect(
-			air({ european_aqi: 59, grass_pollen: 20, birch_pollen: 100 }),
+			air({ european_aqi: 59, grass_pollen: 49, birch_pollen: 69 }),
 		).toBeNull();
 		expect(air({ european_aqi: 60 })).toBe("Air quality poor (AQI 60)");
-		expect(air({ european_aqi: 30, grass_pollen: 21 })).toBe(
+		expect(air({ european_aqi: 30, grass_pollen: 50 })).toBe(
 			"Grass pollen high today",
 		);
 		expect(
-			air({ birch_pollen: 101, alder_pollen: 400, grass_pollen: null }),
+			air({ birch_pollen: 70, alder_pollen: 400, grass_pollen: null }),
 		).toBe("Birch and alder pollen high today");
 		expect(air({ european_aqi: 72, mugwort_pollen: 25 })).toBe(
 			"Mugwort pollen high today · Air quality poor (AQI 72)",

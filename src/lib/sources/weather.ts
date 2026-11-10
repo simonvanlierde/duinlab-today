@@ -121,14 +121,14 @@ export function parseRaintext(text: string): Weather["rainNext2h"] {
 
 /** European AQI from which the air counts as poor (EAQI "poor" starts at 60). */
 const AQI_POOR = 60;
-// "High" starts above the moderate band, in grains/m3: trees 100, grass and weeds 20
-// (the EAN-based classes pollen.today publishes; olive is left out, it does not grow here).
+// Where "high" starts, in pollen/m3: MeteoSwiss's load classes ("Threshold values for pollen
+// load classes of allergenic pollen types", 2024), set for daily means; olive does not grow here.
 const POLLEN = [
-	["grass", "grass_pollen", 20],
-	["birch", "birch_pollen", 100],
-	["alder", "alder_pollen", 100],
-	["mugwort", "mugwort_pollen", 20],
-	["ragweed", "ragweed_pollen", 20],
+	["grass", "grass_pollen", 50],
+	["birch", "birch_pollen", 70],
+	["alder", "alder_pollen", 70],
+	["mugwort", "mugwort_pollen", 15],
+	["ragweed", "ragweed_pollen", 11],
 ] as const;
 
 type AirRaw = { current: Record<string, number | null> };
@@ -137,7 +137,7 @@ type AirRaw = { current: Record<string, number | null> };
 export function airLine(r: AirRaw): string | null {
 	const c = r.current;
 	const aqi = c.european_aqi;
-	const high = POLLEN.filter(([, key, limit]) => (c[key] ?? 0) > limit).map(
+	const high = POLLEN.filter(([, key, limit]) => (c[key] ?? 0) >= limit).map(
 		([name]) => name,
 	);
 	const parts = [

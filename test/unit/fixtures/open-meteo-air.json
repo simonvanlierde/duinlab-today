@@ -11,7 +11,7 @@
 		"time": "2026-11-10T11:00",
 		"interval": 3600,
 		"european_aqi": 64,
-		"grass_pollen": 30.0,
+		"grass_pollen": 60.0,
 		"birch_pollen": 0.0,
 		"alder_pollen": 0.0,
 		"ragweed_pollen": 0.0,
