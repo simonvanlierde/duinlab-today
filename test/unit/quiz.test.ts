@@ -21,6 +21,24 @@ const day = "2026-11-06";
 afterEach(() => vi.unstubAllGlobals());
 
 describe("quiz store", () => {
+	it.each([
+		[-1, 0.5],
+		[2, 4],
+	])("drops invalid saved answer indices %s, %s", (first, second) => {
+		vi.stubGlobal(
+			"localStorage",
+			stubStorage({
+				[KEY]: {
+					day,
+					sig: signature(quiz),
+					picks: [first, second],
+					done: [],
+				},
+			}),
+		);
+		expect(loadQuiz(quiz, day).picks).toEqual([null, null]);
+	});
+
 	it("keeps today's picks for the same questions, and the finished days", () => {
 		vi.stubGlobal(
 			"localStorage",

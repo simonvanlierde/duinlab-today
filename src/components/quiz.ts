@@ -29,7 +29,11 @@ export function loadQuiz(
 			Array.isArray(saved.picks)
 		)
 			picks = picks.map((_, i) =>
-				typeof saved.picks[i] === "number" ? saved.picks[i] : null,
+				Number.isInteger(saved.picks[i]) &&
+				saved.picks[i] >= 0 &&
+				saved.picks[i] < quiz.questions[i].answers.length
+					? saved.picks[i]
+					: null,
 			);
 	} catch {
 		// private window: the quiz still works for this visit

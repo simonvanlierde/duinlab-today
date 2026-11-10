@@ -15,6 +15,8 @@ the picture links directly to its image.
 
 ## How it works
 
+After finishing the quiz, open “Review answers” to revisit your choices and the correct answers.
+
 ```mermaid
 flowchart LR
   cron(["Cron, hourly at :05"]) --> build
