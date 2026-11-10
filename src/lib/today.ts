@@ -30,7 +30,7 @@ export async function refreshDay(now: Date): Promise<Day> {
 	const date = amsterdamDay(now);
 	const prev = await readDay(date);
 	if (prev && !incomplete(prev, hasApodKey())) return prev;
-	const day = mergeDay(prev, await buildDay(date, now, env.NASA_API_KEY));
+	const day = mergeDay(prev, await buildDay(date, now, env.NASA_API_KEY, prev));
 	try {
 		await env.DAYS.put(keyFor(date), JSON.stringify(day), {
 			// a total outage is kept a minute only, so the next request tries again

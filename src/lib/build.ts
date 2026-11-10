@@ -12,21 +12,45 @@ import type { Today } from "./types";
 /** The day's sources, fetched in parallel, each failing on its own. Weather, news, recipes and games are added on read. */
 export type Day = Omit<Today, "weather" | "news" | "recipes" | "games">;
 
+/**
+ * A rebuild passes the stored day as `prev` and fetches only the sections it lacks: asking a
+ * source again for what the day already has wastes its rate limit, and mergeDay would keep
+ * the stored copy anyway.
+ */
 export async function buildDay(
 	date: string,
 	now: Date,
 	apiKey: string | undefined,
+	prev: Day | null = null,
 ): Promise<Day> {
+	const keep = <T>(have: T | null | undefined, fetch: () => Promise<T>) =>
+		have ? Promise.resolve(have) : fetch();
+	const wikiDone =
+		prev && prev.didYouKnow.length > 0 && prev.onThisDay && prev.featured;
+	// The Met standing in for APOD is fetched again until APOD publishes
+	const pictureDone =
+		prev?.picture &&
+		!(
+			apiKey &&
+			preferredPicture(date) === "apod" &&
+			prev.picture.kind === "met"
+		);
 	const [wiki, picture, word, quote, quiz, tides, nearYou, events] =
 		await Promise.all([
-			fetchWikipedia(date),
-			fetchPicture(date, apiKey),
-			fetchWord(date),
-			fetchQuote(),
-			fetchQuiz(date),
-			fetchTides(date),
-			fetchNearYou(date),
-			fetchEvents(date),
+			wikiDone
+				? Promise.resolve({
+						didYouKnow: prev.didYouKnow,
+						onThisDay: prev.onThisDay,
+						featured: prev.featured,
+					})
+				: fetchWikipedia(date),
+			pictureDone ? Promise.resolve(prev.picture) : fetchPicture(date, apiKey),
+			keep(prev?.word, () => fetchWord(date)),
+			keep(prev?.quote, () => fetchQuote()),
+			keep(prev?.quiz, () => fetchQuiz(date)),
+			keep(prev?.tides, () => fetchTides(date)),
+			keep(prev?.nearYou, () => fetchNearYou(date)),
+			keep(prev?.events, () => fetchEvents(date)),
 		]);
 	return {
 		date,
