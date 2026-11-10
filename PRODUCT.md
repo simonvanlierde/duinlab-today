@@ -57,9 +57,14 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
   ZenQuotes (credited).
 - Local Hague, below the paper: high and low water at Scheveningen (Rijkswaterstaat, in the
   moon's popover), and the next five shows at Paard.
+- Sea: temperature and wave height off Scheveningen from Open-Meteo's marine API (keyless, credited),
+  in the almanac popover beside the tides, cached for an hour.
+- Sky: Astronomy Engine (MIT) gives the bright planets, full moons, solstices, equinoxes and
+  eclipses seen from The Hague; meteor shower peaks are fixed approximate dates.
 - Also on the page: the moon in its real phase, high in the sky, which opens the sun times,
-  golden hour, day length and moon phase; the games played in the phone's bar, Dutch holidays and customs ahead (a
-  static table), day length, a share
+  golden hour, day length, moon phase, the planets up tonight, the sea and the tides. At night
+  the bright planets are small named points in the sky like the moon; the games played in the phone's bar, Dutch holidays and customs ahead (a
+  static table) and sky events (full moons, meteor peaks, solstices, equinoxes, eclipses; a holiday wins), day length, a share
   line for the quiz score and games played, and an About page (privacy, accessibility,
   sources, code).
 

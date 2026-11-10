@@ -1,5 +1,5 @@
 import { allPlayed, amsterdamDay } from "../lib/day";
-import { moonNow, starNow } from "../lib/moon";
+import { moonNow, planetsAt, starNow } from "../lib/moon";
 import { phaseAt, type SkyPhase, sunAltitude } from "../lib/sun";
 import type { Sun } from "../lib/types";
 import {
@@ -20,6 +20,7 @@ const INLINED = {
 	bodiesAt,
 	moonNow,
 	starNow,
+	planetsAt,
 	moonPath,
 	amsterdamDay,
 	allPlayed,
@@ -34,6 +35,7 @@ type Cfg = {
 	key: string;
 	table: typeof SKY;
 	phaseSun: typeof PHASE_SUN;
+	planets: [string, number, number][];
 } & typeof INLINED;
 
 // Same rules as the server: the sky follows the sun's altitude on the browser clock, and
@@ -112,10 +114,18 @@ const boot = (cfg: Cfg) => {
 			sun.alt,
 			cfg.moonNow,
 			cfg.starNow,
+			(t) => cfg.planetsAt(cfg.planets, t),
 		);
 		for (const el of document.querySelectorAll<HTMLElement>("[data-orb]")) {
 			const b = sky2[el.dataset.orb as "sun" | "moon" | "star"];
 			el.hidden = !b.show;
+			el.style.setProperty("--x", b.x.toFixed(4));
+			el.style.setProperty("--alt", b.alt.toFixed(2));
+		}
+		for (const el of document.querySelectorAll<HTMLElement>("[data-planet]")) {
+			const b = sky2.planets.find((p) => p.name === el.dataset.planet);
+			el.hidden = !b?.show;
+			if (!b) continue;
 			el.style.setProperty("--x", b.x.toFixed(4));
 			el.style.setProperty("--alt", b.alt.toFixed(2));
 		}
@@ -207,6 +217,8 @@ export function skyBootScript(day: {
 	/** The `?phase=` the page keeps, or null to follow the clock. */
 	forced: SkyPhase | null;
 	ids: string[];
+	/** Name, right ascension and declination in degrees, from `planetPositions`. */
+	planets?: [string, number, number][];
 }): string {
 	const cfg = {
 		sun: day.sun,
@@ -217,6 +229,7 @@ export function skyBootScript(day: {
 		key: "today.games.v1",
 		table: SKY,
 		phaseSun: PHASE_SUN,
+		planets: day.planets ?? [],
 	};
 	const fns = Object.entries(INLINED)
 		.map(([name, fn]) => `${JSON.stringify(name)}:${fn.toString()}`)

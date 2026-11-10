@@ -8,8 +8,8 @@ import { fetchWord } from "./sources/wiktionary";
 import { moonAt, sunTimes } from "./sun";
 import type { Today } from "./types";
 
-/** The day's sources, fetched in parallel, each failing on its own. Weather, recipes and games are added on read. */
-export type Day = Omit<Today, "weather" | "recipes" | "games">;
+/** The day's sources, fetched in parallel, each failing on its own. Weather, sea, recipes and games are added on read. */
+export type Day = Omit<Today, "weather" | "sea" | "recipes" | "games">;
 
 /**
  * A rebuild passes the stored day as `prev` and fetches only the sections it lacks: asking a

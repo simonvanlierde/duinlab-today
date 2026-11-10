@@ -1,5 +1,5 @@
 /**
- * Moon and bright stars over The Hague. Both functions are self-contained on purpose: the
+ * Moon, bright stars and planets over The Hague. Both functions are self-contained on purpose: the
  * layout inlines their source into the page, so the server render and the browser clock agree.
  */
 
@@ -97,4 +97,25 @@ export function starNow(now: number) {
 			best = { name, alt, h: ((((h / r) % 360) + 540) % 360) - 180 };
 	}
 	return best;
+}
+
+/**
+ * Altitude and hour angle (degrees) at `now` (ms) of fixed equatorial positions, for the
+ * planets: the server gives right ascension (of date) and declination for the day, and a
+ * planet moves under a degree a day (Mercury up to two), enough for a point in the masthead.
+ */
+export function planetsAt(planets: [string, number, number][], now: number) {
+	const r = Math.PI / 180;
+	const d = now / 86400000 - 10957.5;
+	const lst = 280.16 + 360.9856235 * d + 4.31;
+	const phi = 52.08 * r;
+	return planets.map(([name, ra, dec]) => {
+		const h = (lst - ra) * r;
+		const alt =
+			Math.asin(
+				Math.sin(phi) * Math.sin(dec * r) +
+					Math.cos(phi) * Math.cos(dec * r) * Math.cos(h),
+			) / r;
+		return { name, alt, h: ((((h / r) % 360) + 540) % 360) - 180 };
+	});
 }

@@ -145,8 +145,40 @@ test("the sky's bright body opens the sun, moon and tide times, and Escape close
 	await expect(almanac).toContainText(
 		/High water \d\d:\d\d and \d\d:\d\d, low \d\d:\d\d and \d\d:\d\d at Scheveningen/,
 	);
+	// the Open-Meteo marine fixture
+	await expect(almanac).toContainText(
+		"Sea at Scheveningen 11.6 °C, waves 0.1 m",
+	);
+	await expect(almanac.getByRole("link", { name: "Open-Meteo" })).toBeVisible();
+	// which planets show depends on the date: the line is there only when one is up tonight
+	const tonight = almanac.locator("p", { hasText: /^Tonight:/ });
+	if (await tonight.count())
+		await expect(tonight).toHaveText(
+			/^Tonight: (\w+ in the [a-z-]+( (from|until) \d\d:\d\d)*( all night)?(, )?)+$/,
+		);
 	await page.keyboard.press("Escape");
 	await expect(almanac).toBeHidden();
+});
+
+test("the planets are named buttons that open the almanac, and show only in the dark", async ({
+	page,
+}) => {
+	await page.goto("/?phase=night");
+	const planets = page.locator("[data-planet]");
+	await expect(planets).toHaveCount(5);
+	for (const name of ["Mercury", "Venus", "Mars", "Jupiter", "Saturn"])
+		await expect(page.locator(`[data-planet=${name}]`)).toHaveAttribute(
+			"aria-label",
+			new RegExp(`^${name}:`),
+		);
+	const up = page.locator("[data-planet]:not([hidden])");
+	if (await up.count()) {
+		await up.first().click();
+		await expect(page.locator("#almanac")).toBeVisible();
+	}
+	await page.keyboard.press("Escape");
+	await page.goto("/?phase=day");
+	await expect(page.locator("[data-planet]:not([hidden])")).toHaveCount(0);
 });
 
 test("by day the sun is a named, focusable button that opens the times", async ({
@@ -287,6 +319,26 @@ test("on a short desktop the picture, reading and games fit, and the quote waits
 			expect(bottom).toBeLessThanOrEqual(height);
 		expect(edges.quote).toBeGreaterThan(edges.rail);
 	}
+});
+
+test("on desktop altitude reaches the full height of the sky", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 1280, height: 800 });
+	await page.goto("/");
+	const star = page.locator("[data-orb=star]");
+	const sky = await page.locator("header.sky").boundingBox();
+	await star.evaluate((el) => {
+		el.removeAttribute("hidden");
+		el.style.setProperty("--alt", "60");
+	});
+	const box = await star.boundingBox();
+	expect(sky && box).toBeTruthy();
+	if (sky && box)
+		// the old 64px band would put 60 degrees under 76px; here it is two thirds of the way up
+		expect(sky.y + sky.height - (box.y + box.height / 2)).toBeGreaterThan(
+			(sky.height - 76) * 0.5,
+		);
 });
 
 test("the quiz asks one question at a time and keeps the score", async ({

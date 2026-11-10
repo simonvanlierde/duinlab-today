@@ -74,6 +74,10 @@ const HOSTS = {
 		"application/json",
 		text("open-meteo-air.json"),
 	],
+	"marine-api.open-meteo.com": () => [
+		"application/json",
+		text("open-meteo-marine.json"),
+	],
 	"gpsgadget.buienradar.nl": () => ["text/plain", text("buienradar.txt")],
 	// both recorded on 2026-11-09
 	"ddapi20-waterwebservices.rijkswaterstaat.nl": () => [

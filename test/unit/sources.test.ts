@@ -13,6 +13,7 @@ import {
 } from "../../src/lib/sources/picture";
 import { parseQuote } from "../../src/lib/sources/quote";
 import { parseTopItem } from "../../src/lib/sources/recipes";
+import { parseSea } from "../../src/lib/sources/sea";
 import { parseQuiz } from "../../src/lib/sources/trivia";
 import {
 	airLine,
@@ -38,6 +39,7 @@ import raintext from "./fixtures/buienradar.txt?raw";
 import metObject from "./fixtures/met-object.json";
 import metSearch from "./fixtures/met-search.json";
 import meteo from "./fixtures/open-meteo.json";
+import marine from "./fixtures/open-meteo-marine.json";
 import opentdb from "./fixtures/opentdb.json";
 import rijksObject from "./fixtures/rijks-object.json";
 import wikipedia from "./fixtures/wikipedia.json";
@@ -328,6 +330,25 @@ describe("parsers", () => {
 			"Mugwort pollen high today · Air quality poor (AQI 72)",
 		);
 		expect(air({})).toBeNull();
+	});
+
+	it("reads the sea temperature and wave height, each of which may be missing", () => {
+		expect(parseSea(marine)).toMatchObject({
+			temperatureC: 11.6,
+			waveHeightM: 0.1,
+			credit: { name: "Open-Meteo" },
+		});
+		expect(
+			parseSea({
+				current: { wave_height: 0.4, sea_surface_temperature: null },
+			}),
+		).toMatchObject({ temperatureC: null, waveHeightM: 0.4 });
+		expect(
+			parseSea({
+				current: { wave_height: null, sea_surface_temperature: null },
+			}),
+		).toBeNull();
+		expect(parseSea({})).toBeNull();
 	});
 
 	it("maps weather to plain words, Beaufort and compass points", () => {

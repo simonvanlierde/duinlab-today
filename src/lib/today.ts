@@ -5,12 +5,15 @@ import { amsterdamDay, shift } from "./day";
 import { games } from "./games";
 import { withAgenda } from "./sources/events";
 import { fetchRecipes } from "./sources/recipes";
+import { fetchSea } from "./sources/sea";
 import { fetchWeather } from "./sources/weather";
 import type { Today } from "./types";
 
 // stale: how long past its ttl an entry is still served while a request refreshes it. Weather
 // gets 2 h, after which the temperature would be wrong; recipes only change daily.
 const WEATHER_LIFE = { ttl: 15 * 60, stale: 2 * 60 * 60 };
+// sea temperature moves slowly: an hour, and served stale for six more
+const SEA_LIFE = { ttl: 60 * 60, stale: 6 * 60 * 60 };
 const RECIPES_LIFE = { ttl: 3 * 60 * 60, stale: 6 * 60 * 60 };
 /** A failed fetch is retried after a minute, not on every request, and never served stale. */
 const FAILED = { ttl: 60, stale: 0 };
@@ -97,7 +100,7 @@ async function readAgenda() {
 
 export async function getToday(now: Date = new Date()): Promise<Today> {
 	const cache = (caches as unknown as { default: Cache }).default;
-	const [day, agenda, weather, recipes] = await Promise.all([
+	const [day, agenda, weather, sea, recipes] = await Promise.all([
 		getDay(now),
 		readAgenda(),
 		cached(
@@ -105,6 +108,13 @@ export async function getToday(now: Date = new Date()): Promise<Today> {
 			"weather",
 			() => fetchWeather(new Date()),
 			(w) => (w ? WEATHER_LIFE : FAILED),
+			waitUntil,
+		),
+		cached(
+			cache,
+			"sea",
+			() => fetchSea(),
+			(x) => (x ? SEA_LIFE : FAILED),
 			waitUntil,
 		),
 		cached(
@@ -121,6 +131,7 @@ export async function getToday(now: Date = new Date()): Promise<Today> {
 		events: withAgenda(day.events, agenda, day.date),
 		games,
 		weather,
+		sea,
 		recipes,
 	};
 }

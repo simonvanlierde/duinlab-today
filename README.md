@@ -32,10 +32,13 @@ One Worker serves everything ([`src/worker.ts`](src/worker.ts)).
   every section the day already had, so the quiz never changes under you, and every picture it
   already has (each source picks its artwork from the date). A request that finds
   no day builds it itself ([`src/lib/today.ts`](src/lib/today.ts)).
-- **Weather and recipes** change during the day, so each request reads them through the
-  Workers cache: 15 minutes for the weather, 3 hours for the recipes. An entry past that is still
-  served while the request refreshes it in the background (`waitUntil`): for 2 hours more for the
-  weather, 6 for the recipes. Older than that, the request fetches it itself.
+- **Weather, sea and recipes** change during the day, so each request reads them through the
+  Workers cache: 15 minutes for the weather, an hour for the sea, 3 hours for the recipes. An entry
+  past that is still served while the request refreshes it in the background (`waitUntil`): for 2
+  hours more for the weather, 6 for the sea and the recipes. Older than that, the request fetches it itself.
+- **Planets and sky events** are worked out on the server with Astronomy Engine for each request:
+  the planets tonight in the almanac, the sky events in the line under the date. The browser gets
+  each planet's position for the day and works out altitude itself, like the moon and the bright star.
 - **The page** is rendered on the server with all of this in it, so it reads fine without
   JavaScript. In the browser, a small inline script moves the sky with the clock, and two
   Svelte islands keep the games and the quiz in `localStorage`. Nothing goes back to the
@@ -75,7 +78,7 @@ are:
 | `generatedAt` | ISO instant (UTC) the day was built | always present |
 | `sun`, `moon` | worked out locally | always present |
 | `games` | the daily games | always present |
-| `onThisDay`, `featured`, `word`, `quote`, `quiz`, `tides`, `events`, `weather` | objects | `null` |
+| `onThisDay`, `featured`, `word`, `quote`, `quiz`, `tides`, `events`, `weather`, `sea` | objects | `null` |
 | `didYouKnow` | a list of facts | `[]` |
 | `pictures` | up to five, in this order: APOD, The Met, Wikipedia picture of the day, Art Institute of Chicago, Rijksmuseum; one per source | `[]` |
 | `recipes` | up to three recipes (`title`, `url`, `source`), one per site | `[]` |
@@ -91,7 +94,8 @@ Worker itself fails, it answers 503 with `{"error": ...}`.
 
 Wikipedia (On this day, Did you know, the featured article), Wiktionary (word of the day),
 NASA APOD, The Metropolitan Museum of Art, the Art Institute of Chicago and the Rijksmuseum (public-domain works), the Wikipedia picture of the day (credited with its licence), Open Trivia DB (CC BY-SA 4.0),
-ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), Paard (this week's shows), Open-Meteo (weather, air quality and pollen), Buienradar (the rain radar), and the
+ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), Paard (this week's shows), Open-Meteo (weather, air quality, pollen and the sea off Scheveningen), Buienradar (the rain radar),
+Astronomy Engine (planets, full moons, eclipses; an npm package, not a feed), and the
 recipe feeds of the Guardian, BBC Good Food and
 Love and Lemons. Each item on the page links to its source.
 

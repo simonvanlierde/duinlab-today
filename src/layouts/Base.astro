@@ -11,10 +11,13 @@ interface Props {
 	/** `?phase=` was given: the page keeps that sky and the clock does not move it. */
 	forced: boolean;
 	saturation: number;
+	/** `planetPositions` for the sky script; none off the home page. */
+	planets?: [string, number, number][];
 	title: string;
 	description: string;
 }
-const { today, phase, forced, saturation, title, description } = Astro.props;
+const { today, phase, forced, saturation, planets, title, description } =
+	Astro.props;
 
 const now = Date.now();
 const sun = forced
@@ -32,6 +35,7 @@ const boot = skyBootScript({
 	sun: today.sun,
 	forced: forced ? phase : null,
 	ids: today.games.map((g) => g.id),
+	planets,
 });
 
 // the inline script is allowed by its hash, not by 'unsafe-inline'
