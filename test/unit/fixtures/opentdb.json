@@ -28,30 +28,6 @@
 			"question": "How%20many%20countries%20are%20larger%20than%20Australia%3F",
 			"correct_answer": "5",
 			"incorrect_answers": ["4", "3", "6"]
-		},
-		{
-			"type": "multiple",
-			"difficulty": "easy",
-			"category": "Entertainment%3A%20Video%20Games",
-			"question": "What%20were%20the%20first%20two%20blocks%20in%20%22Minecraft%22%3F",
-			"correct_answer": "Grass%20and%20Cobblestone",
-			"incorrect_answers": [
-				"Grass%20and%20Stone",
-				"Crafting%20Table%20and%20Cobblestone",
-				"Cobblestone%20and%20Stone"
-			]
-		},
-		{
-			"type": "multiple",
-			"difficulty": "medium",
-			"category": "Entertainment%3A%20Video%20Games",
-			"question": "Who%20is%20the%20main%20character%20in%20the%20video%20game%20%22Just%20Cause%203%22%3F",
-			"correct_answer": "Rico%20Rodriguez",
-			"incorrect_answers": [
-				"Tom%20Sheldon",
-				"Marcus%20Holloway",
-				"Mario%20Frigo"
-			]
 		}
 	]
 }

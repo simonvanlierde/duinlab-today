@@ -73,7 +73,7 @@ test("renders the sky, every section from the fixtures, and the ten games", asyn
 	);
 	await expect(section("h-word").locator(".word")).toHaveText("sax");
 	await expect(section("h-featured")).toContainText("Bill Madden (soldier)");
-	await expect(page.locator(".quiz-live .qn")).toHaveText("1 of 5");
+	await expect(page.locator(".quiz-live .qn")).toHaveText("1 of 3");
 	await expect(page.locator(".quiz-live .q")).toHaveText(
 		'Which Kingdom Hearts game featured the cast of "The World Ends With You"?',
 	);

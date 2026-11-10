@@ -1,7 +1,7 @@
 # duinlab-today
 
 A small daily page at <https://today.duinlab.nl>: up to five pictures in a swipe strip, a few sourced facts, the
-weather in The Hague, a five-question quiz and a short list of daily web
+weather in The Hague, a three-question quiz and a short list of daily web
 games with played-today marks and streaks. The sky at the top follows the sun's position over
 The Hague, minute by minute. Checkmarks and streaks stay in your browser; the server keeps
 nothing beyond Cloudflare's request logs.

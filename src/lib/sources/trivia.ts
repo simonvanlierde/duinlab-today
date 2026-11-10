@@ -45,7 +45,7 @@ export const fetchQuiz = (date: string) =>
 	safe("opentdb", async () =>
 		parseQuiz(
 			await getJson<Raw>(
-				"https://opentdb.com/api.php?amount=5&type=multiple&encode=url3986",
+				"https://opentdb.com/api.php?amount=3&type=multiple&encode=url3986",
 			),
 			date,
 		),

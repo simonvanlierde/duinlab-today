@@ -45,7 +45,7 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
 - Recipes: the newest recipe from the Guardian, BBC Good Food and Love and Lemons, title and
   link only, below the paper. NYT Cooking is left out: it has no public feed.
 - Sources: Wikipedia featured feed (On this day, Did you know, the featured article), Wiktionary word of the day,
-  Open Trivia DB (five questions per day, CC BY-SA 4.0, credited), NASA APOD (API key), The
+  Open Trivia DB (three questions per day, CC BY-SA 4.0, credited), NASA APOD (API key), The
   Met collection API (public-domain highlights), the Art Institute of Chicago and Rijksmuseum (public-domain
   artworks, no key), the Wikipedia picture of the day (credited with its licence),
   ZenQuotes (credited).

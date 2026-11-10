@@ -220,7 +220,7 @@ describe("parsers", () => {
 		const b = parseQuiz(opentdb, "2026-11-06");
 		const c = parseQuiz(opentdb, "2026-11-07");
 		expect(a).toEqual(b);
-		expect(a?.questions).toHaveLength(5);
+		expect(a?.questions).toHaveLength(3);
 		expect(a?.questions[0]?.question).toBe(
 			'Which Kingdom Hearts game featured the cast of "The World Ends With You"?',
 		);
