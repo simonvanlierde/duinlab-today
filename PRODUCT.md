@@ -46,6 +46,8 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
   or a pollen count is high.
 - Recipes: the newest recipe from the Guardian, BBC Good Food and Love and Lemons, title and
   link only, below the paper. NYT Cooking is left out: it has no public feed.
+- Live feeds (weather, recipes) are cached and served stale while refreshed in the background, so a
+  cold view does not wait on them; weather is never served more than about 2 h past its 15 minutes.
 - Sources: Wikipedia featured feed (On this day, Did you know, the featured article), Wiktionary word of the day,
   Open Trivia DB (three questions per day, CC BY-SA 4.0, credited), NASA APOD (API key), The
   Met collection API (public-domain highlights), the Art Institute of Chicago and Rijksmuseum (public-domain

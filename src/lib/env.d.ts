@@ -6,4 +6,6 @@ declare module "cloudflare:workers" {
 		FIXTURE_ORIGIN?: string;
 		DAYS: KVNamespace;
 	};
+	/** Runs `promise` to completion after the response is sent. */
+	export function waitUntil(promise: Promise<unknown>): void;
 }

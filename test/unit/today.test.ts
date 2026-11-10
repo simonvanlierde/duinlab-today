@@ -11,7 +11,10 @@ const kv = {
 		store.set(key, value);
 	}),
 };
-vi.mock("cloudflare:workers", () => ({ env: { DAYS: kv, NASA_API_KEY: "" } }));
+vi.mock("cloudflare:workers", () => ({
+	env: { DAYS: kv, NASA_API_KEY: "" },
+	waitUntil: () => {},
+}));
 
 const buildDay = vi.fn();
 vi.mock("../../src/lib/build", async (importOriginal) => ({

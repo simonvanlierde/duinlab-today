@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { allFailed, buildDay, incomplete, mergeDay } from "../../src/lib/build";
-import { cached } from "../../src/lib/cache";
+import { cached, freshness } from "../../src/lib/cache";
 import { rainLine } from "../../src/lib/format";
 import {
 	fetchPictures,
@@ -527,14 +527,61 @@ describe("day assembly and cache", () => {
 			put: async (r: Request, res: Response) => void store.set(r.url, res),
 		} as unknown as Cache;
 		const build = vi.fn(async () => ({ n: 1 }));
-		expect(await cached(cache, "a", build, () => 60)).toEqual({ n: 1 });
-		expect(await cached(cache, "a", build, () => 60)).toEqual({ n: 1 });
+		const life = () => ({ ttl: 60, stale: 120 });
+		const later = vi.fn();
+		expect(await cached(cache, "a", build, life, later)).toEqual({ n: 1 });
+		expect(await cached(cache, "a", build, life, later)).toEqual({ n: 1 });
 		expect(build).toHaveBeenCalledTimes(1);
+		expect(later).not.toHaveBeenCalled();
 		expect(store.values().next().value?.headers.get("cache-control")).toBe(
-			"public, max-age=60",
+			"public, max-age=180",
 		);
-		await cached(cache, "b", build, () => null);
+		await cached(cache, "b", build, () => null, later);
 		expect(store.size).toBe(1);
+	});
+
+	it("decides fresh, stale and expired from the age", () => {
+		const life = { ttl: 60, stale: 120 };
+		expect(freshness(59_000, life)).toBe("fresh");
+		expect(freshness(60_000, life)).toBe("stale");
+		expect(freshness(179_000, life)).toBe("stale");
+		expect(freshness(180_000, life)).toBe("expired");
+		expect(freshness(60_000, { ttl: 60, stale: 0 })).toBe("expired");
+	});
+
+	it("serves a stale entry and refreshes it behind the response, once", async () => {
+		const store = new Map<string, Response>();
+		const cache = {
+			match: async (r: Request) => store.get(r.url)?.clone(),
+			put: async (r: Request, res: Response) => void store.set(r.url, res),
+		} as unknown as Cache;
+		const life = () => ({ ttl: 60, stale: 3600 });
+		let n = 0;
+		let release = () => {};
+		const gate = new Promise<void>((r) => (release = r));
+		const build = vi.fn(async () => {
+			if (n > 0) await gate;
+			return { n: ++n };
+		});
+		const jobs: Promise<unknown>[] = [];
+		const later = (p: Promise<unknown>) => void jobs.push(p);
+		vi.useFakeTimers();
+		try {
+			expect(await cached(cache, "s", build, life, later)).toEqual({ n: 1 });
+			vi.advanceTimersByTime(90_000);
+			expect(await cached(cache, "s", build, life, later)).toEqual({ n: 1 });
+			expect(await cached(cache, "s", build, life, later)).toEqual({ n: 1 });
+			expect(jobs).toHaveLength(1);
+			release();
+			await Promise.all(jobs);
+			expect(await cached(cache, "s", build, life, later)).toEqual({ n: 2 });
+			// past the stale window the request builds the value itself
+			vi.advanceTimersByTime(3_700_000);
+			expect(await cached(cache, "s", build, life, later)).toEqual({ n: 3 });
+			expect(jobs).toHaveLength(1);
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });
 
@@ -672,7 +719,8 @@ describe("hardening", () => {
 				cache,
 				"x",
 				async () => ({ n: 2 }),
-				() => 60,
+				() => ({ ttl: 60, stale: 0 }),
+				() => {},
 			),
 		).toEqual({ n: 2 });
 		warn.mockRestore();

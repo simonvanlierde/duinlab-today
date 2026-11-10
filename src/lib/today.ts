@@ -1,4 +1,4 @@
-import { env } from "cloudflare:workers";
+import { env, waitUntil } from "cloudflare:workers";
 import { allFailed, buildDay, type Day, incomplete, mergeDay } from "./build";
 import { cached } from "./cache";
 import { amsterdamDay, shift } from "./day";
@@ -8,10 +8,12 @@ import { fetchRecipes } from "./sources/recipes";
 import { fetchWeather } from "./sources/weather";
 import type { Today } from "./types";
 
-const WEATHER_TTL = 15 * 60;
-const RECIPES_TTL = 3 * 60 * 60;
-/** A failed fetch is retried after a minute, not on every request. */
-const FAILED_TTL = 60;
+// stale: how long past its ttl an entry is still served while a request refreshes it. Weather
+// gets 2 h, after which the temperature would be wrong; recipes only change daily.
+const WEATHER_LIFE = { ttl: 15 * 60, stale: 2 * 60 * 60 };
+const RECIPES_LIFE = { ttl: 3 * 60 * 60, stale: 6 * 60 * 60 };
+/** A failed fetch is retried after a minute, not on every request, and never served stale. */
+const FAILED = { ttl: 60, stale: 0 };
 /** A request rebuilds an incomplete day at most this often; the hourly refresh does the rest. */
 const RETRY_MS = 10 * 60 * 1000;
 /** Keep two days in KV, so a day is never dropped while it is still today somewhere. */
@@ -52,7 +54,7 @@ async function rebuild(date: string, now: Date): Promise<Day> {
 	try {
 		await env.DAYS.put(keyFor(date), JSON.stringify(day), {
 			// a total outage is kept a minute only, so the next request tries again
-			expirationTtl: allFailed(day) ? FAILED_TTL : KEEP_SECONDS,
+			expirationTtl: allFailed(day) ? FAILED.ttl : KEEP_SECONDS,
 		});
 	} catch (err) {
 		console.warn(`kv put ${date} failed: ${err}`);
@@ -101,14 +103,16 @@ export async function getToday(now: Date = new Date()): Promise<Today> {
 		cached(
 			cache,
 			"weather",
-			() => fetchWeather(now),
-			(w) => (w ? WEATHER_TTL : FAILED_TTL),
+			() => fetchWeather(new Date()),
+			(w) => (w ? WEATHER_LIFE : FAILED),
+			waitUntil,
 		),
 		cached(
 			cache,
 			"recipes",
 			() => fetchRecipes(),
-			(r) => (r.length > 0 ? RECIPES_TTL : FAILED_TTL),
+			(r) => (r.length > 0 ? RECIPES_LIFE : FAILED),
+			waitUntil,
 		),
 	]);
 	// games are static: added here so a change to the list shows without waiting for midnight

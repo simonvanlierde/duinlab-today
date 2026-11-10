@@ -18,7 +18,7 @@ flowchart LR
   sources[("Wikipedia, Wiktionary,<br/>APOD, The Met, Art Institute,<br/>Rijksmuseum, Open Trivia DB, ZenQuotes,<br/>Rijkswaterstaat, Paard")] --> build
   build -- "day/v2/date" --> kv[("Workers KV")]
   kv --> page
-  live[("Open-Meteo, Buienradar,<br/>recipe feeds")] -- "Cache API,<br/>15 min to 3 h" --> page
+  live[("Open-Meteo, Buienradar,<br/>recipe feeds")] -- "Cache API,<br/>15 min to 3 h,<br/>stale while revalidating" --> page
   page -- "HTML with the data in it" --> browser["Browser: sky script,<br/>games and quiz islands"]
   browser <--> ls[("localStorage:<br/>ticks, streaks, quiz")]
 ```
@@ -33,7 +33,9 @@ One Worker serves everything ([`src/worker.ts`](src/worker.ts)).
   already has (each source picks its artwork from the date). A request that finds
   no day builds it itself ([`src/lib/today.ts`](src/lib/today.ts)).
 - **Weather and recipes** change during the day, so each request reads them through the
-  Workers cache: 15 minutes for the weather, 3 hours for the recipes.
+  Workers cache: 15 minutes for the weather, 3 hours for the recipes. An entry past that is still
+  served while the request refreshes it in the background (`waitUntil`): for 2 hours more for the
+  weather, 6 for the recipes. Older than that, the request fetches it itself.
 - **The page** is rendered on the server with all of this in it, so it reads fine without
   JavaScript. In the browser, a small inline script moves the sky with the clock, and two
   Svelte islands keep the games and the quiz in `localStorage`. Nothing goes back to the
