@@ -114,12 +114,13 @@ const what = `A small daily page: a few pictures, sourced facts, a word, a quiz 
 									</a>
 								</>
 							)}
+							{weather.air && (
+								<>
+									{" · "}
+									<a href="https://open-meteo.com/en/docs/air-quality-api" title="Air quality and pollen: Open-Meteo">{weather.air}<span class="sr"> (Open-Meteo)</span></a>
+								</>
+							)}
 						</li>
-						{weather.air && (
-							<li>
-								<a href="https://open-meteo.com/en/docs/air-quality-api" title="Air quality and pollen: Open-Meteo">{weather.air}<span class="sr"> (Open-Meteo)</span></a>
-							</li>
-						)}
 					</ul>
 				)
 			}
