@@ -321,6 +321,9 @@ h1 {
 	display: block;
 }
 .almanac {
+	width: min(34rem, calc(100vw - 24px));
+	max-height: calc(100svh - 24px);
+	overflow-y: auto;
 	margin: auto;
 	padding: 16px 20px;
 	border: 1px solid var(--rule);
@@ -330,6 +333,20 @@ h1 {
 	font-variant-numeric: tabular-nums;
 	line-height: 1.6;
 	box-shadow: 0 12px 40px rgb(0 0 0 / 0.3);
+}
+.almanac h2 {
+	margin-bottom: 12px;
+	font-size: 1.5rem;
+	font-weight: 500;
+}
+.almanac-details {
+	display: grid;
+	gap: 8px;
+}
+.almanac-details > [data-almanac-body]:first-child {
+	padding-bottom: 12px;
+	margin-bottom: 4px;
+	border-bottom: 1px solid var(--rule);
 }
 .almanac::backdrop {
 	background: rgb(10 12 30 / 0.35);
@@ -1069,6 +1086,8 @@ code {
 	.skip,
 	.arrow,
 	.dots,
+	.almanac,
+	.almanac::backdrop,
 	.picture-hint,
 	.picture-viewer,
 	.picture-viewer[open],

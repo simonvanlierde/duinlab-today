@@ -27,6 +27,11 @@ const DIRECTIONS = [
 const MIN_ALT = 5;
 const STEP_MS = 10 * 60 * 1000;
 
+interface PlanetWindow {
+	name: string;
+	line: string;
+}
+
 /** Name, right ascension (degrees, of date) and declination (degrees) of each bright planet at `at`. */
 export function planetPositions(at: Date): [string, number, number][] {
 	return PLANETS.map(([name, body]) => {
@@ -36,14 +41,14 @@ export function planetPositions(at: Date): [string, number, number][] {
 }
 
 /**
- * "Jupiter in the east from 19:40, Saturn in the south until 23:10" for the dark hours
- * between `from` and `to`, or null when no bright planet clears 5 degrees. The direction is
+ * Each bright planet's name and observing sentence (e.g. "Jupiter in the east from 19:40")
+ * for the dark hours between `from` and `to`, or [] when none clears 5 degrees. The direction is
  * where the planet rises, or else where it stands highest. A planet moves under two degrees a day, so one position for
  * the whole night is enough.
  */
-export function planetsBetween(from: Date, to: Date): string | null {
+export function planetsBetween(from: Date, to: Date): PlanetWindow[] {
 	const mid = new Date((from.getTime() + to.getTime()) / 2);
-	const parts: string[] = [];
+	const parts: PlanetWindow[] = [];
 	for (const [name, ra, dec] of planetPositions(mid)) {
 		let first: { at: number; az: number } | undefined;
 		let top = { alt: 0, az: 0 };
@@ -68,9 +73,9 @@ export function planetsBetween(from: Date, to: Date): string | null {
 						: " all night";
 		const az = rises ? first.az : top.az;
 		const dir = DIRECTIONS[Math.round(az / 45) % 8];
-		parts.push(`${name} in the ${dir}${when}`);
+		parts.push({ name, line: `${name} in the ${dir}${when}` });
 	}
-	return parts.length ? parts.join(", ") : null;
+	return parts;
 }
 
 /**
@@ -78,7 +83,7 @@ export function planetsBetween(from: Date, to: Date): string | null {
  * evening, the one in progress before dawn. Dark means the sun below 6 degrees (`sunTimes`'s
  * dawn and dusk); the window starts no earlier than `now`.
  */
-export function planetsTonight(date: string, now: Date): string | null {
+export function planetsTonight(date: string, now: Date): PlanetWindow[] {
 	const t = now.getTime();
 	const dawn = Date.parse(sunTimes(date).dawn);
 	const before = t < dawn;
