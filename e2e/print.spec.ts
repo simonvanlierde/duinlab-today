@@ -10,6 +10,10 @@ test("print lays out every picture and caption without carousel controls", async
 	);
 	await page.goto("/");
 	await expect(page.locator(".dots")).toBeVisible();
+	await page
+		.locator("button[popovertarget=almanac]:not([hidden])")
+		.first()
+		.click();
 	await page.emulateMedia({ media: "print" });
 	await page.setViewportSize({ width: 794, height: 1123 });
 	const slides = await page.locator(".slide").evaluateAll((slides) =>
@@ -25,6 +29,7 @@ test("print lays out every picture and caption without carousel controls", async
 		expect(box.top).toBeGreaterThanOrEqual(slides[i - 1]?.bottom ?? 0);
 	}
 	await expect(page.locator(".dots")).toBeHidden();
+	await expect(page.locator("#almanac")).toBeHidden();
 	await expect(page.locator(".arrow").first()).toBeHidden();
 	await expect(page.locator(".more").first()).toBeHidden();
 	await page.screenshot({

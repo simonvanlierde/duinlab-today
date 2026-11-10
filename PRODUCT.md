@@ -101,6 +101,8 @@ lines come with each source. There are no users, metrics or testimonials to cite
 - The date and time share a masthead row. Recipes and events sit side by side on desktop.
 - Phone pictures keep a short, stable frame and show the whole image. Sun and moon remain
   the quiet controls for the almanac.
+- Tapping a moon or planet brings that object's details to the top of the almanac, with the
+  remaining information below. Without JavaScript the complete overview still opens.
 - Games mark on opening; the page has no un-mark controls, score sharing or reading modes.
 - Sourced facts only; every item links to where it came from.
 - One Worker, no other backend.

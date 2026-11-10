@@ -6,6 +6,9 @@ games with played-today marks and streaks. The sky at the top follows the sun's 
 The Hague, minute by minute. Checkmarks and streaks stay in your browser. The server stores two days of public content
 and cached feeds, alongside Cloudflare's request logs; it stores no personal progress.
 
+Tap the moon or a planet to see its details first in the almanac, followed by the sun times,
+other planets, tides and sea conditions. Without JavaScript, the same controls open the complete overview.
+
 ## How it works
 
 ```mermaid

@@ -142,10 +142,8 @@ test("the sky's bright body opens the sun, moon and tide times, and Escape close
 	await expect(almanac.getByRole("link", { name: "Open-Meteo" })).toBeVisible();
 	// which planets show depends on the date: the line is there only when one is up tonight
 	const tonight = almanac.locator("p", { hasText: /^Tonight:/ });
-	if (await tonight.count())
-		for (const part of ((await tonight.textContent()) ?? "")
-			.replace(/^Tonight: /, "")
-			.split(", "))
+	for (const line of await tonight.allTextContents())
+		for (const part of line.replace(/^Tonight: /, "").split(", "))
 			expect(part).toMatch(
 				/^\w+ in the [a-z-]+(?: (?:from|until) \d\d:\d\d){0,2}(?: all night)?$/,
 			);

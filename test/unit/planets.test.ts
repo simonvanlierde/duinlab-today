@@ -22,31 +22,43 @@ describe("planets", () => {
 
 	it("says where and when for the night of 10 November 2026", () => {
 		// Saturn rose before dusk and sets after 03:00, Jupiter rises after midnight, Mars and the morning stars come later
-		const line = planetsBetween(
+		const windows = planetsBetween(
 			new Date(sunTimes("2026-11-10").dusk),
 			new Date(sunTimes("2026-11-11").dawn),
 		);
-		expect(line).toMatch(/Saturn in the south until 0[23]:\d\d/);
-		expect(line).toMatch(/Jupiter in the east from 00:\d\d/);
-		expect(line).toMatch(/Mars in the east from 0\d:\d\d/);
+		expect(windows.find((p) => p.name === "Saturn")?.line).toMatch(
+			/Saturn in the south until 0[23]:\d\d/,
+		);
+		expect(windows.find((p) => p.name === "Jupiter")?.line).toMatch(
+			/Jupiter in the east from 00:\d\d/,
+		);
+		expect(windows.find((p) => p.name === "Mars")?.line).toMatch(
+			/Mars in the east from 0\d:\d\d/,
+		);
 	});
 
 	it("says all night for a planet that is up through the window", () => {
 		const hour = (h: number) => new Date(Date.UTC(2026, 10, 10, h));
-		expect(planetsBetween(hour(20), hour(21))).toMatch(
-			/Saturn in the south all night/,
-		);
+		expect(
+			planetsBetween(hour(20), hour(21)).find((p) => p.name === "Saturn")?.line,
+		).toMatch(/Saturn in the south all night/);
 	});
 
 	it("tonight starts at now once it is dark, and before dawn means the night in progress", () => {
 		const late = planetsTonight("2026-11-10", new Date("2026-11-10T22:30:00Z"));
 		// 23:30 Amsterdam: nothing can start "from" an hour that has passed
-		expect(late ?? "").not.toMatch(/from 1[89]:|from 2[01]:/);
+		for (const window of late)
+			expect(window.line).not.toMatch(/from 1[89]:|from 2[01]:/);
 		const early = planetsTonight(
 			"2026-11-10",
 			new Date("2026-11-10T01:00:00Z"),
 		);
-		expect(early).toBeTruthy();
+		expect(early.length).toBeGreaterThan(0);
+	});
+
+	it("returns no observing windows for an empty interval", () => {
+		const at = new Date("2026-11-10T20:00:00Z");
+		expect(planetsBetween(at, new Date(at.getTime() - 1))).toEqual([]);
 	});
 
 	it("shows planets only in the dark and above 3 degrees, placed like the stars", () => {
