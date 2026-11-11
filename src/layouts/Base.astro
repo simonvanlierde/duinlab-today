@@ -5,6 +5,9 @@ import { PHASE_SUN, SKY, skyAt } from "../components/sky";
 import { type SkyPhase, sunAltitude } from "../lib/sun";
 import type { Today } from "../lib/types";
 
+// Set in astro.config.mjs: the first 8 hex of the SHA-256 of public/og.png.
+declare const __OG_VERSION__: string;
+
 interface Props {
 	today: Today;
 	phase: SkyPhase;
@@ -67,7 +70,7 @@ Astro.csp?.insertScriptHash(`sha256-${btoa(String.fromCharCode(...digest))}`);
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
 		<meta property="og:url" content="https://today.duinlab.nl/" />
-		<meta property="og:image" content="https://today.duinlab.nl/og.png" />
+		<meta property="og:image" content={`https://today.duinlab.nl/og.png?v=${__OG_VERSION__}`} />
 		<meta property="og:image:width" content="1200" />
 		<meta property="og:image:height" content="630" />
 		<meta property="og:image:alt" content="today.duinlab.nl: one picture, a few facts, a word, a quiz and ten games, over a night sky and pale dunes" />
