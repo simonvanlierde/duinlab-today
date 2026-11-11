@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- The social card keeps its title and line inside the centred crop that some link previews apply.
+
 ## [0.1.0] - 2026-11-10
 
 ### Added

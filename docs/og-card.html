@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>today.duinlab.nl social card</title>
+<!-- Source of public/og.png. Render: see README, "Develop". -->
+<style>
+  @font-face { font-family: Literata; src: url("../public/fonts/literata.woff2") format("woff2"); font-weight: 200 900; font-style: normal; }
+  @font-face { font-family: Literata; src: url("../public/fonts/literata-italic.woff2") format("woff2"); font-weight: 200 900; font-style: italic; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body { position: relative; background: linear-gradient(#0a1030 0, #16296e 300px, #2f50bf 430px, #987fb8 500px, #eaa7b6 560px, #fffaf7 600px); color: #fff; }
+  svg { position: absolute; inset: 0; }
+  /* Everything that carries meaning sits in the centred 630 px column; the sun and dunes may crop. */
+  main { position: absolute; left: 285px; top: 130px; width: 630px; }
+  h1 { font: 400 82px/1 Literata, Georgia, serif; letter-spacing: -0.02em; white-space: nowrap; }
+  p { margin-top: 22px; font: italic 400 38px/1.22 Literata, Georgia, serif; color: #cfe0ff; }
+</style>
+</head>
+<body>
+<svg width="1200" height="630" viewBox="0 0 1200 630" aria-hidden="true">
+  <defs><radialGradient id="glow"><stop offset="0" stop-color="#ffe9c4" stop-opacity=".55"/><stop offset="1" stop-color="#ffe9c4" stop-opacity="0"/></radialGradient></defs>
+  <g fill="#fff"><circle cx="161" cy="41" r="1.5"/><circle cx="421" cy="71" r="1.5"/><circle cx="701" cy="31" r="1.5"/><circle cx="1111" cy="41" r="1.5"/><circle cx="981" cy="91" r="1.5" opacity=".8"/><circle cx="561" cy="121" r="1.5" opacity=".5"/></g>
+  <circle cx="980" cy="530" r="100" fill="url(#glow)"/>
+  <path d="M0 568 C150 530 280 515 420 530 C560 545 650 560 760 556 C860 552 940 500 1060 498 C1130 497 1170 515 1200 520 V630 H0Z" fill="#d9a6bf" opacity=".8"/>
+  <path d="M0 570 C140 540 290 520 430 534 C560 548 660 560 770 556 C860 552 930 508 1040 502 C1120 498 1170 512 1200 518 V630 H0Z" fill="#f0c0ca"/>
+  <circle cx="980" cy="530" r="28" fill="#fff9f2"/>
+  <path d="M0 600 C200 570 420 585 640 596 C860 606 1040 590 1200 568 V630 H0Z" fill="#fffaf7"/>
+</svg>
+<main>
+  <h1>today.duinlab.nl</h1>
+  <p>One picture, a few facts,<br>a word, a quiz and ten games.</p>
+</main>
+</body>
+</html>
