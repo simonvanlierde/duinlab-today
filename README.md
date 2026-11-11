@@ -77,6 +77,13 @@ against a production build, including axe scans of today, yesterday, about and 4
 reads every source from a local fixture server ([`e2e/fixture-server.mjs`](e2e/fixture-server.mjs))
 through the `FIXTURE_ORIGIN` variable, so the tests run offline and give the same page every time.
 
+The social card `public/og.png` is rendered from `docs/og-card.html`. Keep its text inside the centred 630 px
+column, because some link previews crop to it. After editing, run:
+
+```sh
+pnpm exec playwright screenshot --viewport-size=1200,630 "file://$PWD/docs/og-card.html" public/og.png
+```
+
 For the NASA slide, put a line `NASA_API_KEY=<your key>` in `.dev.vars` for local runs. In
 production it is a Worker secret (`pnpm wrangler secret put NASA_API_KEY`). Without a key the
 strip simply has no NASA slide. The tests don't need it.
