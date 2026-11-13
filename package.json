@@ -13,6 +13,7 @@
 		"check": "pnpm run types && biome check . && astro check",
 		"test": "vitest run",
 		"e2e": "playwright test",
+		"licenses": "pnpm licenses list --prod --json | node scripts/checkLicenses.mjs",
 		"deploy": "pnpm run build && wrangler deploy"
 	},
 	"dependencies": {
