@@ -35,6 +35,7 @@ jobs:
       - run: pnpm run build
       # Known advisories, moderate and up, in what ships.
       - run: pnpm audit --prod --audit-level=moderate
+      - run: pnpm run licenses
 
   e2e:
     name: e2e (chromium)
@@ -125,7 +126,7 @@ jobs:
       - if: steps.gate.outputs.run == 'true'
         env:
           SITE: ${{ steps.deploy.outputs.url }}
-        run: |
+        run: |-
           # a just-enabled workers.dev route can take minutes to resolve, and an HTTP error is not a
           # curl error, so --retry would not retry it: loop, and print what came back
           for _ in $(seq 1 12); do

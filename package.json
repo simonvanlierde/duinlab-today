@@ -13,12 +13,13 @@
 		"check": "pnpm run types && biome check . && astro check",
 		"test": "vitest run",
 		"e2e": "playwright test",
+		"licenses": "pnpm licenses list --prod --json | node scripts/checkLicenses.mjs",
 		"deploy": "pnpm run build && wrangler deploy"
 	},
 	"dependencies": {
 		"@astrojs/cloudflare": "14.4.3",
 		"@astrojs/svelte": "9.1.2",
-		"astro": "7.4.4",
+		"astro": "7.4.7",
 		"astronomy-engine": "2.1.19",
 		"svelte": "5.57.3"
 	},

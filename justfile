@@ -9,6 +9,7 @@ check:
     pnpm check
     pnpm test
     pnpm build
+    pnpm run licenses
 
 # Fix and format.
 fmt:
