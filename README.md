@@ -106,8 +106,8 @@ are:
 | `recipes` | up to nine recipes (`title`, `url`, `source`), three per site | `[]` |
 
 Sun times carry the Amsterdam offset. `weather.rainNext2h[].time` is `HH:MM` on the
-Amsterdam clock, and `mm` is mm per hour: 5-minute steps from Buienradar's radar, or 15-minute
-steps from Open-Meteo when Buienradar is down (`weather.rainCredit` says which). New fields may
+Amsterdam clock, and `mm` is mm per hour: 5-minute steps from KNMI's radar nowcast (`rain/v1` in KV)
+or Buienradar's radar, or 15-minute steps from Open-Meteo when both are unavailable (`weather.rainCredit` says which). New fields may
 appear at any time. A commit that renames or removes a field says so in its message.
 When every source fails, the endpoint still answers 200, with a short cache time. When the
 Worker itself fails, it answers 503 with `{"error": ...}`.

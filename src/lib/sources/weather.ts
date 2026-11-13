@@ -18,6 +18,10 @@ const BUIENRADAR: Credit = {
 	name: "Buienradar",
 	url: "https://www.buienradar.nl/",
 };
+const KNMI: Credit = {
+	name: "KNMI",
+	url: "https://dataplatform.knmi.nl/dataset/radar-forecast-2-0",
+};
 const OPEN_METEO: Credit = {
 	name: "Open-Meteo",
 	url: "https://open-meteo.com/",
@@ -179,4 +183,51 @@ export async function fetchWeather(now: Date): Promise<Weather | null> {
 	return radar
 		? { ...weather, rainNext2h: radar, rainCredit: BUIENRADAR, air }
 		: { ...weather, air };
+}
+
+const KNMI_MAX_AGE_MS = 45 * 60_000;
+const KNMI_FUTURE_SKEW_MS = 5 * 60_000;
+
+/**
+ * Validate `rain/v1` from KV. Rejects stale feeds or any missing (`null`) cell so
+ * missing radar data never turns into dry weather; returns null to fall back.
+ */
+export function parseKnmiRain(
+	raw: unknown,
+	now: Date,
+): Weather["rainNext2h"] | null {
+	if (!raw || typeof raw !== "object") return null;
+	const { issuedAt, steps } = raw as { issuedAt?: unknown; steps?: unknown };
+	if (
+		typeof issuedAt !== "string" ||
+		!Array.isArray(steps) ||
+		steps.length === 0
+	) {
+		return null;
+	}
+	const issued = Date.parse(issuedAt);
+	if (!Number.isFinite(issued)) return null;
+	const age = now.getTime() - issued;
+	if (age < -KNMI_FUTURE_SKEW_MS || age > KNMI_MAX_AGE_MS) return null;
+
+	const out: Weather["rainNext2h"] = [];
+	for (const s of steps) {
+		if (!s || typeof s !== "object") return null;
+		const { time, mm } = s as { time?: unknown; mm?: unknown };
+		if (typeof time !== "string" || !/^\d{2}:\d{2}$/.test(time)) return null;
+		if (typeof mm !== "number" || !Number.isFinite(mm) || mm < 0) return null;
+		out.push({ time, mm });
+	}
+	return out;
+}
+
+/** Prefer fresh KNMI KV nowcast over Buienradar/Open-Meteo when available. */
+export function withKnmiRain(
+	weather: Weather | null,
+	rawRain: unknown,
+	now: Date,
+): Weather | null {
+	if (!weather) return null;
+	const steps = parseKnmiRain(rawRain, now);
+	return steps ? { ...weather, rainNext2h: steps, rainCredit: KNMI } : weather;
 }

@@ -20,8 +20,10 @@ import {
 	beaufort,
 	compass,
 	fetchWeather,
+	parseKnmiRain,
 	parseRaintext,
 	parseWeather,
+	withKnmiRain,
 } from "../../src/lib/sources/weather";
 import {
 	fetchWikipedia,
@@ -372,6 +374,36 @@ describe("parsers", () => {
 			}),
 		).toBeNull();
 		expect(parseSea({})).toBeNull();
+	});
+
+	it("prefers fresh KNMI KV nowcast and rejects stale or missing cells", () => {
+		const now = new Date("2026-11-13T22:50:00Z");
+		const fresh = {
+			issuedAt: "2026-11-13T22:40:00Z",
+			steps: [
+				{ time: "23:40", mm: 0 },
+				{ time: "23:45", mm: 0.24 },
+			],
+		};
+		const base = parseWeather(meteo, now);
+		const applied = withKnmiRain(base, fresh, now);
+		expect(applied?.rainCredit.name).toBe("KNMI");
+		expect(applied?.rainNext2h).toEqual(fresh.steps);
+
+		// Stale (> 45 min) falls back to existing weather
+		const stale = { ...fresh, issuedAt: "2026-11-13T21:50:00Z" };
+		expect(parseKnmiRain(stale, now)).toBeNull();
+		expect(withKnmiRain(base, stale, now)?.rainCredit.name).toBe("Open-Meteo");
+
+		// Missing cell (null) must not become 0
+		const withNull = {
+			issuedAt: "2026-11-13T22:40:00Z",
+			steps: [
+				{ time: "23:40", mm: 0 },
+				{ time: "23:45", mm: null },
+			],
+		};
+		expect(parseKnmiRain(withNull, now)).toBeNull();
 	});
 
 	it("maps weather to plain words, Beaufort and compass points", () => {
