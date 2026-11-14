@@ -3,6 +3,7 @@
 // `https://<host>/<path>?<query>`. An unknown host answers 404, like a source that is down.
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
+import { isoAmsterdam } from "../src/lib/day.ts";
 
 const port = Number(process.env.FIXTURE_PORT ?? 4332);
 const unit = new URL("../test/unit/fixtures/", import.meta.url);
@@ -58,6 +59,24 @@ const recipeRss = (host) =>
 
 const metObject = () => text("met-object.json");
 
+function raintext() {
+	const start = Math.floor(Date.now() / 300_000) * 300_000;
+	return Array.from(
+		{ length: 24 },
+		(_, i) =>
+			`${i === 2 ? "109" : "000"}|${isoAmsterdam(new Date(start + i * 300_000)).slice(11, 16)}`,
+	).join("\n");
+}
+
+function weather() {
+	const raw = JSON.parse(text("open-meteo.json"));
+	const start = Math.floor(Date.now() / 900_000) * 900_000;
+	raw.minutely_15.time = raw.minutely_15.time.map((_, i) =>
+		isoAmsterdam(new Date(start + i * 900_000)),
+	);
+	return JSON.stringify(raw);
+}
+
 /** host -> (path) -> [content type, body] */
 const HOSTS = {
 	"api.wikimedia.org": () => ["application/json", text("wikipedia.json")],
@@ -76,7 +95,7 @@ const HOSTS = {
 	"id.rijksmuseum.nl": () => ["application/ld+json", text("rijks-object.json")],
 	"opentdb.com": () => ["application/json", text("opentdb.json")],
 	"zenquotes.io": () => ["application/json", text("zenquotes.json")],
-	"api.open-meteo.com": () => ["application/json", text("open-meteo.json")],
+	"api.open-meteo.com": () => ["application/json", weather()],
 	"air-quality-api.open-meteo.com": () => [
 		"application/json",
 		text("open-meteo-air.json"),
@@ -85,7 +104,7 @@ const HOSTS = {
 		"application/json",
 		text("open-meteo-marine.json"),
 	],
-	"gpsgadget.buienradar.nl": () => ["text/plain", text("buienradar.txt")],
+	"gpsgadget.buienradar.nl": () => ["text/plain", raintext()],
 	// both recorded on 2026-11-09
 	"ddapi20-waterwebservices.rijkswaterstaat.nl": () => [
 		"application/json",

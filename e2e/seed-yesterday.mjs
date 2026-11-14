@@ -1,9 +1,9 @@
 // Stores a day for yesterday in the e2e KV, so /yesterday has something to show.
 import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
+import { amsterdamDay, shift } from "../src/lib/day.ts";
 
-const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Amsterdam" });
-const date = fmt.format(new Date(Date.now() - 86_400_000));
+const date = shift(amsterdamDay(), -1);
 const credit = { name: "Wikipedia", url: "https://en.wikipedia.org/" };
 const day = {
 	date,

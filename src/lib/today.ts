@@ -87,8 +87,8 @@ export async function getToday(now: Date = new Date()): Promise<Today> {
 		readKnmiRain(),
 		cached(
 			cache,
-			"weather",
-			() => fetchWeather(new Date()),
+			`weather/${amsterdamDay(now)}`,
+			() => fetchWeather(now),
 			(w) => (w ? WEATHER_LIFE : FAILED),
 			waitUntil,
 		),

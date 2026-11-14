@@ -21,7 +21,7 @@ const { pictures } = Astro.props;
 			{
 				pictures.map((p, i) => (
 					<figure class="slide" role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${pictures.length}`}>
-						<a class="picture-open" href={p.imageUrl} aria-label={`Look closer: ${p.title}`}>
+						<a class="picture-open" href={p.fullImageUrl ?? p.imageUrl} aria-label={`Look closer: ${p.title}`}>
 							<img
 								src={p.imageUrl}
 								alt={p.alt}
@@ -87,8 +87,8 @@ const { pictures } = Astro.props;
 			b.textContent = text;
 			return b;
 		};
-		const prev = button("arrow prev", "Previous picture", "‹");
-		const next = button("arrow next", "Next picture", "›");
+		const prev = button("arrow prev", "Previous picture", "Previous");
+		const next = button("arrow next", "Next picture", "Next");
 		const dots = document.createElement("div");
 		dots.className = "dots";
 		const dot = slides.map((_, i) => {
@@ -114,7 +114,11 @@ const { pictures } = Astro.props;
 			e.preventDefault();
 			go(current() + (e.key === "ArrowRight" ? 1 : -1));
 		});
-		for (const control of [prev, next, dots]) strip.parentElement?.appendChild(control);
+		const controls = document.createElement("div");
+		controls.className = "picture-controls";
+		for (const control of [prev, dots, next]) controls.appendChild(control);
+		strip.parentElement?.appendChild(controls);
+		strip.closest(".pic")?.classList.add("has-controls");
 		sync();
 	}
 
@@ -131,6 +135,7 @@ const { pictures } = Astro.props;
 	if (viewer && image && caption && stage && count && error && zoom && close && prev && next) {
 		let at = 0;
 		let opener: HTMLAnchorElement;
+		let previewUrl = "";
 		const fit = () => {
 			stage.classList.remove("zoomed");
 			stage.scrollTo(0, 0);
@@ -140,6 +145,7 @@ const { pictures } = Astro.props;
 		const show = (index: number) => {
 			at = Math.max(0, Math.min(slides.length - 1, index));
 			const source = slides[at].querySelector("img");
+			const link = slides[at].querySelector<HTMLAnchorElement>(".picture-open");
 			const credit = slides[at].querySelector("figcaption");
 			if (!source || !credit) return;
 			fit();
@@ -147,7 +153,8 @@ const { pictures } = Astro.props;
 			image.hidden = false;
 			zoom.disabled = false;
 			image.alt = source.alt;
-			image.src = source.src;
+			previewUrl = source.src;
+			image.src = link?.href ?? previewUrl;
 			caption.replaceChildren(...[...credit.childNodes].map((node) => node.cloneNode(true)));
 			count.textContent = `${at + 1} of ${slides.length}`;
 			if ((document.activeElement === prev && at === 0) ||
@@ -178,6 +185,7 @@ const { pictures } = Astro.props;
 			stage.scrollTo((stage.scrollWidth - stage.clientWidth) / 2, (stage.scrollHeight - stage.clientHeight) / 2);
 			zoom.textContent = "Fit picture";
 			zoom.setAttribute("aria-pressed", "true");
+			stage.focus({ preventScroll: true });
 		});
 		viewer.addEventListener("keydown", (event) => {
 			if (stage.classList.contains("zoomed")) return;
@@ -187,12 +195,16 @@ const { pictures } = Astro.props;
 		});
 		let touch: { x: number; y: number; id: number } | null = null;
 		stage.addEventListener("pointerdown", (event) => {
-			if (event.pointerType === "touch" && !stage.classList.contains("zoomed")) {
+			if (event.pointerType === "touch" && !touch && !stage.classList.contains("zoomed")) {
 				touch = { x: event.clientX, y: event.clientY, id: event.pointerId };
 			}
 		});
-		stage.addEventListener("pointercancel", () => { touch = null; });
-		stage.addEventListener("pointerup", (event) => {
+		const cancelTouch = () => { touch = null; };
+		stage.addEventListener("pointercancel", cancelTouch);
+		stage.addEventListener("lostpointercapture", cancelTouch);
+		window.addEventListener("blur", cancelTouch);
+		viewer.addEventListener("close", cancelTouch);
+		window.addEventListener("pointerup", (event) => {
 			if (!touch || touch.id !== event.pointerId) return;
 			const dx = event.clientX - touch.x;
 			const dy = event.clientY - touch.y;
@@ -200,6 +212,10 @@ const { pictures } = Astro.props;
 			if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) show(at + (dx < 0 ? 1 : -1));
 		});
 		image.addEventListener("error", () => {
+			if (image.src !== previewUrl) {
+				image.src = previewUrl;
+				return;
+			}
 			image.hidden = true;
 			error.hidden = false;
 			if (document.activeElement === zoom) stage.focus({ preventScroll: true });

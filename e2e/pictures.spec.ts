@@ -34,9 +34,15 @@ test("pictures open, zoom, navigate and return focus without moving the paper", 
 	).toBeDisabled();
 	await viewer.getByRole("button", { name: "Zoom in" }).click();
 	const stage = viewer.getByRole("region", { name: "Enlarged picture" });
+	await expect(stage).toBeFocused();
 	expect(await stage.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(
 		true,
 	);
+	const pan = await stage.evaluate((el) => el.scrollLeft);
+	await page.keyboard.press("ArrowRight");
+	await expect
+		.poll(() => stage.evaluate((el) => el.scrollLeft))
+		.toBeGreaterThan(pan);
 	await viewer.getByRole("button", { name: "Fit picture" }).click();
 	await page.keyboard.press("ArrowRight");
 	await expect(viewer.locator("figcaption")).toContainText("Wikimedia");
@@ -46,6 +52,46 @@ test("pictures open, zoom, navigate and return focus without moving the paper", 
 	await expect(viewer).toBeHidden();
 	await expect(opener).toBeFocused();
 	expect(await page.evaluate(() => window.scrollY)).toBe(scroll);
+});
+
+test("closer viewing loads the source original while the paper keeps its preview", async ({
+	page,
+}) => {
+	const original =
+		"https://images.metmuseum.org/CRDImages/ep/original/DP-42549-001.jpg";
+	await page.goto("/");
+	const opener = page.getByRole("link", {
+		name: "Look closer: Wheat Field with Cypresses",
+	});
+	await expect(opener).toHaveAttribute("href", original);
+	await expect(opener.locator("img")).toHaveAttribute("src", /\/web-large\//);
+	const requested = page.waitForRequest(original);
+	await opener.click();
+	await requested;
+	await expect(page.getByRole("dialog").locator("img")).toHaveAttribute(
+		"src",
+		original,
+	);
+});
+
+test("a failed original falls back to the preview before showing an image error", async ({
+	page,
+}) => {
+	await page.route("**/original/DP-42549-001.jpg", (route) => route.abort());
+	await page.goto("/");
+	await page
+		.getByRole("link", { name: "Look closer: Wheat Field with Cypresses" })
+		.click();
+	const viewer = page.getByRole("dialog", { name: "Picture viewer" });
+	const image = viewer.locator("img");
+	await expect(image).toHaveAttribute("src", /\/web-large\//);
+	await expect
+		.poll(() => image.evaluate((el) => (el as HTMLImageElement).naturalWidth))
+		.toBeGreaterThan(0);
+	await expect(viewer.locator(".viewer-error")).toBeHidden();
+	await image.evaluate((el) => el.dispatchEvent(new Event("error")));
+	await expect(viewer.locator(".viewer-error")).toBeVisible();
+	await expect(viewer.getByRole("button", { name: "Zoom in" })).toBeDisabled();
 });
 
 test("the viewer stays usable with long captions, reduced motion and a broken image", async ({
@@ -167,4 +213,38 @@ test.describe("pictures without JavaScript", () => {
 		);
 		await expect(page.getByRole("dialog")).toHaveCount(0);
 	});
+});
+
+test("a second finger and interrupted swipes do not strand the viewer", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page
+		.getByRole("link", { name: "Look closer: Wheat Field with Cypresses" })
+		.click();
+	const viewer = page.getByRole("dialog", { name: "Picture viewer" });
+	const stage = viewer.locator(".viewer-stage");
+	const pointer = (type: string, id: number, x: number) =>
+		stage.dispatchEvent(type, {
+			pointerType: "touch",
+			pointerId: id,
+			clientX: x,
+			clientY: 150,
+		});
+	await pointer("pointerdown", 1, 250);
+	await pointer("pointerdown", 2, 280);
+	await pointer("pointerup", 1, 100);
+	await expect(viewer.locator(".viewer-count")).toHaveText("2 of 4");
+	await pointer("pointerup", 2, 280);
+	for (const interrupt of ["pointercancel", "lostpointercapture", "blur"]) {
+		await pointer("pointerdown", 1, 250);
+		if (interrupt === "blur")
+			await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+		else await pointer(interrupt, 1, 250);
+		await pointer("pointerup", 1, 100);
+		await expect(viewer.locator(".viewer-count")).toHaveText("2 of 4");
+	}
+	await pointer("pointerdown", 1, 250);
+	await pointer("pointerup", 1, 100);
+	await expect(viewer.locator(".viewer-count")).toHaveText("3 of 4");
 });

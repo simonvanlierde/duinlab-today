@@ -17,11 +17,6 @@ export function shift(day: string, by: number): string {
 	return d.toISOString().slice(0, 10);
 }
 
-export function dayOfYear(date: string): number {
-	const [y, m, d] = date.split("-").map(Number) as [number, number, number];
-	return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 0)) / 86400000);
-}
-
 /** ISO string with the Europe/Amsterdam offset ("2026-11-06T07:46:12+01:00"). */
 export function isoAmsterdam(at: Date): string {
 	const f = new Intl.DateTimeFormat("en-CA", {

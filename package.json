@@ -21,6 +21,7 @@
 		"@astrojs/svelte": "9.1.2",
 		"astro": "7.4.7",
 		"astronomy-engine": "2.1.19",
+		"entities": "4.5.0",
 		"svelte": "5.57.3"
 	},
 	"devDependencies": {

@@ -40,14 +40,14 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
 - Games: factmap.world, TimeGuessr, Shikaku of the day, Krillion, Catfishing, Connections,
   Wordle, Raddle, Timdle, Metazooa.
 - Weather: Open-Meteo forecast for The Hague (52.08 N, 4.31 E), no key, credited; the weather
-  line links to meteoblue's week forecast. The rain line comes from Buienradar's radar (5-minute
-  steps), with Open-Meteo as the fallback. A line on air quality or pollen
+  line links to meteoblue's week forecast. The rain line uses KNMI's radar nowcast from KV,
+  then Buienradar (both in 5-minute steps), then Open-Meteo in 15-minute steps. A line on air quality or pollen
   (Open-Meteo air-quality API, no key, credited) shows only when the European AQI is 60 or more
   or a pollen count is high.
 - Recipes: the three newest recipes from the Guardian, BBC Good Food and Love and Lemons, title
   and link only. One per source is visible; More recipes expands the rest. NYT Cooking is left out: it has no public feed.
-- On a desktop screen shorter than 760 px, On this day and the quote start under the fold, so the
-  rest of the paper fits one screen.
+- On a desktop screen shorter than 760 px, On this day and the quote follow the main reading and
+  games. Compact spacing targets a 600 px-high screen; longer daily content can still scroll.
 - Live feeds (weather, recipes) use cached responses while refreshing usable stale entries in
   the background. Cold or expired entries wait for a fetch; weather is never served more than
   about 2 h past its 15 minutes.
@@ -102,10 +102,14 @@ lines come with each source. There are no users, metrics or testimonials to cite
 - The date and time share a masthead row. Recipes and events sit side by side on desktop.
 - Phone pictures keep a short, stable frame and show the whole image. Sun and moon remain
   the quiet controls for the almanac.
-- Tapping a moon or planet brings that object's details to the top of the almanac, with the
+- Tapping a moon, planet or bright star brings that object's details to the top of the almanac, with the
   remaining information below. Without JavaScript the complete overview still opens.
 - Pictures open in a larger viewer with zoom, touch and keyboard navigation, and their existing
   captions and source links. Closing returns to the same place in the paper.
+  The viewer uses source originals when supplied and falls back to the preview if they fail.
+- Picture selectors sit below the caption, leaving the whole work visible. NASA leads when
+  available; its official daily feed recovers pictures missing from the API.
+- Quiz answers stay in sync across tabs in the same browser. The first saved answer is kept.
 - Games mark on opening; the page has no un-mark controls, score sharing or reading modes.
 - Sourced facts only; every item links to where it came from.
 - One Worker, no other backend.

@@ -5,6 +5,9 @@ import Foot from "../components/Foot.astro";
 import { PHASE_SUN, SKY, skyAt } from "../components/sky";
 import { sunAltitude } from "../lib/sun";
 
+// Set in astro.config.mjs: the first 8 hex of the SHA-256 of public/og.png.
+declare const __OG_VERSION__: string;
+
 interface Props {
 	title: string;
 	description: string;
@@ -19,6 +22,7 @@ const {
 	sky,
 	label = sky === "night" ? "below the horizon" : "about",
 } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
 const now = Date.now();
 const s = sky
 	? skyAt(PHASE_SUN[sky].alt, true, SKY)
@@ -35,9 +39,23 @@ const style = Object.entries(s.vars)
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>{title}</title>
 		<meta name="description" content={description} />
-		<link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+		<link rel="canonical" href={canonical} />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="manifest" href="/manifest.webmanifest" />
+		{Astro.response.status !== 404 && (
+			<>
+				<meta property="og:type" content="website" />
+				<meta property="og:site_name" content="today.duinlab.nl" />
+				<meta property="og:title" content={title} />
+				<meta property="og:description" content={description} />
+				<meta property="og:url" content={canonical} />
+				<meta property="og:image" content={`https://today.duinlab.nl/og.png?v=${__OG_VERSION__}`} />
+				<meta property="og:image:width" content="1200" />
+				<meta property="og:image:height" content="630" />
+				<meta property="og:image:alt" content="today.duinlab.nl: one picture, a few facts, a word, a quiz and ten games, over a night sky and pale dunes" />
+				<meta name="twitter:card" content="summary_large_image" />
+			</>
+		)}
 	</head>
 	<body>
 		<p class="bar">

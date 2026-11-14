@@ -40,31 +40,41 @@ export function loadQuiz(
 	return { picks, done };
 }
 
-/** Saves `picks`; once all are answered, today joins the finished days. Returns those days. */
-export function saveQuiz(
+/** Keeps the first saved answers across tabs; completing the quiz adds today to finished days. */
+export async function saveQuiz(
 	quiz: Quiz,
 	picks: (number | null)[],
 	done: string[],
 	day = amsterdamDay(),
-): string[] {
-	const finished =
-		picks.every((p) => p !== null) && !done.includes(day)
-			? [...done, day]
-			: done;
+): Promise<{ picks: (number | null)[]; done: string[] }> {
+	const save = () => {
+		const saved = loadQuiz(quiz, day);
+		picks = saved.picks.map((pick, i) => pick ?? picks[i] ?? null);
+		const finished = [...new Set([...done, ...saved.done])];
+		if (picks.every((p) => p !== null) && !finished.includes(day))
+			finished.push(day);
+		try {
+			localStorage.setItem(
+				KEY,
+				JSON.stringify({
+					day,
+					sig: signature(quiz),
+					picks,
+					done: finished,
+				}),
+			);
+		} catch {
+			// nothing to keep then
+		}
+		return { picks, done: finished };
+	};
 	try {
-		localStorage.setItem(
-			KEY,
-			JSON.stringify({
-				day,
-				sig: signature(quiz),
-				picks,
-				done: finished,
-			}),
-		);
+		if (globalThis.navigator?.locks)
+			return await navigator.locks.request(KEY, save);
 	} catch {
-		// nothing to keep then
+		// Denied locks still allow progress for this visit.
 	}
-	return finished;
+	return save();
 }
 
 /** Consecutive days with the whole quiz answered, ending today or yesterday. */

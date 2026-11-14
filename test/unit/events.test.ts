@@ -15,6 +15,16 @@ const ev = (name: string, startDate: string, extra = "") =>
 	`{"@type":"Event","name":"${name}","url":"https://www.paard.nl/event/x/","startDate":"${startDate}"${extra}}`;
 
 describe("parseEvents", () => {
+	it.each(["Beyoncé", "Beyonc&eacute;", "Beyonc&#233;", "Beyonc&#xE9;"])(
+		"decodes an event name before title casing: %s",
+		(name) => {
+			expect(
+				parseEvents(page(ev(name, "2026-11-11T20:00")), "2026-11-10")?.items[0]
+					?.name,
+			).toBe("Beyoncé");
+		},
+	);
+
 	it.each([
 		{ items: {} },
 		{ items: [null] },

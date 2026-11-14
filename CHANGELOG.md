@@ -5,9 +5,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- The picture viewer uses source originals when available and falls back to previews if they fail.
+
 ### Fixed
 
 - The social card keeps its title and line inside the centred crop that some link previews apply.
+- Zooming a picture moves keyboard focus to the image so arrow keys can pan it.
+- Selecting the bright star opens its current name and altitude first in the almanac.
+- Quiz tabs preserve saved answers and completed days while keeping answer feedback in place.
+- Games and quiz saves preserve progress when tabs write at the same time, and remote updates keep keyboard focus visible.
+- Rain forecasts discard elapsed intervals and show the remaining horizon; daily weather summaries refresh after Amsterdam midnight.
+- Imported titles decode accented HTML entities, and about and yesterday pages include sharing cards.
 
 ## [0.1.0] - 2026-11-10
 

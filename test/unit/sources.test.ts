@@ -8,6 +8,7 @@ import {
 	mergePictures,
 	parseAic,
 	parseApod,
+	parseApodFeed,
 	parseMet,
 	parseRijks,
 } from "../../src/lib/sources/picture";
@@ -162,6 +163,42 @@ describe("parsers", () => {
 				"2026-11-06",
 			),
 		).toBeNull();
+	});
+
+	it("keeps source originals separate from picture previews and rejects unsafe URLs", () => {
+		const moon = {
+			title: "Moon",
+			date: "2026-11-06",
+			media_type: "image",
+			url: "https://images.example/moon-small.jpg",
+			hdurl: "https://images.example/moon.jpg",
+		};
+		expect(parseApod(moon, moon.date)).toMatchObject({
+			imageUrl: moon.url,
+			fullImageUrl: moon.hdurl,
+		});
+		expect(
+			parseApod({ ...moon, hdurl: "javascript:x" }, moon.date)?.fullImageUrl,
+		).toBeUndefined();
+		expect(
+			parseApod(
+				{ ...moon, media_type: "video", thumbnail_url: moon.url },
+				moon.date,
+			)?.fullImageUrl,
+		).toBeUndefined();
+		expect(
+			parseMet({ ...metObject, primaryImage: moon.hdurl })?.fullImageUrl,
+		).toBe(moon.hdurl);
+		expect(
+			parseMet({
+				...metObject,
+				primaryImage: "http://images.example/original.jpg",
+			})?.fullImageUrl,
+		).toBeUndefined();
+		expect(parseMet(metObject)?.imageUrl).toBe(metObject.primaryImageSmall);
+		expect(parseRijks(rijksObject)?.fullImageUrl).toBe(
+			"https://iiif.micr.io/mPymb/full/max/0/default.jpg",
+		);
 	});
 
 	it("takes only public-domain Met objects with an image", () => {
@@ -377,7 +414,7 @@ describe("parsers", () => {
 	});
 
 	it("prefers fresh KNMI KV nowcast and rejects stale or missing cells", () => {
-		const now = new Date("2026-11-13T22:50:00Z");
+		const now = new Date("2026-11-13T22:44:00Z");
 		const fresh = {
 			issuedAt: "2026-11-13T22:40:00Z",
 			steps: [
@@ -432,6 +469,110 @@ describe("parsers", () => {
 });
 
 describe("pictures", () => {
+	const nasaFeed = `<rss><channel><item>
+		<title>Moon &amp; stars</title><pubDate>Fri, 06 Nov 2026 05:05:00 +0000</pubDate>
+		<link>https://science.nasa.gov/image-article/apod-2026-november-6-moon/</link>
+		<apod:hdurl>https://assets.science.nasa.gov/moon.jpg?w=2000&#038;h=1800</apod:hdurl>
+		<apod:credit><![CDATA[<a href="https://example.com">A Photographer</a>]]></apod:credit>
+		<apod:alt>The Moon above a field of stars.</apod:alt>
+	</item></channel></rss>`;
+
+	it("reads the dated official NASA feed without taking a stale day or unsafe image", () => {
+		expect(parseApodFeed(nasaFeed, "2026-11-06")).toMatchObject({
+			kind: "apod",
+			title: "Moon & stars",
+			by: "A Photographer",
+			imageUrl: "https://assets.science.nasa.gov/moon.jpg?w=2000&h=1800",
+			alt: "The Moon above a field of stars.",
+			pageUrl:
+				"https://science.nasa.gov/image-article/apod-2026-november-6-moon/",
+		});
+		expect(parseApodFeed(nasaFeed, "2026-11-07")).toBeNull();
+		expect(
+			parseApodFeed(
+				nasaFeed.replace("Fri, 06 Nov 2026 05:05:00 +0000", "invalid"),
+				"2026-11-06",
+			),
+		).toBeNull();
+		expect(
+			parseApodFeed(
+				nasaFeed.replace(
+					"https://assets.science.nasa.gov/moon.jpg?w=2000&#038;h=1800",
+					"javascript:x",
+				),
+				"2026-11-06",
+			),
+		).toBeNull();
+		expect(
+			parseApodFeed(
+				nasaFeed.replace("moon.jpg", "nasa-logo.png"),
+				"2026-11-06",
+			),
+		).toBeNull();
+	});
+
+	it("uses NASA's official feed when the API returns its site logo", async () => {
+		vi.stubGlobal("fetch", async (url: string) => {
+			if (new URL(url).host === "api.nasa.gov")
+				return new Response(JSON.stringify(apod));
+			if (new URL(url).host === "science.nasa.gov")
+				return new Response(nasaFeed);
+			return new Response("", { status: 404 });
+		});
+		expect(
+			(await fetchPictures("2026-11-06", "k", ["met", "aic", "rijks"]))[0]
+				?.title,
+		).toBe("Moon & stars");
+	});
+
+	it.each([false, true])(
+		"keeps a ready feed within the source deadline and prefers a valid API answer (%s)",
+		async (apiOk) => {
+			vi.useFakeTimers();
+			try {
+				vi.stubGlobal("fetch", async (url: string) => {
+					const host = new URL(url).host;
+					if (host === "api.nasa.gov") {
+						await new Promise((resolve) => setTimeout(resolve, 4000));
+						return apiOk
+							? new Response(JSON.stringify(goodApod))
+							: new Response("", { status: 503 });
+					}
+					if (host === "science.nasa.gov") {
+						await new Promise((resolve) => setTimeout(resolve, 1200));
+						return new Response(nasaFeed);
+					}
+					return new Response("", { status: 404 });
+				});
+				const result = fetchPictures("2026-11-06", "k", [
+					"met",
+					"aic",
+					"rijks",
+				]);
+				await vi.advanceTimersByTimeAsync(5000);
+				expect((await result)[0]?.title).toBe(apiOk ? "Moon" : "Moon & stars");
+			} finally {
+				vi.useRealTimers();
+			}
+		},
+	);
+
+	it("replaces generic museum medium text with the title and artist, retaining descriptions", () => {
+		const work = {
+			...aic.data[0],
+			title: "A painting",
+			artist_display: "An Artist",
+			thumbnail: { alt_text: "A work made of oil on canvas." },
+		};
+		expect(parseAic(work)?.alt).toBe("A painting, by An Artist");
+		expect(
+			parseAic({
+				...work,
+				thumbnail: { alt_text: "People gathered beside a lake." },
+			})?.alt,
+		).toBe("People gathered beside a lake.");
+	});
+
 	const goodApod = {
 		title: "Moon",
 		media_type: "image",
@@ -481,7 +622,10 @@ describe("pictures", () => {
 		expect(await fetchPictures("2026-11-06", undefined)).toEqual(one);
 		hosts.length = 0;
 		await fetchPictures("2026-11-06", "k", ["met", "aic", "rijks"]);
-		expect(hosts.filter((h) => h !== "img")).toEqual(["api.nasa.gov"]);
+		expect(hosts.filter((h) => h !== "img")).toEqual([
+			"science.nasa.gov",
+			"api.nasa.gov",
+		]);
 	});
 
 	it("lets each source fail or hang on its own", async () => {
@@ -663,6 +807,85 @@ describe("day assembly and cache", () => {
 });
 
 describe("hardening", () => {
+	it("expires rain intervals against their feed anchor across midnight", () => {
+		const issuedAt = "2026-11-13T22:55:00Z";
+		const steps = [
+			{ time: "23:55", mm: 1 },
+			{ time: "00:00", mm: 0 },
+		];
+		expect(
+			parseKnmiRain({ issuedAt, steps }, new Date("2026-11-13T23:01:00Z")),
+		).toEqual([steps[1]]);
+		expect(
+			parseKnmiRain({ issuedAt, steps }, new Date("2026-11-13T23:05:00Z")),
+		).toBeNull();
+	});
+
+	it("does not call an accepted half-hour-old wet interval current rain", () => {
+		const steps = Array.from({ length: 13 }, (_, i) => ({
+			time: `11:${String((i * 5) % 60).padStart(2, "0")}`,
+			mm: i === 0 ? 1 : 0,
+		}));
+		steps[12] = { time: "12:00", mm: 0 };
+		const now = new Date("2026-11-13T10:30:00Z");
+		const remaining = parseKnmiRain(
+			{ issuedAt: "2026-11-13T10:00:00Z", steps },
+			now,
+		);
+		expect(remaining?.[0]).toEqual({ time: "11:30", mm: 0 });
+		expect(rainLine(remaining ?? [], now)).toBe(
+			"No rain expected through 12:05",
+		);
+	});
+
+	it("drops elapsed cached radar and quarter-hour forecast intervals", () => {
+		const fetched = new Date("2026-11-06T20:20:00Z");
+		const base = parseWeather(meteo, fetched);
+		const now = new Date("2026-11-06T20:30:00Z");
+		expect(withKnmiRain(base, null, now)?.rainNext2h[0]?.time).toBe("21:30");
+		const radar = {
+			...base,
+			rainCredit: { name: "Buienradar", url: "https://www.buienradar.nl/" },
+			rainNext2h: [
+				{ time: "21:20", mm: 1 },
+				{ time: "21:25", mm: 0 },
+			],
+		};
+		expect(withKnmiRain(radar, null, now)?.rainNext2h).toEqual([]);
+	});
+
+	it("rejects invalid clocks and ambiguous repeated-hour rain", () => {
+		const now = new Date("2026-10-25T00:30:00Z");
+		for (const time of ["24:00", "12:60", "02:30"]) {
+			expect(
+				parseKnmiRain(
+					{ issuedAt: now.toISOString(), steps: [{ time, mm: 1 }] },
+					now,
+				),
+			).toBeNull();
+		}
+		expect(parseRaintext("109|24:00\n109|12:60\n999|12:30")).toEqual([]);
+		expect(() =>
+			parseWeather(
+				{
+					...meteo,
+					minutely_15: { ...meteo.minutely_15, time: ["2026-11-06T24:00"] },
+				},
+				now,
+			),
+		).toThrow("invalid rain times");
+	});
+
+	it("keeps ordered spring-transition intervals without inventing missing clocks", () => {
+		const issuedAt = "2026-03-29T00:55:00Z";
+		const steps = [
+			{ time: "01:55", mm: 1 },
+			{ time: "03:00", mm: 0 },
+		];
+		expect(
+			parseKnmiRain({ issuedAt, steps }, new Date("2026-03-29T01:01:00Z")),
+		).toEqual([steps[1]]);
+	});
 	it("drops every Wikipedia section on a malformed feed instead of throwing", async () => {
 		vi.stubGlobal("fetch", async () => new Response('{"dyk":5}'));
 		expect(await fetchWikipedia("2026-11-06")).toEqual({
@@ -707,15 +930,18 @@ describe("hardening", () => {
 
 	it("says rain now when the current quarter hour is wet", () => {
 		const step = (time: string, mm: number) => ({ time, mm });
-		expect(rainLine([step("10:00", 0.3), step("10:15", 0)])).toBe("Rain now");
-		expect(rainLine([step("10:00", 0), step("10:15", 0.2)])).toBe(
+		const now = new Date("2026-11-06T09:10:00Z");
+		expect(rainLine([step("10:00", 0.3), step("10:15", 0)], now, 15)).toBe(
+			"Rain now",
+		);
+		expect(rainLine([step("10:00", 0), step("10:15", 0.2)], now, 15)).toBe(
 			"Rain expected around 10:15",
 		);
 	});
 
-	it("limits a dry forecast to the next two hours", () => {
+	it("limits a dry forecast to its available horizon", () => {
 		expect(rainLine([{ time: "23:30", mm: 0 }])).toBe(
-			"No rain expected in the next 2 hours",
+			"No rain expected through 23:35",
 		);
 		expect(rainLine([])).toBe("");
 	});

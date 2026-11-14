@@ -1,5 +1,14 @@
 import type { Picture } from "../types";
-import { getJson, httpsUrl, safe, seededRandom, upstream } from "../util";
+import {
+	decodeEntities,
+	getJson,
+	getText,
+	httpsUrl,
+	safe,
+	seededRandom,
+	stripTags,
+	upstream,
+} from "../util";
 
 interface Apod {
 	title?: string;
@@ -29,6 +38,8 @@ export function parseApod(a: Apod, date: string): Picture | null {
 		by: a.copyright?.replace(/\s+/g, " ").trim() || null,
 		date: null,
 		imageUrl,
+		fullImageUrl:
+			a.media_type === "image" ? (httpsUrl(a.hdurl) ?? undefined) : undefined,
 		width: null,
 		height: null,
 		alt: a.title,
@@ -37,17 +48,71 @@ export function parseApod(a: Apod, date: string): Picture | null {
 	};
 }
 
-const fetchApod = (date: string, apiKey: string | undefined) =>
-	safe("apod", async () => {
-		if (!apiKey) return null;
+/** NASA's basic feed keeps the dated picture and credit when its API returns the site logo. */
+export function parseApodFeed(xml: string, date: string): Picture | null {
+	for (const item of xml.split("<item>").slice(1)) {
+		const field = (tag: string) =>
+			new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`)
+				.exec(item)?.[1]
+				?.replace(/^<!\[CDATA\[([\s\S]*)\]\]>$/, "$1")
+				.trim() ?? "";
+		const published = new Date(field("pubDate"));
+		if (
+			!Number.isFinite(published.getTime()) ||
+			published.toISOString().slice(0, 10) !== date
+		)
+			continue;
+		const imageUrl = httpsUrl(decodeEntities(field("apod:hdurl")));
+		const pageUrl = httpsUrl(decodeEntities(field("link")));
+		if (
+			!imageUrl ||
+			!/\.(?:jpe?g|png|gif|webp|avif)(?:\?|$)/i.test(imageUrl) ||
+			!pageUrl
+		)
+			continue;
+		const p = parseApod(
+			{
+				date,
+				title: stripTags(field("title")),
+				media_type: "image",
+				url: imageUrl,
+				hdurl: imageUrl,
+				copyright: stripTags(field("apod:credit")),
+			},
+			date,
+		);
+		if (p) return { ...p, pageUrl, alt: stripTags(field("apod:alt")) || p.alt };
+	}
+	return null;
+}
+
+async function fetchApod(
+	date: string,
+	apiKey: string | undefined,
+): Promise<Picture | null> {
+	if (!apiKey) return null;
+	// Start both within the source deadline; a slow API must not leave the feed only a second.
+	const feed = safe("apod-feed", async () =>
+		parseApodFeed(
+			await getText(
+				"https://science.nasa.gov/feed/apod-basic/",
+				"application/rss+xml",
+			),
+			date,
+		),
+	);
+	const api = await safe("apod", async () => {
 		const url = `https://api.nasa.gov/planetary/apod?thumbs=true&date=${date}&api_key=${encodeURIComponent(apiKey)}`;
 		return parseApod(await getJson<Apod>(url), date);
 	});
+	return api ?? (await feed);
+}
 
 interface MetObject {
 	objectID: number;
 	isPublicDomain?: boolean;
 	primaryImageSmall?: string;
+	primaryImage?: string;
 	title?: string;
 	artistDisplayName?: string;
 	objectDate?: string;
@@ -65,6 +130,7 @@ export function parseMet(o: MetObject): Picture | null {
 		by,
 		date: o.objectDate?.trim() || null,
 		imageUrl,
+		fullImageUrl: httpsUrl(o.primaryImage) ?? undefined,
 		width: null,
 		height: null,
 		alt: by ? `${o.title}, by ${by}` : o.title,
@@ -115,6 +181,7 @@ export function parseAic(a: Aic): Picture | null {
 	// "Georges Seurat (French, 1859-1891)\nmore lines": the first line is the name
 	const by = a.artist_display?.split("\n")[0]?.trim() || null;
 	const pageUrl = `https://www.artic.edu/artworks/${a.id}`;
+	const sourceAlt = a.thumbnail?.alt_text?.trim();
 	return {
 		kind: "aic",
 		title: a.title,
@@ -123,7 +190,12 @@ export function parseAic(a: Aic): Picture | null {
 		imageUrl: `https://www.artic.edu/iiif/2/${encodeURIComponent(a.image_id)}/full/843,/0/default.jpg`,
 		width: a.thumbnail?.width ?? null,
 		height: a.thumbnail?.height ?? null,
-		alt: a.thumbnail?.alt_text?.trim() || a.title,
+		alt:
+			sourceAlt && !/^A work made of .+\.$/.test(sourceAlt)
+				? sourceAlt
+				: by
+					? `${a.title}, by ${by}`
+					: a.title,
 		pageUrl,
 		credit: {
 			name: "Art Institute of Chicago (CC0)",
@@ -217,6 +289,7 @@ export function parseRijks(o: RijksObject): Picture | null {
 		by,
 		date: o.produced_by?.timespan?.identified_by?.[0]?.content?.trim() || null,
 		imageUrl,
+		fullImageUrl: httpsUrl(iiif) ?? undefined,
 		width: null,
 		height: null,
 		alt: by ? `${title}, by ${by}` : title,

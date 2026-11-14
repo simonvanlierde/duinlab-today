@@ -62,14 +62,24 @@ export function windLine(w: Weather["now"]): string {
 	return `Wind from the ${from}, force ${w.windBeaufort} (${name}), ${Math.round(w.windKmh)} km/h`;
 }
 
-export function rainLine(steps: Weather["rainNext2h"]): string {
-	if (steps.length === 0) return "";
-	// the first step is the current one: 5 minutes from KNMI/Buienradar, 15 from Open-Meteo
-	if ((steps[0]?.mm ?? 0) > 0) return "Rain now";
+export function rainLine(
+	steps: Weather["rainNext2h"],
+	now = new Date(),
+	interval = 5,
+): string {
+	const last = steps.at(-1);
+	if (!last) return "";
+	const minutes = (time: string) =>
+		Number(time.slice(0, 2)) * 60 + Number(time.slice(3));
+	const first = steps[0];
+	const age = first
+		? (minutes(clock(now)) - minutes(first.time) + 1440) % 1440
+		: interval;
+	if ((first?.mm ?? 0) > 0 && age < interval) return "Rain now";
 	const wet = steps.find((s) => s.mm > 0);
-	return wet
-		? `Rain expected around ${wet.time}`
-		: "No rain expected in the next 2 hours";
+	if (wet) return `Rain expected around ${wet.time}`;
+	const end = (minutes(last.time) + interval) % 1440;
+	return `No rain expected through ${String(Math.floor(end / 60)).padStart(2, "0")}:${String(end % 60).padStart(2, "0")}`;
 }
 
 /** "9 h 18 min of daylight, 3 min less than yesterday": the day's length and its change. */

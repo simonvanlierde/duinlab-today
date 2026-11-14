@@ -14,7 +14,13 @@ import {
 
 let { games }: { games: Game[] } = $props();
 
-onMount(() => init(games.map((g) => g.id)));
+onMount(() => {
+	init(games.map((g) => g.id));
+	const foldedWidth = matchMedia("(max-width: 1099px)");
+	const resize = () => focusFoldedBoard(document.activeElement);
+	foldedWidth.addEventListener("change", resize);
+	return () => foldedWidth.removeEventListener("change", resize);
+});
 
 const live = $derived(store.ready && !store.off);
 const done = $derived(live && allPlayed());
@@ -25,13 +31,25 @@ let board = $state<HTMLOListElement>();
 /** The count is announced only after someone opens a game, not when the page loads. */
 let announce = $state(false);
 
-/** Opening the last game folds the board away; keyboard focus moves to the unfold button. */
+/** A fold only moves focus when it would hide the current control. */
+function focusFoldedBoard(focused: Element | null) {
+	if (
+		board?.contains(focused) &&
+		document.activeElement === focused &&
+		getComputedStyle(board).display === "none"
+	)
+		unfoldBtn?.focus();
+}
+
+$effect.pre(() => {
+	if (!done || unfolded) return;
+	const focused = document.activeElement;
+	if (board?.contains(focused)) tick().then(() => focusFoldedBoard(focused));
+});
+
 async function open(id: string) {
 	announce = true;
-	mark(id);
-	await tick();
-	if (done && !unfolded && board && getComputedStyle(board).display === "none")
-		unfoldBtn?.focus();
+	await mark(id);
 }
 
 async function unfold() {
@@ -133,6 +151,13 @@ async function unfold() {
 		gap: 8px;
 		min-height: 45px;
 		border-bottom: 1px solid var(--rule);
+	}
+	@media (min-width: 1100px) and (max-height: 640px) {
+		.game {
+			min-height: 44px;
+			border-bottom: 0;
+			box-shadow: inset 0 -1px var(--rule);
+		}
 	}
 	.name {
 		flex: 1;

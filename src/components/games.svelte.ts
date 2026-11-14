@@ -18,12 +18,24 @@ export const store = $state({
 	ids: [] as string[],
 });
 
-function save() {
+async function save() {
+	const write = () => {
+		load();
+		try {
+			localStorage.setItem(KEY, JSON.stringify(store.played));
+		} catch {
+			// private window or full quota: keep progress for this visit
+		}
+	};
 	try {
-		localStorage.setItem(KEY, JSON.stringify(store.played));
+		if (globalThis.navigator?.locks) {
+			await navigator.locks.request(KEY, write);
+			return;
+		}
 	} catch {
-		// private window or full quota: the page keeps working for this visit
+		// Denied locks still allow progress for this visit.
 	}
+	write();
 }
 
 function load() {
@@ -33,10 +45,15 @@ function load() {
 		if (raw && typeof raw === "object") {
 			for (const [id, days] of Object.entries(raw)) {
 				if (Array.isArray(days))
-					clean[id] = days.filter((d) => typeof d === "string");
+					clean[id] = [
+						...new Set([
+							...(store.played[id] ?? []),
+							...days.filter((d) => typeof d === "string"),
+						]),
+					];
 			}
 		}
-		store.played = clean;
+		store.played = { ...store.played, ...clean };
 		store.off = false;
 	} catch {
 		store.off = true;
@@ -75,11 +92,11 @@ export function isPlayed(id: string, day = store.day): boolean {
 	return !!store.played[id]?.includes(day);
 }
 
-export function mark(id: string) {
+export async function mark(id: string) {
 	if (isPlayed(id)) return;
 	store.played[id] = [...(store.played[id] ?? []), store.day];
-	save();
 	syncSky();
+	await save();
 }
 
 export function playedCount(): number {

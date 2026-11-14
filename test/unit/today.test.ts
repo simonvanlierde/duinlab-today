@@ -99,6 +99,33 @@ beforeEach(() => {
 });
 
 describe("canonical day publication", () => {
+	it.each([
+		[
+			"2026-11-10T22:59:00Z",
+			"2026-11-10T23:01:00Z",
+			"2026-11-10",
+			"2026-11-11",
+		],
+		[
+			"2026-07-10T21:59:00Z",
+			"2026-07-10T22:01:00Z",
+			"2026-07-10",
+			"2026-07-11",
+		],
+	])(
+		"separates daily weather across Amsterdam midnight (%s)",
+		async (before, after, first, second) => {
+			durable.set("day", day("published"));
+			await getToday(new Date(before));
+			await getToday(new Date(after));
+			expect(cached.mock.calls.map((call) => call[1])).toContain(
+				`weather/${first}`,
+			);
+			expect(cached.mock.calls.map((call) => call[1])).toContain(
+				`weather/${second}`,
+			);
+		},
+	);
 	it("imports the published KV quiz before filling missing sections", async () => {
 		store.set(KEY, JSON.stringify(day("published")));
 		buildDay.mockResolvedValue(day("replacement"));
@@ -206,7 +233,7 @@ describe("canonical day publication", () => {
 			credit: { name: "Open-Meteo", url: "https://open-meteo.com/" },
 		};
 		cached.mockImplementation(async (_c: unknown, key: string) =>
-			key === "weather" ? baseWeather : key === "recipes" ? [] : null,
+			key.startsWith("weather/") ? baseWeather : key === "recipes" ? [] : null,
 		);
 		store.set(
 			"rain/v1",
@@ -218,6 +245,10 @@ describe("canonical day publication", () => {
 		const withKnmi = await getToday(NOW);
 		expect(withKnmi.weather?.rainCredit.name).toBe("KNMI");
 		expect(withKnmi.weather?.rainNext2h).toEqual([{ time: "09:00", mm: 0.36 }]);
+		// The same cached forecast is checked again on each request, even without a refresh.
+		const later = await getToday(new Date("2026-11-10T08:05:00Z"));
+		expect(later.weather?.rainNext2h).toEqual([]);
+		expect(later.weather?.rainCredit.name).toBe("Buienradar");
 
 		kv.get.mockImplementationOnce(async (key: string) => {
 			if (key === "rain/v1") throw new Error("KV timeout");
