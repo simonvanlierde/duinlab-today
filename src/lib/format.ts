@@ -64,7 +64,7 @@ export function windLine(w: Weather["now"]): string {
 
 export function rainLine(steps: Weather["rainNext2h"]): string {
 	if (steps.length === 0) return "";
-	// the first step is the current one: 5 minutes from Buienradar, 15 from Open-Meteo
+	// the first step is the current one: 5 minutes from KNMI/Buienradar, 15 from Open-Meteo
 	if ((steps[0]?.mm ?? 0) > 0) return "Rain now";
 	const wet = steps.find((s) => s.mm > 0);
 	return wet

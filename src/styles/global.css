@@ -309,7 +309,7 @@ h1 {
 }
 .moon {
 	--top: 16px;
-	padding: 8px;
+	padding: 9px;
 	filter: drop-shadow(0 0 6px rgb(246 241 220 / 0.45));
 }
 .moon:hover,

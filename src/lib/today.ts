@@ -6,7 +6,7 @@ import { games } from "./games";
 import { withAgenda } from "./sources/events";
 import { fetchRecipes } from "./sources/recipes";
 import { fetchSea } from "./sources/sea";
-import { fetchWeather } from "./sources/weather";
+import { fetchWeather, withKnmiRain } from "./sources/weather";
 import type { Today } from "./types";
 
 // stale: how long past its ttl an entry is still served while a request refreshes it. Weather
@@ -67,11 +67,24 @@ async function readAgenda() {
 	}
 }
 
+/** The homelab KNMI nowcast job's 2-hour rain steps; refreshes every few minutes. */
+async function readKnmiRain() {
+	try {
+		return await env.DAYS.get("rain/v1", {
+			type: "json",
+			cacheTtl: 300,
+		});
+	} catch {
+		return null;
+	}
+}
+
 export async function getToday(now: Date = new Date()): Promise<Today> {
 	const cache = (caches as unknown as { default: Cache }).default;
-	const [day, agenda, weather, sea, recipes] = await Promise.all([
+	const [day, agenda, knmiRain, weather, sea, recipes] = await Promise.all([
 		getDay(now),
 		readAgenda(),
+		readKnmiRain(),
 		cached(
 			cache,
 			"weather",
@@ -99,7 +112,7 @@ export async function getToday(now: Date = new Date()): Promise<Today> {
 		...day,
 		events: withAgenda(day.events, agenda, day.date),
 		games,
-		weather,
+		weather: withKnmiRain(weather, knmiRain, now),
 		sea,
 		recipes,
 	};

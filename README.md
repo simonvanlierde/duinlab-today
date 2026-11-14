@@ -106,8 +106,8 @@ are:
 | `recipes` | up to nine recipes (`title`, `url`, `source`), three per site | `[]` |
 
 Sun times carry the Amsterdam offset. `weather.rainNext2h[].time` is `HH:MM` on the
-Amsterdam clock, and `mm` is mm per hour: 5-minute steps from Buienradar's radar, or 15-minute
-steps from Open-Meteo when Buienradar is down (`weather.rainCredit` says which). New fields may
+Amsterdam clock, and `mm` is mm per hour: 5-minute steps from KNMI's radar nowcast (`rain/v1` in KV)
+or Buienradar's radar, or 15-minute steps from Open-Meteo when both are unavailable (`weather.rainCredit` says which). New fields may
 appear at any time. A commit that renames or removes a field says so in its message.
 When every source fails, the endpoint still answers 200, with a short cache time. When the
 Worker itself fails, it answers 503 with `{"error": ...}`.
@@ -116,7 +116,7 @@ Worker itself fails, it answers 503 with `{"error": ...}`.
 
 Wikipedia (On this day, Did you know, the featured article), Wiktionary (word of the day),
 NASA APOD, The Metropolitan Museum of Art, the Art Institute of Chicago and the Rijksmuseum (public-domain works), the Wikipedia picture of the day (credited with its licence), Open Trivia DB (CC BY-SA 4.0),
-ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), Paard, Amare and DenHaag.com (this week's shows and events; the last two through a weekly homelab job that writes `agenda/v1` to KV), Open-Meteo (weather, air quality, pollen and the sea off Scheveningen), Buienradar (the rain radar),
+ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), Paard, Amare and DenHaag.com (this week's shows and events; the last two through a weekly homelab job that writes `agenda/v1` to KV), Open-Meteo (weather, air quality, pollen and the sea off Scheveningen), KNMI (`radar_forecast/2.0` via a scheduled homelab job that writes `rain/v1` to KV) and Buienradar (fallback rain radar),
 Astronomy Engine (planets, full moons, eclipses; an npm package, not a feed), and the
 recipe feeds of the Guardian, BBC Good Food and
 Love and Lemons. Each item on the page links to its source.

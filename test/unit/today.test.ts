@@ -40,7 +40,13 @@ vi.mock("cloudflare:workers", () => ({
 		) {}
 	},
 }));
-vi.mock("../../src/lib/cache", () => ({ cached: async () => null }));
+const cached = vi.fn(
+	async (_c: unknown, key: string): Promise<unknown> =>
+		key === "recipes" ? [] : null,
+);
+vi.mock("../../src/lib/cache", () => ({
+	cached: (c: unknown, key: string) => cached(c, key),
+}));
 const buildDay = vi.fn();
 vi.mock("../../src/lib/build", async (importOriginal) => ({
 	...(await importOriginal<typeof import("../../src/lib/build")>()),
@@ -179,5 +185,55 @@ describe("canonical day publication", () => {
 		);
 		await owner.alarm();
 		expect(durable.size).toBe(0);
+	});
+
+	it("applies fresh rain/v1 from KV in getToday and falls back when KV throws", async () => {
+		durable.set("day", day("published"));
+		const baseWeather = {
+			now: {
+				description: "overcast",
+				temperatureC: 10,
+				windKmh: 12,
+				windBeaufort: 3,
+				windFrom: "W",
+				cloudPct: 80,
+			},
+			today: { maxC: 12, minC: 8, rainChancePct: 20 },
+			rainNext2h: [{ time: "09:00", mm: 0 }],
+			rainCredit: { name: "Buienradar", url: "https://www.buienradar.nl/" },
+			air: null,
+			fetchedAt: NOW.toISOString(),
+			credit: { name: "Open-Meteo", url: "https://open-meteo.com/" },
+		};
+		cached.mockImplementation(async (_c: unknown, key: string) =>
+			key === "weather" ? baseWeather : key === "recipes" ? [] : null,
+		);
+		store.set(
+			"rain/v1",
+			JSON.stringify({
+				issuedAt: "2026-11-10T07:55:00Z",
+				steps: [{ time: "09:00", mm: 0.36 }],
+			}),
+		);
+		const withKnmi = await getToday(NOW);
+		expect(withKnmi.weather?.rainCredit.name).toBe("KNMI");
+		expect(withKnmi.weather?.rainNext2h).toEqual([{ time: "09:00", mm: 0.36 }]);
+
+		kv.get.mockImplementationOnce(async (key: string) => {
+			if (key === "rain/v1") throw new Error("KV timeout");
+			const value = store.get(key);
+			return value ? JSON.parse(value) : null;
+		});
+		// readAgenda() calls kv.get("agenda/v1") first, then readKnmiRain() calls kv.get("rain/v1")
+		kv.get.mockImplementation(async (key: string) => {
+			if (key === "rain/v1") throw new Error("KV timeout");
+			const value = store.get(key);
+			return value ? JSON.parse(value) : null;
+		});
+		const fallback = await getToday(NOW);
+		expect(fallback.weather?.rainCredit.name).toBe("Buienradar");
+		cached.mockImplementation(async (_c: unknown, key: string) =>
+			key === "recipes" ? [] : null,
+		);
 	});
 });
