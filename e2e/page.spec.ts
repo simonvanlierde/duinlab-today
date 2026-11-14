@@ -658,6 +658,14 @@ test("quiz tabs refresh missed progress when returning to the page", async ({
 		await tab.locator("astro-island:not([ssr]) .quiz-live").waitFor();
 	await page.locator(".quiz-live .answer").first().click();
 	await expect(other.locator(".quiz-live .qn")).toHaveText("1 of 3");
+	await expect
+		.poll(() =>
+			page.evaluate(
+				() =>
+					JSON.parse(localStorage.getItem("today.quiz.v1") ?? "null")?.picks[0],
+			),
+		)
+		.toBe(0);
 	await other.bringToFront();
 	await other.evaluate(() =>
 		document.dispatchEvent(new Event("visibilitychange")),
