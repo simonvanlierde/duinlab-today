@@ -178,6 +178,9 @@ importers:
       astronomy-engine:
         specifier: 2.1.19
         version: 2.1.19
+      entities:
+        specifier: 4.5.0
+        version: 4.5.0
       svelte:
         specifier: 5.57.3
         version: 5.57.3

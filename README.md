@@ -6,16 +6,18 @@ games with played-today marks and streaks. The sky at the top follows the sun's 
 The Hague, minute by minute. Checkmarks and streaks stay in your browser. The server stores two days of public content
 and cached feeds, alongside Cloudflare's request logs; it stores no personal progress.
 
-Tap the moon or a planet to see its details first in the almanac, followed by the sun times,
+Tap the moon, a planet or the bright star to see its details first in the almanac, followed by the sun times,
 other planets, tides and sea conditions. Without JavaScript, the same controls open the complete overview.
 
 Tap a picture to open a larger view, zoom into details and browse the day's images. Captions and
 source links stay within reach. Close the viewer to return to the paper; without JavaScript,
 the picture links directly to its image.
+The viewer loads the source's original image when supplied, with the preview as a fallback.
 
 ## How it works
 
 After finishing the quiz, open “Review answers” to revisit your choices and the correct answers.
+Quiz answers stay in sync across tabs in the same browser; the first saved answer is kept.
 See [release preparation](docs/releasing.md) before the first canonical-day deployment or a release tag.
 
 ```mermaid
@@ -62,7 +64,9 @@ One Worker serves everything ([`src/worker.ts`](src/worker.ts)).
 
 ## Develop
 
-You need Node 22.23.4 or later (CI uses 26). `packageManager` in `package.json` pins pnpm.
+Install Node 22.23.4 or later (CI uses 26), [pnpm](https://pnpm.io/installation) and
+[just](https://just.systems/man/en/packages.html). Use the pnpm version pinned by
+`packageManager` in `package.json`.
 
 ```sh
 pnpm install
@@ -72,7 +76,7 @@ just dev
 
 `just dev` starts the dev server in the background; `pnpm exec astro dev stop` ends it.
 Checks and builds generate Cloudflare runtime and binding types from `wrangler.jsonc`.
-`just check` runs CI's lint, types, unit tests and build. `just e2e` runs the browser tests
+`just check` runs CI's lint, types, unit tests, build, licence check and production dependency audit. `just e2e` runs the browser tests
 against a production build, including axe scans of today, yesterday, about and 404 pages and a print-layout check. The Worker
 reads every source from a local fixture server ([`e2e/fixture-server.mjs`](e2e/fixture-server.mjs))
 through the `FIXTURE_ORIGIN` variable, so the tests run offline and give the same page every time.
@@ -107,7 +111,9 @@ are:
 
 Sun times carry the Amsterdam offset. `weather.rainNext2h[].time` is `HH:MM` on the
 Amsterdam clock, and `mm` is mm per hour: 5-minute steps from KNMI's radar nowcast (`rain/v1` in KV)
-or Buienradar's radar, or 15-minute steps from Open-Meteo when both are unavailable (`weather.rainCredit` says which). New fields may
+or Buienradar's radar, or 15-minute steps from Open-Meteo when both are unavailable (`weather.rainCredit` says which).
+Elapsed intervals are removed on each request, so the remaining forecast can cover less than two hours.
+An empty list means no usable rain forecast. New fields may
 appear at any time. A commit that renames or removes a field says so in its message.
 When every source fails, the endpoint still answers 200, with a short cache time. When the
 Worker itself fails, it answers 503 with `{"error": ...}`.

@@ -40,7 +40,13 @@ const tideTimes = (kind: "high" | "low") =>
 		.filter((e) => e.kind === kind)
 		.map((e) => e.at)
 		.join(" and ");
-const rain = weather ? rainLine(weather.rainNext2h) : "";
+const rain = weather
+	? rainLine(
+			weather.rainNext2h,
+			now,
+			weather.rainCredit.name === "Open-Meteo" ? 15 : 5,
+		)
+	: "";
 const fact = today.didYouKnow[0];
 const heading = longDate(today.date);
 const hasQuiz = !!quiz && quiz.questions.length > 0;
@@ -147,6 +153,9 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 				</div>
 				<div data-almanac-body="moon" data-almanac-name="Moon">
 				<p data-moon-line>{bodies.moon.line}</p>
+				</div>
+				<div data-almanac-body="star" data-almanac-name="Star" hidden={!bodies.star.show}>
+				<p data-star-line>{bodies.star.name}, {Math.round(bodies.star.alt)}° above the horizon</p>
 				</div>
 				{bodies.planets.map((planet) => {
 					const window = tonight.find((item) => item.name === planet.name);
@@ -339,7 +348,7 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 			const unavailable = new Set(sections.filter((section) => section.hidden));
 			for (const button of document.querySelectorAll<HTMLElement>('button[popovertarget="almanac"]:not([popovertargetaction="hide"])')) {
 				button.addEventListener("click", () => {
-					for (const section of sections) section.hidden = unavailable.has(section);
+					for (const section of sections) section.hidden = section.dataset.almanacBody === "star" || unavailable.has(section);
 					for (const section of sections) details.appendChild(section);
 					const key = button.dataset.planet ?? button.dataset.orb;
 					const selected = sections.find((section) => section.dataset.almanacBody === key);

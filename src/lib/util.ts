@@ -1,3 +1,5 @@
+import { decodeHTML } from "entities";
+
 const UA = "duinlab-today/1.0 (https://today.duinlab.nl)";
 const TIMEOUT_MS = 4000;
 
@@ -64,34 +66,7 @@ export async function safe<T>(
 export const httpsUrl = (s: string | undefined) =>
 	s && URL.canParse(s) && new URL(s).protocol === "https:" ? s : undefined;
 
-const ENTITIES: Record<string, string> = {
-	amp: "&",
-	lt: "<",
-	gt: ">",
-	quot: '"',
-	apos: "'",
-	nbsp: " ",
-	ldquo: "“",
-	rdquo: "”",
-	lsquo: "‘",
-	rsquo: "’",
-	mdash: "—",
-	ndash: "–",
-	hellip: "…",
-};
-
-export function decodeEntities(s: string): string {
-	return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e: string) => {
-		if (e[0] === "#") {
-			const code =
-				e[1] === "x" || e[1] === "X"
-					? Number.parseInt(e.slice(2), 16)
-					: Number(e.slice(1));
-			return Number.isFinite(code) ? String.fromCodePoint(code) : m;
-		}
-		return ENTITIES[e.toLowerCase()] ?? m;
-	});
-}
+export const decodeEntities = decodeHTML;
 
 /** Plain text from an HTML fragment; the page escapes it again when it renders. */
 export function stripTags(html: string): string {

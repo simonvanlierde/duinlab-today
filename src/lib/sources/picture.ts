@@ -29,6 +29,8 @@ export function parseApod(a: Apod, date: string): Picture | null {
 		by: a.copyright?.replace(/\s+/g, " ").trim() || null,
 		date: null,
 		imageUrl,
+		fullImageUrl:
+			a.media_type === "image" ? (httpsUrl(a.hdurl) ?? undefined) : undefined,
 		width: null,
 		height: null,
 		alt: a.title,
@@ -48,6 +50,7 @@ interface MetObject {
 	objectID: number;
 	isPublicDomain?: boolean;
 	primaryImageSmall?: string;
+	primaryImage?: string;
 	title?: string;
 	artistDisplayName?: string;
 	objectDate?: string;
@@ -65,6 +68,7 @@ export function parseMet(o: MetObject): Picture | null {
 		by,
 		date: o.objectDate?.trim() || null,
 		imageUrl,
+		fullImageUrl: httpsUrl(o.primaryImage) ?? undefined,
 		width: null,
 		height: null,
 		alt: by ? `${o.title}, by ${by}` : o.title,
@@ -217,6 +221,7 @@ export function parseRijks(o: RijksObject): Picture | null {
 		by,
 		date: o.produced_by?.timespan?.identified_by?.[0]?.content?.trim() || null,
 		imageUrl,
+		fullImageUrl: httpsUrl(iiif) ?? undefined,
 		width: null,
 		height: null,
 		alt: by ? `${title}, by ${by}` : title,

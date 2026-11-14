@@ -17,6 +17,8 @@ export interface Picture {
 	/** The work's own date as the source gives it ("1889"), not today's date. */
 	date: string | null;
 	imageUrl: string;
+	/** Source original for closer viewing; older stored days have only the preview. */
+	fullImageUrl?: string;
 	/** Pixel size when the source gives it, so the page can reserve the right aspect ratio. */
 	width: number | null;
 	height: number | null;
@@ -95,11 +97,12 @@ export interface Weather {
 	};
 	today: { maxC: number; minC: number; rainChanceMax: number };
 	/**
-	 * The next two hours, from now: Buienradar's radar in 5-minute steps, or Open-Meteo's
-	 * forecast in 15-minute steps when Buienradar fails. `time` is local "HH:MM", `mm` is mm/h.
+	 * Remaining forecast intervals: KNMI/Buienradar in 5-minute steps, or Open-Meteo
+	 * in 15-minute steps. Cached forecasts may cover less than two hours or be empty.
+	 * `time` is the interval start as local "HH:MM", `mm` is mm/h.
 	 */
 	rainNext2h: { time: string; mm: number }[];
-	/** Which of the two `rainNext2h` comes from. */
+	/** The source of `rainNext2h`. */
 	rainCredit: Credit;
 	/** "Air quality poor (AQI 64)" or "Grass pollen high today"; null when both are fine or the air feed failed. */
 	air: string | null;

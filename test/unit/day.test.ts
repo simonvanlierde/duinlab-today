@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
 	allPlayed,
 	amsterdamDay,
-	dayOfYear,
 	isoAmsterdam,
 	shift,
 	streak,
@@ -26,7 +25,7 @@ describe("shift", () => {
 	});
 });
 
-describe("isoAmsterdam and dayOfYear", () => {
+describe("isoAmsterdam", () => {
 	it("writes the local offset of the date", () => {
 		expect(isoAmsterdam(new Date("2026-11-06T06:46:12Z"))).toBe(
 			"2026-11-06T07:46:12+01:00",
@@ -34,8 +33,6 @@ describe("isoAmsterdam and dayOfYear", () => {
 		expect(isoAmsterdam(new Date("2026-07-01T03:20:00Z"))).toBe(
 			"2026-07-01T05:20:00+02:00",
 		);
-		expect(dayOfYear("2026-01-01")).toBe(1);
-		expect(dayOfYear("2026-11-06")).toBe(310);
 	});
 });
 

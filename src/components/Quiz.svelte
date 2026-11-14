@@ -1,7 +1,7 @@
 <script lang="ts">
 import { onMount, tick } from "svelte";
 import type { Quiz } from "../lib/types";
-import { loadQuiz, quizStreak, saveQuiz } from "./quiz";
+import { KEY, loadQuiz, quizStreak, saveQuiz } from "./quiz";
 
 let { quiz }: { quiz: Quiz } = $props();
 
@@ -19,6 +19,8 @@ let picks = $state<(number | null)[]>([]);
 let at = $state(0);
 /** Days on which every question was answered, for the streak. */
 let done = $state<string[]>([]);
+let saving = $state(false);
+let root = $state<HTMLDivElement>();
 let nextBtn = $state<HTMLButtonElement>();
 let top = $state<HTMLElement>();
 
@@ -26,18 +28,46 @@ onMount(() => {
 	({ picks, done } = loadQuiz(quiz));
 	const open = picks.indexOf(null);
 	at = open === -1 ? total : open;
+	function sync() {
+		const saved = loadQuiz(quiz);
+		const merged = saved.picks.map((pick, i) => pick ?? picks[i] ?? null);
+		const finished = [...new Set([...done, ...saved.done])];
+		if (
+			merged.every((pick, i) => pick === picks[i]) &&
+			finished.length === done.length
+		)
+			return;
+		const waiting = picks[at] === null;
+		picks = merged;
+		done = finished;
+		if (waiting && !saving && !root?.contains(document.activeElement)) {
+			const open = picks.indexOf(null);
+			at = open === -1 ? total : open;
+		}
+	}
+	const storage = (event: StorageEvent) => event.key === KEY && sync();
+	const visible = () => !document.hidden && sync();
+	addEventListener("storage", storage);
+	document.addEventListener("visibilitychange", visible);
+	return () => {
+		removeEventListener("storage", storage);
+		document.removeEventListener("visibilitychange", visible);
+	};
 });
 
 async function pick(i: number) {
 	if (picks[at] !== null && picks[at] !== undefined) return;
+	saving = true;
 	picks[at] = i;
-	done = saveQuiz(quiz, picks, done);
+	({ picks, done } = await saveQuiz(quiz, picks, done));
+	saving = false;
 	await tick();
-	nextBtn?.focus();
+	if (root?.contains(document.activeElement)) nextBtn?.focus();
 }
 
 /** Keyboard focus follows the quiz: to the next question, or to the score. */
 async function next() {
+	if (saving) return;
 	at++;
 	await tick();
 	top?.focus();
@@ -61,7 +91,7 @@ const score = $derived(
 );
 </script>
 
-<div class="quiz-live" style={`--lift:${total ? answered / total : 0}`}>
+<div class="quiz-live" bind:this={root} style={`--lift:${total ? answered / total : 0}`}>
 	<span class="lift" aria-hidden="true"></span>
 	<h2 class="cue" id="h-quiz">
 		Quiz
@@ -69,7 +99,7 @@ const score = $derived(
 	</h2>
 	{#if q}
 		<p class="q" tabindex="-1" bind:this={top}>{q.question}</p>
-		<ul class="answers plain" class:two={q.answers.length === 2}>
+		<ul class="answers plain">
 			{#each q.answers as a, i (i)}
 				<li>
 					<button
@@ -90,7 +120,7 @@ const score = $derived(
 		<p class="quiz-foot" aria-live="polite">
 			{#if chosen !== null}
 				<span>{chosen === q.correct ? "Right." : `It was ${q.answers[q.correct]}.`}</span>
-				<button type="button" class="next" bind:this={nextBtn} onclick={next}>{at + 1 < total ? "Next question" : "See the score"}</button>
+				<button type="button" class="next" aria-disabled={saving} bind:this={nextBtn} onclick={next}>{at + 1 < total ? "Next question" : "See the score"}</button>
 			{:else}
 				<a class="src" href={quiz.credit.url}>{quiz.credit.name}</a>
 			{/if}

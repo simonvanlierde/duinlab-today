@@ -1,6 +1,51 @@
 import type { Credit, Weather } from "../types";
 import { getJson, getText, safe } from "../util";
 
+const CLOCK = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+const rainClock = new Intl.DateTimeFormat("en-GB", {
+	timeZone: "Europe/Amsterdam",
+	hour: "2-digit",
+	minute: "2-digit",
+	hourCycle: "h23",
+});
+const minutes = (time: string) =>
+	Number(time.slice(0, 2)) * 60 + Number(time.slice(3));
+
+/** Anchor bare clocks to the feed instant before discarding elapsed intervals. */
+function remainingRain(
+	steps: Weather["rainNext2h"],
+	anchor: Date,
+	now: Date,
+	interval: number,
+): Weather["rainNext2h"] {
+	if (
+		!Number.isFinite(anchor.getTime()) ||
+		steps.length === 0 ||
+		steps.some((s) => !CLOCK.test(s.time))
+	)
+		return [];
+	const first = steps[0];
+	if (!first) return [];
+	const delta =
+		((minutes(first.time) - minutes(rainClock.format(anchor)) + 2160) % 1440) -
+		720;
+	if (delta < -interval || delta > 120) return [];
+	const start = Math.floor(anchor.getTime() / 60_000) * 60_000 + delta * 60_000;
+	const out: Weather["rainNext2h"] = [];
+	for (const [i, step] of steps.entries()) {
+		const at = start + i * interval * 60_000;
+		// Repeated autumn clocks have no unique instant in this public HH:MM format.
+		if (
+			rainClock.format(at) !== step.time ||
+			rainClock.format(at - 3_600_000) === step.time ||
+			rainClock.format(at + 3_600_000) === step.time
+		)
+			return [];
+		if (at + interval * 60_000 > now.getTime()) out.push(step);
+	}
+	return out;
+}
+
 const URL =
 	"https://api.open-meteo.com/v1/forecast?latitude=52.08&longitude=4.31" +
 	"&current=temperature_2m,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m" +
@@ -86,6 +131,13 @@ interface Raw {
 export function parseWeather(r: Raw, fetchedAt: Date): Weather {
 	const c = r.current;
 	if (
+		r.minutely_15.time.some(
+			(t) => !/^\d{4}-\d{2}-\d{2}T/.test(t) || !CLOCK.test(t.slice(11, 16)),
+		)
+	) {
+		throw new Error("Weather feed has invalid rain times");
+	}
+	if (
 		![
 			c.temperature_2m,
 			c.weather_code,
@@ -130,7 +182,7 @@ export function parseWeather(r: Raw, fetchedAt: Date): Weather {
 export function parseRaintext(text: string): Weather["rainNext2h"] {
 	return text.split("\n").flatMap((line) => {
 		const m = /^(\d{1,3})\|(\d{2}:\d{2})\s*$/.exec(line);
-		if (!m) return [];
+		if (!m || !CLOCK.test(m[2] as string) || Number(m[1]) > 255) return [];
 		// rounding to 0.01 mm/h turns the scale's floor (VVV 0 is 0.0004) into a dry 0
 		const mm = Math.round(10 ** ((Number(m[1]) - 109) / 32) * 100) / 100;
 		return [{ time: m[2] as string, mm }];
@@ -214,11 +266,12 @@ export function parseKnmiRain(
 	for (const s of steps) {
 		if (!s || typeof s !== "object") return null;
 		const { time, mm } = s as { time?: unknown; mm?: unknown };
-		if (typeof time !== "string" || !/^\d{2}:\d{2}$/.test(time)) return null;
+		if (typeof time !== "string" || !CLOCK.test(time)) return null;
 		if (typeof mm !== "number" || !Number.isFinite(mm) || mm < 0) return null;
 		out.push({ time, mm });
 	}
-	return out;
+	const remaining = remainingRain(out, new Date(issued), now, 5);
+	return remaining.length > 0 ? remaining : null;
 }
 
 /** Prefer fresh KNMI KV nowcast over Buienradar/Open-Meteo when available. */
@@ -229,5 +282,15 @@ export function withKnmiRain(
 ): Weather | null {
 	if (!weather) return null;
 	const steps = parseKnmiRain(rawRain, now);
-	return steps ? { ...weather, rainNext2h: steps, rainCredit: KNMI } : weather;
+	return steps
+		? { ...weather, rainNext2h: steps, rainCredit: KNMI }
+		: {
+				...weather,
+				rainNext2h: remainingRain(
+					weather.rainNext2h,
+					new Date(weather.fetchedAt),
+					now,
+					weather.rainCredit.name === "Open-Meteo" ? 15 : 5,
+				),
+			};
 }

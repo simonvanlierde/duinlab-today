@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { moonNow } from "../src/lib/moon";
+import { moonNow, starNow } from "../src/lib/moon";
 
 test.beforeEach(async ({ page }) => {
 	await page.route(
@@ -118,6 +118,51 @@ test("reopening on a short screen shows the newly selected object at the top", a
 	expect(await almanac.evaluate((el) => el.scrollTop)).toBe(0);
 });
 
+test("the selected star leads with its current position and stays current", async ({
+	page,
+}, testInfo) => {
+	const { date } = await (await page.request.get("/today.json")).json();
+	const start = Date.parse(`${date}T00:00:00Z`);
+	const at = Array.from({ length: 47 }, (_, i) => start + i * 1800000).find(
+		(at) =>
+			starNow(at).name !== starNow(at + 1800000).name &&
+			moonNow(at).alt < -0.5 &&
+			moonNow(at + 1800000).alt < -0.5,
+	);
+	if (at === undefined) throw new Error("No moonless star change found");
+	await page.clock.install({ time: new Date(at) });
+	await page.goto("/?phase=night");
+	await page.locator("button[data-orb=star]").click();
+	const almanac = page.locator("#almanac");
+	await expect(
+		almanac.getByRole("heading", { name: "Star", exact: true }),
+	).toBeFocused();
+	const lead = almanac.locator(".almanac-details > :first-child");
+	await expect(lead).toHaveAttribute("data-almanac-body", "star");
+	await expect(lead).toHaveText(
+		`${starNow(at).name}, ${Math.round(starNow(at).alt)}° above the horizon`,
+	);
+	await expect(almanac.locator("[data-almanac-body=sun]")).toBeVisible();
+	await expect(almanac.locator("[data-moon-line]")).toBeVisible();
+	await page.clock.fastForward(1800000);
+	const next = starNow(at + 1800000);
+	await expect(lead).toHaveText(
+		`${next.name}, ${Math.round(next.alt)}° above the horizon`,
+	);
+	await expect(page.locator("button[data-orb=star]")).toHaveAttribute(
+		"aria-label",
+		`${next.name}: sun, moon and tide times`,
+	);
+	await page.screenshot({
+		path: `test-results/almanac-star-${testInfo.project.name}.png`,
+	});
+	await page.keyboard.press("Escape");
+	await page
+		.locator("button[data-orb=sun]")
+		.evaluate((button: HTMLButtonElement) => button.click());
+	await expect(almanac.locator("[data-almanac-body=star]")).toBeHidden();
+});
+
 test.describe("the almanac without JavaScript", () => {
 	test.use({ javaScriptEnabled: false });
 	test("native sky controls still open the complete overview", async ({
@@ -136,5 +181,9 @@ test.describe("the almanac without JavaScript", () => {
 		await expect(almanac).toContainText(/Sun up \d\d:\d\d/);
 		await expect(almanac).toContainText(/% lit/);
 		await expect(almanac).toContainText("Scheveningen");
+		if (await page.locator("button[data-orb=star]").isVisible())
+			await expect(almanac.locator("[data-star-line]")).toHaveText(
+				/.+, \d+° above the horizon/,
+			);
 	});
 });

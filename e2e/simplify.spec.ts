@@ -1,5 +1,17 @@
 import { expect, test } from "@playwright/test";
 
+test.beforeEach(async ({ context }) => {
+	await context.route(/^https?:\/\/(?!localhost)/, (route) => route.abort());
+	await context.route(
+		/^https:\/\/(images\.metmuseum\.org|thumb\.wikimedia\.org|www\.artic\.edu\/iiif|iiif\.micr\.io)\//,
+		(route) =>
+			route.fulfill({
+				path: "e2e/fixtures/picture.png",
+				contentType: "image/png",
+			}),
+	);
+});
+
 test("the masthead keeps date and time together without extra controls", async ({
 	page,
 }, testInfo) => {

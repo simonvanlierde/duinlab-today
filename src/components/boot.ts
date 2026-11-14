@@ -132,6 +132,8 @@ const boot = (cfg: Cfg) => {
 			el.textContent = m.line;
 		for (const el of document.querySelectorAll("[data-moon-label]"))
 			el.setAttribute("aria-label", `${m.label}: sun, moon and tide times`);
+		for (const el of document.querySelectorAll("[data-star-line]"))
+			el.textContent = `${sky2.star.name}, ${Math.round(sky2.star.alt)}° above the horizon`;
 		for (const el of document.querySelectorAll("[data-star-label]"))
 			el.setAttribute(
 				"aria-label",

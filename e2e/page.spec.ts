@@ -13,15 +13,15 @@ async function play(page: Page, name: string) {
 	await page.locator(".games .name", { hasText: name }).click();
 }
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ context }) => {
 	// the external game sites are never loaded
-	await page.route(/^https?:\/\/(?!localhost)/, (r) =>
+	await context.route(/^https?:\/\/(?!localhost)/, (r) =>
 		r.request().resourceType() === "document"
 			? r.fulfill({ body: "ok" })
-			: r.continue(),
+			: r.abort(),
 	);
 	// the day's pictures (Met, Wikipedia, Art Institute, Rijksmuseum fixtures) are the fixture PNG
-	await page.route(PICTURE_HOSTS, (r) =>
+	await context.route(PICTURE_HOSTS, (r) =>
 		r.fulfill({ path: "e2e/fixtures/picture.png", contentType: "image/png" }),
 	);
 });
@@ -90,7 +90,7 @@ test("renders the sky, every section from the fixtures, and the ten games", asyn
 	);
 	await expect(page.locator(".wx")).toContainText(/5°\s*overcast, 9° \/ 2°/);
 	await expect(page.locator(".strip")).toContainText(
-		"rain expected around 10:15",
+		/rain expected around \d{2}:\d{2}/,
 	);
 	await expect(page.locator(".strip")).toContainText(
 		"Grass pollen high today · Air quality poor (AQI 64)",
@@ -461,6 +461,232 @@ test("the quiz asks one question at a time and keeps the score", async ({
 	await expect(review.first()).toContainText(choices[0] ?? "");
 });
 
+for (const kind of ["quiz", "games"] as const) {
+	test(`${kind} saves serialize overlapping tab updates`, async ({
+		page,
+		context,
+	}) => {
+		await page.goto("/");
+		const other = await context.newPage();
+		await other.goto("/");
+		for (const tab of [page, other])
+			await tab.locator("astro-island:not([ssr]) .games:not(.off)").waitFor();
+		const key = `today.${kind}.v1`;
+		await page.evaluate(
+			(key) =>
+				new Promise<void>((entered) => {
+					void navigator.locks.request(key, () => {
+						entered();
+						return new Promise<void>((release) => {
+							(
+								window as Window & { releaseProgress?: () => void }
+							).releaseProgress = release;
+						});
+					});
+				}),
+			key,
+		);
+		if (kind === "quiz") {
+			await page.locator(".quiz-live .answer").first().click();
+			await other.locator(".quiz-live .answer").nth(1).click();
+		} else {
+			await page.locator(".games .name").first().click();
+			await other.locator(".games .name").nth(1).click();
+		}
+		await expect
+			.poll(() =>
+				page.evaluate(
+					async () => (await navigator.locks.query()).pending?.length,
+				),
+			)
+			.toBe(2);
+		expect(
+			await page.evaluate((key) => localStorage.getItem(key), key),
+		).toBeNull();
+		await page.evaluate(() =>
+			(window as Window & { releaseProgress?: () => void }).releaseProgress?.(),
+		);
+		await expect
+			.poll(() =>
+				page.evaluate((key) => {
+					const saved = JSON.parse(localStorage.getItem(key) ?? "null");
+					return key.includes("quiz")
+						? saved?.picks[0] === 0
+						: Object.keys(saved ?? {}).length === 2;
+				}, key),
+			)
+			.toBe(true);
+		if (kind === "quiz")
+			await expect(other.locator(".quiz-live .answer").first()).toHaveAttribute(
+				"aria-disabled",
+				"true",
+			);
+		await other.close();
+	});
+}
+
+test("quiz tabs share progress without stealing focus or overwriting completed answers", async ({
+	page,
+	context,
+}) => {
+	await page.goto("/");
+	const other = await context.newPage();
+	await other.goto("/");
+	for (const tab of [page, other])
+		await tab.locator("astro-island:not([ssr]) .quiz-live").waitFor();
+	const quiz: Quiz = (await (await page.request.get("/today.json")).json())
+		.quiz;
+	const otherGame = other.locator(".games .name").first();
+	await otherGame.focus();
+	await page
+		.locator(".quiz-live .answer")
+		.nth(quiz.questions[0].correct)
+		.click();
+	await expect(other.locator(".quiz-live .qn")).toHaveText(
+		`2 of ${quiz.questions.length}`,
+	);
+	await expect(otherGame).toBeFocused();
+	// Install before hydration: Window invokes storage listeners in registration order.
+	await other.addInitScript(() => {
+		addEventListener(
+			"storage",
+			(event) => event.stopImmediatePropagation(),
+			true,
+		);
+		document.addEventListener(
+			"visibilitychange",
+			(event) => event.stopImmediatePropagation(),
+			true,
+		);
+	});
+	await other.reload();
+	await other.locator("astro-island:not([ssr]) .quiz-live").waitFor();
+	await expect(other.locator(".quiz-live .qn")).toHaveText(
+		`2 of ${quiz.questions.length}`,
+	);
+	await page.locator(".quiz-live .next").click();
+	for (const question of quiz.questions.slice(1)) {
+		await page.locator(".quiz-live .answer").nth(question.correct).click();
+		await page.locator(".quiz-live .next").click();
+	}
+	const saved = await page.evaluate(() =>
+		localStorage.getItem("today.quiz.v1"),
+	);
+	await expect(other.locator(".quiz-live .qn")).toHaveText(
+		`2 of ${quiz.questions.length}`,
+	);
+	await other
+		.locator(".quiz-live .answer")
+		.nth((quiz.questions[1].correct + 1) % quiz.questions[1].answers.length)
+		.click();
+	for (let i = 1; i < quiz.questions.length; i++)
+		await other.locator(".quiz-live .next").click();
+	await expect(other.locator(".quiz-live .score .figure")).toHaveText(
+		String(quiz.questions.length),
+	);
+	expect(
+		await other.evaluate(() => localStorage.getItem("today.quiz.v1")),
+	).toBe(saved);
+	await other.close();
+});
+
+test("another quiz tab keeps the current answer feedback and Next button focused", async ({
+	page,
+	context,
+}) => {
+	await page.goto("/");
+	const other = await context.newPage();
+	await other.goto("/");
+	for (const tab of [page, other])
+		await tab.locator("astro-island:not([ssr]) .quiz-live").waitFor();
+	await page.locator(".quiz-live .answer").first().click();
+	const next = page.locator(".quiz-live .next");
+	await expect(next).toBeFocused();
+	const feedback = await page.locator(".quiz-foot > span").textContent();
+	await expect(other.locator(".quiz-live .qn")).toHaveText("2 of 3");
+	await other.locator(".quiz-live .answer").first().click();
+	await page.evaluate(() =>
+		dispatchEvent(new StorageEvent("storage", { key: "today.quiz.v1" })),
+	);
+	await expect(page.locator(".quiz-live .qn")).toHaveText("1 of 3");
+	await expect(page.locator(".quiz-foot > span")).toHaveText(feedback ?? "");
+	await expect(next).toBeFocused();
+	await next.click();
+	await expect(page.locator(".quiz-live .qn")).toHaveText("2 of 3");
+	await expect(next).toBeVisible();
+	await other.close();
+});
+
+test("quiz updates preserve a focused unanswered question", async ({
+	page,
+	context,
+}) => {
+	await page.goto("/");
+	const other = await context.newPage();
+	await other.goto("/");
+	for (const tab of [page, other])
+		await tab.locator("astro-island:not([ssr]) .quiz-live").waitFor();
+	const choice = other.locator(".quiz-live .answer").first();
+	await choice.focus();
+	for (let i = 0; i < 3; i++) {
+		await page.locator(".quiz-live .answer").first().click();
+		await page.locator(".quiz-live .next").click();
+		await expect(other.locator(".quiz-live .qn")).toHaveText("1 of 3");
+		await expect(choice).toBeFocused();
+	}
+	await expect(other.locator(".quiz-live .next")).toBeVisible();
+	for (let i = 0; i < 3; i++) await other.locator(".quiz-live .next").click();
+	await expect(other.locator(".quiz-live .score")).toBeFocused();
+	await other.close();
+});
+
+test("quiz tabs refresh missed progress when returning to the page", async ({
+	page,
+	context,
+}) => {
+	await page.goto("/");
+	const other = await context.newPage();
+	await other.addInitScript(() => {
+		addEventListener(
+			"storage",
+			(event) => event.stopImmediatePropagation(),
+			true,
+		);
+	});
+	await other.goto("/");
+	for (const tab of [page, other])
+		await tab.locator("astro-island:not([ssr]) .quiz-live").waitFor();
+	await page.locator(".quiz-live .answer").first().click();
+	await expect(other.locator(".quiz-live .qn")).toHaveText("1 of 3");
+	await other.bringToFront();
+	await other.evaluate(() =>
+		document.dispatchEvent(new Event("visibilitychange")),
+	);
+	await expect(other.locator(".quiz-live .qn")).toHaveText("2 of 3");
+	await other.close();
+});
+
+test("games keep keyboard focus when another tab finishes the board", async ({
+	page,
+	context,
+}) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto("/");
+	const other = await context.newPage();
+	await other.setViewportSize({ width: 390, height: 844 });
+	await other.goto("/");
+	for (const tab of [page, other])
+		await tab.locator("astro-island:not([ssr]) .games:not(.off)").waitFor();
+	await other.locator(".games .name").first().focus();
+	for (const link of await page.locator(".games .name").all())
+		await link.click();
+	const unfold = other.getByRole("button", { name: "Show the board" });
+	await expect(unfold).toBeFocused();
+	await other.keyboard.press("Enter");
+	await expect(other.locator(".games .name").first()).toBeFocused();
+	await other.close();
+});
+
 test("long game streaks survive another game's save and a reload", async ({
 	page,
 }) => {
@@ -595,6 +821,41 @@ test.describe("without JavaScript", () => {
 		await expect(links.first()).toHaveAttribute("href", /^https:/);
 		await expect(page.locator(".quiz-static details")).not.toHaveCount(0);
 	});
+});
+
+test("public pages share their own title and description with the site card", async ({
+	page,
+}) => {
+	for (const path of ["/about", "/yesterday"]) {
+		await page.goto(path);
+		await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
+			"content",
+			await page.title(),
+		);
+		await expect(
+			page.locator('meta[property="og:description"]'),
+		).toHaveAttribute(
+			"content",
+			(await page
+				.locator('meta[name="description"]')
+				.getAttribute("content")) ?? "",
+		);
+		await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+			"content",
+			`https://today.duinlab.nl${path}`,
+		);
+		await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+			"content",
+			/^https:\/\/today\.duinlab\.nl\/og\.png\?v=[a-f0-9]{8}$/,
+		);
+		await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute(
+			"content",
+			"summary_large_image",
+		);
+	}
+	const missing = await page.goto("/missing-card-test");
+	expect(missing?.status()).toBe(404);
+	await expect(page.locator('meta[property="og:title"]')).toHaveCount(0);
 });
 
 test("the about page says what is kept and links the source", async ({

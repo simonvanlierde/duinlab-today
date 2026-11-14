@@ -4,12 +4,13 @@
 default:
     @just --list
 
-# The checks CI runs: lint, types, unit tests, build.
+# The checks CI runs: lint, types, unit tests, build, licences and dependency audit.
 check:
     pnpm check
     pnpm test
     pnpm build
     pnpm run licenses
+    pnpm audit --prod --audit-level=moderate
 
 # Fix and format.
 fmt:
