@@ -34,10 +34,10 @@ test("the moon leads on keyboard opening and the rest of the almanac stays avail
 		almanac.getByRole("heading", { name: "Moon", exact: true }),
 	).toBeFocused();
 	await expect(
-		almanac.locator(".almanac-details > :first-child"),
+		almanac.locator(".almanac-selected > :first-child"),
 	).toHaveAttribute("data-almanac-body", "moon");
 	await expect(
-		almanac.locator(".almanac-details > :nth-child(2)"),
+		almanac.locator(".almanac-group [data-almanac-body=sun]"),
 	).toHaveAttribute("data-almanac-body", "sun");
 	await expect(almanac.locator("[data-moon-line]")).toHaveCount(1);
 	await expect(almanac).toContainText(/Sun up \d\d:\d\d/);
@@ -71,12 +71,16 @@ test("each planet leads with its own detail, and sun opening resets the order", 
 		await expect(
 			almanac.getByRole("heading", { name, exact: true }),
 		).toBeVisible();
-		const lead = almanac.locator(".almanac-details > :first-child");
+		const lead = almanac.locator(".almanac-selected > :first-child");
 		await expect(lead).toHaveAttribute("data-almanac-body", name);
 		await expect(lead).toBeVisible();
-		await expect(lead).toContainText(/Tonight:|No remaining observing window/);
+		await expect(lead).toContainText(/in the |No remaining observing window/);
 		await expect(almanac.locator("[data-almanac-body=sun]")).toBeVisible();
 		await expect(almanac.locator("[data-moon-line]")).toBeVisible();
+		await expect(almanac.locator("[data-moon-line]")).toHaveCount(1);
+		await expect(
+			almanac.locator(".almanac-group [data-almanac-body=sun]"),
+		).toHaveCount(1);
 		await page.keyboard.press("Escape");
 	}
 	await page
@@ -86,8 +90,14 @@ test("each planet leads with its own detail, and sun opening resets the order", 
 		almanac.getByRole("heading", { name: "Sun", exact: true }),
 	).toBeVisible();
 	await expect(
-		almanac.locator(".almanac-details > :first-child"),
+		almanac.locator(".almanac-selected > :first-child"),
 	).toHaveAttribute("data-almanac-body", "sun");
+	await expect(
+		almanac.locator(".almanac-group [data-almanac-body=moon]"),
+	).toHaveCount(1);
+	await expect(
+		almanac.locator(".almanac-group [data-almanac-body=Saturn]"),
+	).toHaveCount(1);
 	await page.screenshot({
 		path: `test-results/almanac-sun-${testInfo.project.name}.png`,
 	});
@@ -113,7 +123,7 @@ test("reopening on a short screen shows the newly selected object at the top", a
 		almanac.getByRole("heading", { name: "Jupiter", exact: true }),
 	).toBeInViewport();
 	await expect(
-		almanac.locator(".almanac-details > :first-child"),
+		almanac.locator(".almanac-selected > :first-child"),
 	).toBeInViewport();
 	expect(await almanac.evaluate((el) => el.scrollTop)).toBe(0);
 });
@@ -137,7 +147,7 @@ test("the selected star leads with its current position and stays current", asyn
 	await expect(
 		almanac.getByRole("heading", { name: "Star", exact: true }),
 	).toBeFocused();
-	const lead = almanac.locator(".almanac-details > :first-child");
+	const lead = almanac.locator(".almanac-selected > :first-child");
 	await expect(lead).toHaveAttribute("data-almanac-body", "star");
 	await expect(lead).toHaveText(
 		`${starNow(at).name}, ${Math.round(starNow(at).alt)}° above the horizon`,

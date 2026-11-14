@@ -13,24 +13,17 @@ import Plain from "../layouts/Plain.astro";
 		word, a quiz, a handful of games, new recipes, and what's on nearby. It changes at midnight, Amsterdam time.
 	</p>
 
-	<h2>Privacy</h2>
 	<p>
-		No cookies, no analytics. Your played games, streaks and quiz answers stay in this browser's local storage
-		(<code>today.games.v1</code>, <code>today.quiz.v1</code>,
-		and <code>today.sunrise.v1</code> for the date of your last visit) and are never sent anywhere. Clear the site's data
-		to remove them.
-	</p>
-	<p>
-		A Cloudflare Worker serves the page. Cloudflare keeps request logs for a few days: the address asked for,
-		the time, and connection details such as your IP address. I only read them to trace a fault. The day's pictures load straight from NASA, The Met, Wikimedia, the Art Institute, the Rijksmuseum or YouTube, so
-		they see your IP address too.
+		Games open on their own sites in a new tab. Opening a game marks it as played here; the page can't see
+		whether you finish it. Your marks, streaks and quiz answers stay in this browser, so another browser
+		or device has its own progress.
 	</p>
 
 	<h2>Accessibility</h2>
 	<p>
 		The aim is WCAG 2.2 AA. Text contrast holds in every sky, games and answers are at least 44 pixels tall,
 		keyboard focus is visible, motion stops when your system asks for less, and the page reads in full without
-		JavaScript. CI scans today, yesterday, about and 404 pages with axe. If something gets in your way,
+		JavaScript. CI scans today, yesterday, about and 404 pages with axe. If something gets in your way,{" "}
 		<a href="https://github.com/simonvanlierde/duinlab-today/issues">open an issue</a>.
 	</p>
 
@@ -44,10 +37,10 @@ import Plain from "../layouts/Plain.astro";
 		</li>
 		<li>The quiz: Open Trivia DB (CC BY-SA 4.0). The quote: ZenQuotes.</li>
 		<li>
-			The weather: <a href="https://open-meteo.com/">Open-Meteo</a>. The rain line comes from
+			The weather: <a href="https://open-meteo.com/">Open-Meteo</a>. The rain line comes from{" "}
 			<a href="https://dataplatform.knmi.nl/dataset/radar-forecast-2-0">KNMI</a>'s radar when fresh,
 			falling back to <a href="https://www.buienradar.nl/">Buienradar</a> or Open-Meteo.
-			The weather line opens the week ahead on
+			The weather line opens the week ahead on{" "}
 			<a href="https://www.meteoblue.com/en/weather/week/the-hague_netherlands_2747373">meteoblue</a>.
 		</li>
 		<li>
@@ -59,17 +52,30 @@ import Plain from "../layouts/Plain.astro";
 			and waves: <a href="https://open-meteo.com/en/docs/marine-weather-api">Open-Meteo's marine API</a>.
 		</li>
 		<li>
-			This week's shows and events: <a href="https://www.paard.nl/">Paard</a>,
+			This week's shows and events: <a href="https://www.paard.nl/">Paard</a>,{" "}
 			<a href="https://www.amare.nl/">Amare</a> and <a href="https://denhaag.com/en/agenda">DenHaag.com</a>.
 		</li>
 		<li>Recipes: the newest from the Guardian, BBC Good Food and Love and Lemons.</li>
 		<li>
-			The planets, full moons, solstices, equinoxes and eclipses:
+			The planets, full moons, solstices, equinoxes and eclipses:{" "}
 			<a href="https://github.com/cosinekitty/astronomy">Astronomy Engine</a> (MIT). The meteor shower peaks
 			are fixed approximate dates.
 		</li>
 	</ul>
 	<p>Your browser works out the sky from the sun's position over The Hague.</p>
+
+	<h2>Privacy</h2>
+	<p>
+		No cookies, no analytics. Your progress is kept in local storage
+		(<code>today.games.v1</code>, <code>today.quiz.v1</code>,{" "}
+		and <code>today.sunrise.v1</code> for the date of your last visit) and is never sent anywhere.
+		Clear the site's data to remove it.
+	</p>
+	<p>
+		A Cloudflare Worker serves the page. Cloudflare keeps request logs for a few days: the address asked for,
+		the time, and connection details such as your IP address. I only read them to trace a fault. The day's pictures load straight from NASA, The Met, Wikimedia, the Art Institute, the Rijksmuseum or YouTube, so
+		they see your IP address too.
+	</p>
 
 	<h2>Code</h2>
 	<p>

@@ -36,7 +36,15 @@ export function parseWord(atom: string, date: string): Word | null {
 		?.trim();
 	const desc = html.slice(html.indexOf('id="WOTD-rss-description"'));
 	const firstSense = /<li>([\s\S]*?)<\/li>/.exec(desc)?.[1];
-	const gloss = firstSense ? stripTags(firstSense) : "";
+	// Colour-swatch captions belong to the illustration, not the definition.
+	const gloss = firstSense
+		? stripTags(
+				firstSense.replace(
+					/<div\b[^>]*class=["'][^"']*\bcolor-panel\b[^"']*["'][^>]*>[\s\S]*?<\/div>/gi,
+					"",
+				),
+			)
+		: "";
 	if (!gloss) return null;
 	return {
 		word,

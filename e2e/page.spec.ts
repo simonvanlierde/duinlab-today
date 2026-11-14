@@ -185,9 +185,9 @@ test("the sky's bright body opens the sun, moon and tide times, and Escape close
 	);
 	await expect(almanac.getByRole("link", { name: "Open-Meteo" })).toBeVisible();
 	// which planets show depends on the date: the line is there only when one is up tonight
-	const tonight = almanac.locator("p", { hasText: /^Tonight:/ });
+	const tonight = almanac.locator(".planet-window:visible");
 	for (const line of await tonight.allTextContents())
-		for (const part of line.replace(/^Tonight: /, "").split(", "))
+		for (const part of line.replace(/\s+/g, " ").trim().split(", "))
 			expect(part).toMatch(
 				/^\w+ in the [a-z-]+(?: (?:from|until) \d\d:\d\d){0,2}(?: all night)?$/,
 			);
@@ -276,7 +276,7 @@ test("the paper leads on phones and games stay visible on desktop", async ({
 	await page.goto("/");
 	const box = await page.locator(".games").boundingBox();
 	if (testInfo.project.name === "phone") {
-		await expect(page.locator("#paper > :first-child")).toHaveClass("pic");
+		await expect(page.locator("#paper > :first-child")).toHaveClass(/\bpic\b/);
 		for (const selector of [".reading", ".feat", ".otd", ".quote"]) {
 			const reading = await page.locator(selector).boundingBox();
 			expect(
@@ -295,6 +295,11 @@ test("the picture strip moves with arrows, dots and the keyboard", async ({
 	await page.goto("/");
 	const strip = page.getByRole("region", { name: /Pictures of the day/ });
 	const dots = strip.locator("xpath=..").locator(".dot");
+	const picture = await strip.locator(".picture-open").first().boundingBox();
+	const controls = await page.locator(".picture-controls").boundingBox();
+	expect(picture && controls).toBeTruthy();
+	if (picture && controls)
+		expect(controls.y).toBeGreaterThanOrEqual(picture.y + picture.height);
 	await expect(dots).toHaveCount(4);
 	await expect(dots.first()).toHaveAttribute("aria-current", "true");
 	await page.getByRole("button", { name: "Next picture" }).click();
@@ -348,6 +353,7 @@ test("on a short desktop the picture, reading and games fit, and the quote waits
 	for (const [width, height] of [
 		[1100, 700],
 		[1280, 700],
+		[1280, 600],
 	]) {
 		await page.setViewportSize({ width, height });
 		await page.goto("/");

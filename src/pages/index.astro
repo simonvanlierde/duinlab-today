@@ -146,42 +146,50 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 				<button type="button" popovertarget="almanac" popovertargetaction="hide">Close</button>
 			</div>
 			<div class="almanac-details">
-				<div data-almanac-body="sun" data-almanac-name="Sun">
-				<p>Sun up <b>{almanac.sunrise}</b>, down <b>{almanac.sunset}</b></p>
-				<p>Golden hour from <b>{almanac.golden}</b></p>
-				<p>{almanac.daylight}</p>
-				</div>
-				<div data-almanac-body="moon" data-almanac-name="Moon">
-				<p data-moon-line>{bodies.moon.line}</p>
-				</div>
-				<div data-almanac-body="star" data-almanac-name="Star" hidden={!bodies.star.show}>
-				<p data-star-line>{bodies.star.name}, {Math.round(bodies.star.alt)}° above the horizon</p>
-				</div>
-				{bodies.planets.map((planet) => {
-					const window = tonight.find((item) => item.name === planet.name);
-					return (
-						<div data-almanac-body={planet.name} data-almanac-name={planet.name} hidden={!window}>
-							<p>{window ? `Tonight: ${window.line}` : "No remaining observing window tonight."}</p>
-						</div>
-					);
-				})}
-				{
-					tides && (
-						<p>
-							High water <b>{tideTimes("high")}</b>, low <b>{tideTimes("low")}</b> at{" "}
-							<a href={tides.url}>Scheveningen</a>
-						</p>
-					)
-				}
-				{
-					sea && (
-						<p>
-							Sea at Scheveningen{" "}
-							<b>{[sea.temperatureC !== null && `${sea.temperatureC.toFixed(1)} °C`, sea.waveHeightM !== null && `waves ${sea.waveHeightM.toFixed(1)} m`].filter(Boolean).join(", ")}</b>{" "}
-							<span class="src"><a href={sea.credit.url}>{sea.credit.name}</a></span>
-						</p>
-					)
-				}
+				<div class="almanac-selected" hidden></div>
+				<section class="almanac-group" aria-labelledby="almanac-sun-moon">
+					<h3 id="almanac-sun-moon">Sun and moon</h3>
+					<div data-almanac-body="sun" data-almanac-name="Sun">
+						<p>Sun up <b>{almanac.sunrise}</b>, down <b>{almanac.sunset}</b></p>
+						<p>Golden hour from <b>{almanac.golden}</b></p>
+						<p>{almanac.daylight}</p>
+					</div>
+					<div data-almanac-body="moon" data-almanac-name="Moon">
+						<p data-moon-line>{bodies.moon.line}</p>
+					</div>
+					<div data-almanac-body="star" data-almanac-name="Star" hidden={!bodies.star.show}>
+						<p data-star-line>{bodies.star.name}, {Math.round(bodies.star.alt)}° above the horizon</p>
+					</div>
+				</section>
+				<section class="almanac-group" aria-labelledby="almanac-planets" hidden={!tonight.length}>
+					<h3 id="almanac-planets">Planets tonight</h3>
+					{bodies.planets.map((planet) => {
+						const window = tonight.find((item) => item.name === planet.name);
+						return (
+							<div data-almanac-body={planet.name} data-almanac-name={planet.name} hidden={!window}>
+								<p class="planet-window"><b class="planet-name">{planet.name}</b>{" "}<span class="planet-observing">{window ? window.line.slice(planet.name.length + 1) : "No remaining observing window tonight."}</span></p>
+							</div>
+						);
+					})}
+				</section>
+				{(tides || sea) && (
+					<section class="almanac-group" aria-labelledby="almanac-sea">
+						<h3 id="almanac-sea">At Scheveningen</h3>
+						{tides && (
+							<p>
+								High water <b>{tideTimes("high")}</b>, low <b>{tideTimes("low")}</b> at{" "}
+								<a href={tides.url}>Scheveningen</a>
+							</p>
+						)}
+						{sea && (
+							<p>
+								Sea at Scheveningen{" "}
+								<b>{[sea.temperatureC !== null && `${sea.temperatureC.toFixed(1)} °C`, sea.waveHeightM !== null && `waves ${sea.waveHeightM.toFixed(1)} m`].filter(Boolean).join(", ")}</b>{" "}
+								<span class="src"><a href={sea.credit.url}>{sea.credit.name}</a></span>
+							</p>
+						)}
+					</section>
+				)}
 			</div>
 		</div>
 		<Dune />
@@ -206,8 +214,8 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 					<section class="sec" aria-labelledby="h-word">
 						<Cue id="h-word">Word</Cue>
 						<p>
-							<strong class="word" lang="en">{word.word}</strong>
-							{word.partOfSpeech && <em class="pos">{word.partOfSpeech}</em>}
+							<strong class="word" lang="en">{word.word}</strong>{" "}
+							{word.partOfSpeech && <><em class="pos">{word.partOfSpeech}</em>{" "}</>}
 							{word.gloss}{" "}
 							<span class="src"><a href={word.url}>{word.credit.name}</a></span>
 						</p>
@@ -291,7 +299,7 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 				<ul class="plain">
 					{today.recipes.slice(0, 3).map((r) => (
 						<li>
-							<span class="paper">{r.source}</span> <a href={r.url}>{r.title}</a>
+							<span class="paper">{r.source}</span>{" "}<a href={r.url}>{r.title}</a>
 						</li>
 					))}
 				</ul>
@@ -300,7 +308,7 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 						<summary>More recipes</summary>
 						<ul class="plain">
 							{today.recipes.slice(3).map((r) => (
-								<li><span class="paper">{r.source}</span> <a href={r.url}>{r.title}</a></li>
+								<li><span class="paper">{r.source}</span>{" "}<a href={r.url}>{r.title}</a></li>
 							))}
 						</ul>
 					</details>
@@ -317,7 +325,7 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 					{eventPreview.map((e) => (
 						<li>
 							<span class="when">{weekday(e.day, today.date)}{e.time && ` ${e.time}`}</span>{" "}
-							<a href={e.url}>{e.name}</a> <span class="mute">{e.venue}</span>
+							<a href={e.url}>{e.name}</a>{" "}<span class="mute">{e.venue}</span>
 						</li>
 					))}
 				</ul>
@@ -326,7 +334,7 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 						<summary>More events</summary>
 						<ul class="plain">
 							{eventMore.map((e) => (
-								<li><span class="when">{weekday(e.day, today.date)}{e.time && ` ${e.time}`}</span>{" "}<a href={e.url}>{e.name}</a> <span class="mute">{e.venue}</span></li>
+								<li><span class="when">{weekday(e.day, today.date)}{e.time && ` ${e.time}`}</span>{" "}<a href={e.url}>{e.name}</a>{" "}<span class="mute">{e.venue}</span></li>
 							))}
 						</ul>
 					</details>
@@ -338,23 +346,30 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 
 	</div>
 
-	<Foot>New every midnight. <a href="/yesterday">Yesterday's paper</a> &middot; <a href="/about">About</a> &middot;</Foot>
+	<Foot>New every midnight.{" "}<a href="/yesterday">Yesterday's paper</a> &middot; <a href="/about">About</a> &middot;</Foot>
 	<script>
 		const almanac = document.querySelector<HTMLElement>("#almanac");
 		const title = almanac?.querySelector<HTMLElement>("#almanac-title");
 		const details = almanac?.querySelector(".almanac-details");
-		if (almanac && title && details) {
-			const sections = [...details.querySelectorAll<HTMLElement>(":scope > *")];
+		const selectedSlot = details?.querySelector<HTMLElement>(".almanac-selected");
+		if (almanac && title && details && selectedSlot) {
+			const sections = [...details.querySelectorAll<HTMLElement>("[data-almanac-body]")];
+			const homes = sections.map((section) => ({ section, parent: section.parentElement! }));
+			const groups = [...details.querySelectorAll<HTMLElement>(".almanac-group")].filter((group) => group.querySelector("[data-almanac-body]"));
 			const unavailable = new Set(sections.filter((section) => section.hidden));
 			for (const button of document.querySelectorAll<HTMLElement>('button[popovertarget="almanac"]:not([popovertargetaction="hide"])')) {
 				button.addEventListener("click", () => {
 					for (const section of sections) section.hidden = section.dataset.almanacBody === "star" || unavailable.has(section);
-					for (const section of sections) details.appendChild(section);
+					for (const { section, parent } of homes) parent.appendChild(section);
 					const key = button.dataset.planet ?? button.dataset.orb;
 					const selected = sections.find((section) => section.dataset.almanacBody === key);
 					if (selected) {
 						selected.hidden = false;
-						details.insertBefore(selected, details.firstChild);
+						selectedSlot.appendChild(selected);
+					}
+					selectedSlot.hidden = !selected;
+					for (const group of groups) {
+						group.hidden = ![...group.querySelectorAll<HTMLElement>("[data-almanac-body]")].some((section) => !section.hidden);
 					}
 					title.textContent = selected?.dataset.almanacName ?? "Almanac";
 				});

@@ -87,8 +87,8 @@ const { pictures } = Astro.props;
 			b.textContent = text;
 			return b;
 		};
-		const prev = button("arrow prev", "Previous picture", "‹");
-		const next = button("arrow next", "Next picture", "›");
+		const prev = button("arrow prev", "Previous picture", "Previous");
+		const next = button("arrow next", "Next picture", "Next");
 		const dots = document.createElement("div");
 		dots.className = "dots";
 		const dot = slides.map((_, i) => {
@@ -114,7 +114,11 @@ const { pictures } = Astro.props;
 			e.preventDefault();
 			go(current() + (e.key === "ArrowRight" ? 1 : -1));
 		});
-		for (const control of [prev, next, dots]) strip.parentElement?.appendChild(control);
+		const controls = document.createElement("div");
+		controls.className = "picture-controls";
+		for (const control of [prev, dots, next]) controls.appendChild(control);
+		strip.parentElement?.appendChild(controls);
+		strip.closest(".pic")?.classList.add("has-controls");
 		sync();
 	}
 
@@ -191,12 +195,16 @@ const { pictures } = Astro.props;
 		});
 		let touch: { x: number; y: number; id: number } | null = null;
 		stage.addEventListener("pointerdown", (event) => {
-			if (event.pointerType === "touch" && !stage.classList.contains("zoomed")) {
+			if (event.pointerType === "touch" && !touch && !stage.classList.contains("zoomed")) {
 				touch = { x: event.clientX, y: event.clientY, id: event.pointerId };
 			}
 		});
-		stage.addEventListener("pointercancel", () => { touch = null; });
-		stage.addEventListener("pointerup", (event) => {
+		const cancelTouch = () => { touch = null; };
+		stage.addEventListener("pointercancel", cancelTouch);
+		stage.addEventListener("lostpointercapture", cancelTouch);
+		window.addEventListener("blur", cancelTouch);
+		viewer.addEventListener("close", cancelTouch);
+		window.addEventListener("pointerup", (event) => {
 			if (!touch || touch.id !== event.pointerId) return;
 			const dx = event.clientX - touch.x;
 			const dy = event.clientY - touch.y;

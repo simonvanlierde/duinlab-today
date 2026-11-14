@@ -152,6 +152,13 @@ async function unfold() {
 		min-height: 45px;
 		border-bottom: 1px solid var(--rule);
 	}
+	@media (min-width: 1100px) and (max-height: 640px) {
+		.game {
+			min-height: 44px;
+			border-bottom: 0;
+			box-shadow: inset 0 -1px var(--rule);
+		}
+	}
 	.name {
 		flex: 1;
 		display: flex;

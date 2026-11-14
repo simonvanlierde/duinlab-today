@@ -46,8 +46,8 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
   or a pollen count is high.
 - Recipes: the three newest recipes from the Guardian, BBC Good Food and Love and Lemons, title
   and link only. One per source is visible; More recipes expands the rest. NYT Cooking is left out: it has no public feed.
-- On a desktop screen shorter than 760 px, On this day and the quote start under the fold, so the
-  rest of the paper fits one screen.
+- On a desktop screen shorter than 760 px, On this day and the quote follow the main reading and
+  games. Compact spacing targets a 600 px-high screen; longer daily content can still scroll.
 - Live feeds (weather, recipes) use cached responses while refreshing usable stale entries in
   the background. Cold or expired entries wait for a fetch; weather is never served more than
   about 2 h past its 15 minutes.
@@ -107,6 +107,8 @@ lines come with each source. There are no users, metrics or testimonials to cite
 - Pictures open in a larger viewer with zoom, touch and keyboard navigation, and their existing
   captions and source links. Closing returns to the same place in the paper.
   The viewer uses source originals when supplied and falls back to the preview if they fail.
+- Picture selectors sit below the caption, leaving the whole work visible. NASA leads when
+  available; its official daily feed recovers pictures missing from the API.
 - Quiz answers stay in sync across tabs in the same browser. The first saved answer is kept.
 - Games mark on opening; the page has no un-mark controls, score sharing or reading modes.
 - Sourced facts only; every item links to where it came from.

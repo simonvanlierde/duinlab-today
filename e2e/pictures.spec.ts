@@ -214,3 +214,37 @@ test.describe("pictures without JavaScript", () => {
 		await expect(page.getByRole("dialog")).toHaveCount(0);
 	});
 });
+
+test("a second finger and interrupted swipes do not strand the viewer", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page
+		.getByRole("link", { name: "Look closer: Wheat Field with Cypresses" })
+		.click();
+	const viewer = page.getByRole("dialog", { name: "Picture viewer" });
+	const stage = viewer.locator(".viewer-stage");
+	const pointer = (type: string, id: number, x: number) =>
+		stage.dispatchEvent(type, {
+			pointerType: "touch",
+			pointerId: id,
+			clientX: x,
+			clientY: 150,
+		});
+	await pointer("pointerdown", 1, 250);
+	await pointer("pointerdown", 2, 280);
+	await pointer("pointerup", 1, 100);
+	await expect(viewer.locator(".viewer-count")).toHaveText("2 of 4");
+	await pointer("pointerup", 2, 280);
+	for (const interrupt of ["pointercancel", "lostpointercapture", "blur"]) {
+		await pointer("pointerdown", 1, 250);
+		if (interrupt === "blur")
+			await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+		else await pointer(interrupt, 1, 250);
+		await pointer("pointerup", 1, 100);
+		await expect(viewer.locator(".viewer-count")).toHaveText("2 of 4");
+	}
+	await pointer("pointerdown", 1, 250);
+	await pointer("pointerup", 1, 100);
+	await expect(viewer.locator(".viewer-count")).toHaveText("3 of 4");
+});

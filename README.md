@@ -92,6 +92,9 @@ For the NASA slide, put a line `NASA_API_KEY=<your key>` in `.dev.vars` for loca
 production it is a Worker secret (`pnpm wrangler secret put NASA_API_KEY`). Without a key the
 strip simply has no NASA slide. The tests don't need it.
 
+NASA leads the picture strip when available. If its API returns a placeholder or fails, the
+Worker reads the same day's image, credit and description from NASA's official APOD feed.
+
 ## Data
 
 `/today.json` holds the same data as the page, for scripts such as an email digest. The

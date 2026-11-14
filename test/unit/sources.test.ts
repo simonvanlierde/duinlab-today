@@ -8,6 +8,7 @@ import {
 	mergePictures,
 	parseAic,
 	parseApod,
+	parseApodFeed,
 	parseMet,
 	parseRijks,
 } from "../../src/lib/sources/picture";
@@ -468,6 +469,110 @@ describe("parsers", () => {
 });
 
 describe("pictures", () => {
+	const nasaFeed = `<rss><channel><item>
+		<title>Moon &amp; stars</title><pubDate>Fri, 06 Nov 2026 05:05:00 +0000</pubDate>
+		<link>https://science.nasa.gov/image-article/apod-2026-november-6-moon/</link>
+		<apod:hdurl>https://assets.science.nasa.gov/moon.jpg?w=2000&#038;h=1800</apod:hdurl>
+		<apod:credit><![CDATA[<a href="https://example.com">A Photographer</a>]]></apod:credit>
+		<apod:alt>The Moon above a field of stars.</apod:alt>
+	</item></channel></rss>`;
+
+	it("reads the dated official NASA feed without taking a stale day or unsafe image", () => {
+		expect(parseApodFeed(nasaFeed, "2026-11-06")).toMatchObject({
+			kind: "apod",
+			title: "Moon & stars",
+			by: "A Photographer",
+			imageUrl: "https://assets.science.nasa.gov/moon.jpg?w=2000&h=1800",
+			alt: "The Moon above a field of stars.",
+			pageUrl:
+				"https://science.nasa.gov/image-article/apod-2026-november-6-moon/",
+		});
+		expect(parseApodFeed(nasaFeed, "2026-11-07")).toBeNull();
+		expect(
+			parseApodFeed(
+				nasaFeed.replace("Fri, 06 Nov 2026 05:05:00 +0000", "invalid"),
+				"2026-11-06",
+			),
+		).toBeNull();
+		expect(
+			parseApodFeed(
+				nasaFeed.replace(
+					"https://assets.science.nasa.gov/moon.jpg?w=2000&#038;h=1800",
+					"javascript:x",
+				),
+				"2026-11-06",
+			),
+		).toBeNull();
+		expect(
+			parseApodFeed(
+				nasaFeed.replace("moon.jpg", "nasa-logo.png"),
+				"2026-11-06",
+			),
+		).toBeNull();
+	});
+
+	it("uses NASA's official feed when the API returns its site logo", async () => {
+		vi.stubGlobal("fetch", async (url: string) => {
+			if (new URL(url).host === "api.nasa.gov")
+				return new Response(JSON.stringify(apod));
+			if (new URL(url).host === "science.nasa.gov")
+				return new Response(nasaFeed);
+			return new Response("", { status: 404 });
+		});
+		expect(
+			(await fetchPictures("2026-11-06", "k", ["met", "aic", "rijks"]))[0]
+				?.title,
+		).toBe("Moon & stars");
+	});
+
+	it.each([false, true])(
+		"keeps a ready feed within the source deadline and prefers a valid API answer (%s)",
+		async (apiOk) => {
+			vi.useFakeTimers();
+			try {
+				vi.stubGlobal("fetch", async (url: string) => {
+					const host = new URL(url).host;
+					if (host === "api.nasa.gov") {
+						await new Promise((resolve) => setTimeout(resolve, 4000));
+						return apiOk
+							? new Response(JSON.stringify(goodApod))
+							: new Response("", { status: 503 });
+					}
+					if (host === "science.nasa.gov") {
+						await new Promise((resolve) => setTimeout(resolve, 1200));
+						return new Response(nasaFeed);
+					}
+					return new Response("", { status: 404 });
+				});
+				const result = fetchPictures("2026-11-06", "k", [
+					"met",
+					"aic",
+					"rijks",
+				]);
+				await vi.advanceTimersByTimeAsync(5000);
+				expect((await result)[0]?.title).toBe(apiOk ? "Moon" : "Moon & stars");
+			} finally {
+				vi.useRealTimers();
+			}
+		},
+	);
+
+	it("replaces generic museum medium text with the title and artist, retaining descriptions", () => {
+		const work = {
+			...aic.data[0],
+			title: "A painting",
+			artist_display: "An Artist",
+			thumbnail: { alt_text: "A work made of oil on canvas." },
+		};
+		expect(parseAic(work)?.alt).toBe("A painting, by An Artist");
+		expect(
+			parseAic({
+				...work,
+				thumbnail: { alt_text: "People gathered beside a lake." },
+			})?.alt,
+		).toBe("People gathered beside a lake.");
+	});
+
 	const goodApod = {
 		title: "Moon",
 		media_type: "image",
@@ -517,7 +622,10 @@ describe("pictures", () => {
 		expect(await fetchPictures("2026-11-06", undefined)).toEqual(one);
 		hosts.length = 0;
 		await fetchPictures("2026-11-06", "k", ["met", "aic", "rijks"]);
-		expect(hosts.filter((h) => h !== "img")).toEqual(["api.nasa.gov"]);
+		expect(hosts.filter((h) => h !== "img")).toEqual([
+			"science.nasa.gov",
+			"api.nasa.gov",
+		]);
 	});
 
 	it("lets each source fail or hang on its own", async () => {
