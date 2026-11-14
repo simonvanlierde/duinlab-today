@@ -8,9 +8,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - The picture viewer uses source originals when available and falls back to previews if they fail.
+- Picture selectors sit below captions, and the almanac groups sun, moon, planets and sea details.
+- Short desktop layouts use tighter spacing while keeping body text and game controls readable.
 
 ### Fixed
 
+- NASA's official APOD feed recovers the day's astronomy picture when its API returns a placeholder or fails.
+- The occasion line stays readable in daylight, and inline source credits keep their word spacing.
+- Word definitions omit colour-swatch captions, and generic artwork descriptions use the title and artist.
+- Picture swipes recover after a second finger or an interrupted gesture.
 - The social card keeps its title and line inside the centred crop that some link previews apply.
 - Zooming a picture moves keyboard focus to the image so arrow keys can pan it.
 - Selecting the bright star opens its current name and altitude first in the almanac.
