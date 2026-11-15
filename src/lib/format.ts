@@ -1,11 +1,12 @@
+import { site } from "./config";
 // Plain text for the page: times, dates and the weather and sun lines.
 import { shift } from "./day";
 import { sunPasses, sunTimes } from "./sun";
 import type { Sun, Today, Weather } from "./types";
 
-const TZ = "Europe/Amsterdam";
+const TZ = site.location.timezone;
 
-/** "HH:MM" on the Amsterdam clock, from an ISO instant or a Date. */
+/** "HH:MM" on the configured local clock, from an ISO instant or a Date. */
 export function clock(at: string | Date): string {
 	const d = typeof at === "string" ? new Date(at) : at;
 	return new Intl.DateTimeFormat("en-GB", {
@@ -59,7 +60,7 @@ const COMPASS: Record<string, string> = {
 export function windLine(w: Weather["now"]): string {
 	const from = COMPASS[w.windFrom] ?? w.windFrom;
 	const name = BEAUFORT[Math.min(12, Math.max(0, w.windBeaufort))];
-	return `Wind from the ${from}, force ${w.windBeaufort} (${name}), ${Math.round(w.windKmh)} km/h`;
+	return `Wind from the ${from}, force ${w.windBeaufort} (${name}), ${Math.round(site.units.wind === "mph" ? w.windKmh / 1.609344 : w.windKmh)} ${site.units.wind === "mph" ? "mph" : "km/h"}`;
 }
 
 export function rainLine(
@@ -114,3 +115,14 @@ export function weekday(day: string, today: string): string {
 		weekday: "short",
 	}).format(new Date(`${day}T12:00:00Z`));
 }
+
+/** Rounded temperature for display; the public JSON keeps Celsius. */
+export const temperature = (celsius: number, digits = 0) =>
+	Number(
+		(site.units.temperature === "fahrenheit"
+			? (celsius * 9) / 5 + 32
+			: celsius
+		).toFixed(digits),
+	);
+export const temperatureUnit =
+	site.units.temperature === "fahrenheit" ? "°F" : "°C";

@@ -1,3 +1,11 @@
+import { loadSiteConfig } from "./scripts/site-config.mjs";
+
+const configured = loadSiteConfig();
+Object.assign(globalThis, {
+	__SITE_CONFIG__: configured.site,
+	__SITE_CONFIG_KEY__: configured.configKey,
+});
+
 import { defineConfig } from "@playwright/test";
 
 const port = 4331;
@@ -5,6 +13,7 @@ const fixtures = "http://127.0.0.1:4332";
 
 export default defineConfig({
 	testDir: "e2e",
+	testIgnore: "**/apod.spec.ts",
 	fullyParallel: true,
 	reporter: "list",
 	use: { baseURL: `http://localhost:${port}` },

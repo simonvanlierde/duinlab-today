@@ -1,3 +1,4 @@
+import { site } from "./config";
 import { fetchEvents } from "./sources/events";
 import { fetchPictures, mergePictures, PICTURE_ORDER } from "./sources/picture";
 import { fetchQuote } from "./sources/quote";
@@ -29,7 +30,8 @@ export async function buildDay(
 		prev.didYouKnow.length > 0 &&
 		prev.onThisDay &&
 		prev.featured &&
-		prev.pictures.some((p) => p.kind === "wikipedia");
+		(!PICTURE_ORDER.includes("wikipedia") ||
+			prev.pictures.some((p) => p.kind === "wikipedia"));
 	const have = prev?.pictures ?? [];
 	const [wiki, pictures, word, quote, quiz, tides, events] = await Promise.all([
 		wikiDone
@@ -48,8 +50,12 @@ export async function buildDay(
 		keep(prev?.word, () => fetchWord(date)),
 		keep(prev?.quote, () => fetchQuote()),
 		keep(prev?.quiz, () => fetchQuiz(date)),
-		keep(prev?.tides, () => fetchTides(date)),
-		keep(prev?.events, () => fetchEvents(date)),
+		site.content.tides
+			? keep(prev?.tides, () => fetchTides(date))
+			: Promise.resolve(null),
+		site.content.events
+			? keep(prev?.events, () => fetchEvents(date))
+			: Promise.resolve(null),
 	]);
 	return {
 		date,
@@ -73,20 +79,20 @@ export async function buildDay(
  * day stored before it existed is undefined: missing, so the next run fills it in.
  */
 const sections = (d: Day) => [
-	d.pictures.length > 0 ? d.pictures : null,
 	d.onThisDay,
 	d.featured,
 	d.word,
 	d.quote,
 	d.quiz,
-	d.tides,
-	d.events,
+	...(site.content.tides ? [d.tides] : []),
+	...(site.content.events ? [d.events] : []),
 	d.didYouKnow.length > 0 ? d.didYouKnow : null,
 ];
 
 const missingSections = (d: Day) => sections(d).filter((s) => !s).length;
 
-export const allFailed = (d: Day) => sections(d).every((s) => !s);
+export const allFailed = (d: Day) =>
+	d.pictures.length === 0 && sections(d).every((s) => !s);
 
 /** Not final yet: a section or an enabled picture source is missing. */
 export function incomplete(d: Day, hasApodKey: boolean): boolean {
@@ -115,7 +121,7 @@ export function mergeDay(prev: Day | null, fresh: Day): Day {
 		word: prev.word ?? fresh.word,
 		quote: prev.quote ?? fresh.quote,
 		quiz: prev.quiz ?? fresh.quiz,
-		tides: prev.tides ?? fresh.tides,
-		events: prev.events ?? fresh.events,
+		tides: site.content.tides ? (prev.tides ?? fresh.tides) : null,
+		events: site.content.events ? (prev.events ?? fresh.events) : null,
 	};
 }

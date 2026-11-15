@@ -3,16 +3,31 @@
 // `https://<host>/<path>?<query>`. An unknown host answers 404, like a source that is down.
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
-import { isoAmsterdam } from "../src/lib/day.ts";
+import { loadSiteConfig } from "../scripts/site-config.mjs";
+
+const { site } = loadSiteConfig();
+const isoLocal = (at) =>
+	new Intl.DateTimeFormat("sv-SE", {
+		timeZone: site.location.timezone,
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+		hour: "2-digit",
+		minute: "2-digit",
+		second: "2-digit",
+		hourCycle: "h23",
+	})
+		.format(at)
+		.replace(" ", "T");
 
 const port = Number(process.env.FIXTURE_PORT ?? 4332);
 const unit = new URL("../test/unit/fixtures/", import.meta.url);
 const text = (name) => readFileSync(new URL(name, unit), "utf8");
 const png = readFileSync(new URL("fixtures/picture.png", import.meta.url));
 
-/** Today in Amsterdam, the day the Worker builds: the word feed must have an entry for it. */
+/** Today at the configured location, the day the Worker builds: the word feed must have an entry for it. */
 const today = () =>
-	new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Amsterdam" }).format(
+	new Intl.DateTimeFormat("en-CA", { timeZone: site.location.timezone }).format(
 		new Date(),
 	);
 
@@ -64,7 +79,7 @@ function raintext() {
 	return Array.from(
 		{ length: 24 },
 		(_, i) =>
-			`${i === 2 ? "109" : "000"}|${isoAmsterdam(new Date(start + i * 300_000)).slice(11, 16)}`,
+			`${i === 2 ? "109" : "000"}|${isoLocal(new Date(start + i * 300_000)).slice(11, 16)}`,
 	).join("\n");
 }
 
@@ -72,13 +87,25 @@ function weather() {
 	const raw = JSON.parse(text("open-meteo.json"));
 	const start = Math.floor(Date.now() / 900_000) * 900_000;
 	raw.minutely_15.time = raw.minutely_15.time.map((_, i) =>
-		isoAmsterdam(new Date(start + i * 900_000)),
+		isoLocal(new Date(start + i * 900_000)),
 	);
 	return JSON.stringify(raw);
 }
 
 /** host -> (path) -> [content type, body] */
 const HOSTS = {
+	"api.nasa.gov": () => [
+		"application/json",
+		JSON.stringify({
+			date: today(),
+			title: "Moon & stars",
+			media_type: "image",
+			url: "https://images.metmuseum.org/apod/preview.png",
+			hdurl: "https://images.metmuseum.org/apod/original.png",
+			explanation: "The Moon & stars. A second sentence.",
+			copyright: "Fixture image",
+		}),
+	],
 	"api.wikimedia.org": () => ["application/json", text("wikipedia.json")],
 	"en.wiktionary.org": () => ["application/atom+xml", wordFeed()],
 	"collectionapi.metmuseum.org": (path) =>

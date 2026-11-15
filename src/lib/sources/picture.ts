@@ -1,3 +1,4 @@
+import { site } from "../config";
 import type { Picture } from "../types";
 import {
 	decodeEntities,
@@ -17,6 +18,7 @@ interface Apod {
 	thumbnail_url?: string;
 	media_type?: string;
 	copyright?: string;
+	explanation?: string;
 	date?: string;
 }
 
@@ -40,6 +42,9 @@ export function parseApod(a: Apod, date: string): Picture | null {
 		imageUrl,
 		fullImageUrl:
 			a.media_type === "image" ? (httpsUrl(a.hdurl) ?? undefined) : undefined,
+		explanation: a.explanation
+			? stripTags(a.explanation) || undefined
+			: undefined,
 		width: null,
 		height: null,
 		alt: a.title,
@@ -78,6 +83,7 @@ export function parseApodFeed(xml: string, date: string): Picture | null {
 				url: imageUrl,
 				hdurl: imageUrl,
 				copyright: stripTags(field("apod:credit")),
+				explanation: field("apod:explanation"),
 			},
 			date,
 		);
@@ -339,13 +345,7 @@ const fetchRijks = (date: string) =>
 	});
 
 /** The order the strip shows; a stored picture keeps its source's place. */
-export const PICTURE_ORDER: Picture["kind"][] = [
-	"apod",
-	"met",
-	"wikipedia",
-	"aic",
-	"rijks",
-];
+export const PICTURE_ORDER: Picture["kind"][] = site.content.pictures;
 
 /** One picture per source, the first list's winning, in PICTURE_ORDER. */
 export function mergePictures(...lists: Picture[][]): Picture[] {
@@ -445,7 +445,7 @@ export async function fetchPictures(
 	];
 	const got = await Promise.all(
 		sources
-			.filter(([kind]) => !have.includes(kind))
+			.filter(([kind]) => PICTURE_ORDER.includes(kind) && !have.includes(kind))
 			.map(([, run]) => deadline(run(), deadlineMs)),
 	);
 	return Promise.all(got.flatMap((p) => (p ? [p] : [])).map(sized));

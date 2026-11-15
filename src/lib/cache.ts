@@ -1,5 +1,7 @@
+import { configKey, site } from "./config";
+
 const keyFor = (name: string) =>
-	new Request(`https://today.duinlab.nl/__cache/${name}`);
+	new Request(`${site.site.url}/__cache/${configKey}/${name}`);
 
 /**
  * How long a value is fresh (`ttl`) and then still served while a request refreshes it in the

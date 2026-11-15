@@ -1,6 +1,10 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { moonNow, starNow } from "../src/lib/moon";
+import { site } from "../src/lib/config";
+import {
+	moonNow as moonPosition,
+	starNow as starPosition,
+} from "../src/lib/moon";
 
 test.beforeEach(async ({ page }) => {
 	await page.route(
@@ -40,7 +44,9 @@ test("the moon leads on keyboard opening and the rest of the almanac stays avail
 		almanac.locator(".almanac-group [data-almanac-body=sun]"),
 	).toHaveAttribute("data-almanac-body", "sun");
 	await expect(almanac.locator("[data-moon-line]")).toHaveCount(1);
-	await expect(almanac).toContainText(/Sun up \d\d:\d\d/);
+	await expect(almanac).toContainText(/Moonrise \d\d:\d\d|No moonrise today/);
+	await expect(almanac).toContainText(/Moonset \d\d:\d\d|No moonset today/);
+	await expect(almanac).toContainText(/Sunrise \d\d:\d\d/);
 	await expect(almanac).toContainText("Scheveningen");
 	await expect(almanac.getByRole("link", { name: "Open-Meteo" })).toBeVisible();
 	await page.clock.fastForward(60000);
@@ -161,7 +167,7 @@ test("the selected star leads with its current position and stays current", asyn
 	);
 	await expect(page.locator("button[data-orb=star]")).toHaveAttribute(
 		"aria-label",
-		`${next.name}: sun, moon and tide times`,
+		`${next.name}: sun and moon times`,
 	);
 	await page.screenshot({
 		path: `test-results/almanac-star-${testInfo.project.name}.png`,
@@ -188,7 +194,9 @@ test.describe("the almanac without JavaScript", () => {
 		await expect(
 			almanac.getByRole("heading", { name: "Almanac", exact: true }),
 		).toBeVisible();
-		await expect(almanac).toContainText(/Sun up \d\d:\d\d/);
+		await expect(almanac).toContainText(/Sunrise \d\d:\d\d/);
+		await expect(almanac).toContainText(/Moonrise \d\d:\d\d|No moonrise today/);
+		await expect(almanac).toContainText(/Moonset \d\d:\d\d|No moonset today/);
 		await expect(almanac).toContainText(/% lit/);
 		await expect(almanac).toContainText("Scheveningen");
 		if (await page.locator("button[data-orb=star]").isVisible())
@@ -197,3 +205,10 @@ test.describe("the almanac without JavaScript", () => {
 			);
 	});
 });
+
+function moonNow(at: number) {
+	return moonPosition(at, site.location.latitude, site.location.longitude);
+}
+function starNow(at: number) {
+	return starPosition(at, site.location.latitude, site.location.longitude);
+}

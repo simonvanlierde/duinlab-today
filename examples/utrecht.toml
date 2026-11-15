@@ -1,0 +1,84 @@
+# Public settings only. Keep API keys in deployment secrets.
+[site]
+title = "Today in Utrecht"
+url = "https://utrecht.example.org"
+description = "A quiet daily page for Utrecht."
+
+[location]
+name = "Utrecht"
+latitude = 52.09
+longitude = 5.12
+timezone = "Europe/Amsterdam"
+country = "NL"
+
+[units]
+temperature = "celsius"
+wind = "kmh"
+
+[content]
+pictures = ["apod", "met", "wikipedia", "aic", "rijks"]
+tides = false
+sea = false
+events = false
+radar = "buienradar"
+holidays = "nl"
+
+[[games]]
+id = "factmap"
+name = "Factmap"
+url = "https://www.factmap.world/"
+blurb = "Place the day's facts on the map."
+
+[[games]]
+id = "timeguessr"
+name = "TimeGuessr"
+url = "https://timeguessr.com/"
+blurb = "Guess where and when a photo was taken."
+
+[[games]]
+id = "shikaku"
+name = "Shikaku of the day"
+url = "https://shikakuofthe.day/"
+blurb = "Cut the grid into rectangles that match the numbers."
+
+[[games]]
+id = "krillion"
+name = "Krillion"
+url = "https://krillion.io/"
+blurb = "Seven prompts; the rarer your answer, the deeper you dive."
+
+[[games]]
+id = "catfishing"
+name = "Catfishing"
+url = "https://catfishing.net/"
+blurb = "Work out which animal is hiding behind the clues."
+
+[[games]]
+id = "connections"
+name = "Connections"
+url = "https://www.nytimes.com/games/connections"
+blurb = "Sort sixteen words into four groups."
+
+[[games]]
+id = "wordle"
+name = "Wordle"
+url = "https://www.nytimes.com/games/wordle/index.html"
+blurb = "Five letters, six tries."
+
+[[games]]
+id = "raddle"
+name = "Raddle"
+url = "https://raddle.quest/"
+blurb = "Order the clues into a word ladder."
+
+[[games]]
+id = "timdle"
+name = "Timdle"
+url = "https://www.timdle.com/"
+blurb = "Put events in the order they happened."
+
+[[games]]
+id = "metazooa"
+name = "Metazooa"
+url = "https://metazooa.com/"
+blurb = "Find the mystery animal by how closely related your guesses are."

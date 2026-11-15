@@ -1,4 +1,5 @@
 ---
+import { site } from "../lib/config";
 import "../styles/global.css";
 import { skyBootScript } from "../components/boot";
 import { PHASE_SUN, SKY, skyAt } from "../components/sky";
@@ -26,8 +27,13 @@ const now = Date.now();
 const sun = forced
 	? PHASE_SUN[phase]
 	: {
-			alt: sunAltitude(now),
-			rising: sunAltitude(now + 600000) > sunAltitude(now),
+			alt: sunAltitude(now, site.location.latitude, site.location.longitude),
+			rising:
+				sunAltitude(
+					now + 600000,
+					site.location.latitude,
+					site.location.longitude,
+				) > sunAltitude(now, site.location.latitude, site.location.longitude),
 		};
 const first = skyAt(sun.alt, sun.rising, SKY);
 const style = Object.entries({ ...first.vars, "--sat": String(saturation) })
@@ -60,20 +66,20 @@ Astro.csp?.insertScriptHash(`sha256-${btoa(String.fromCharCode(...digest))}`);
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>{title}</title>
 		<meta name="description" content={description} />
-		<link rel="canonical" href="https://today.duinlab.nl/" />
+		<link rel="canonical" href={site.site.url + "/"} />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		<link rel="manifest" href="/manifest.webmanifest" />
 		<meta name="theme-color" content="#0a1030" />
 		<meta property="og:type" content="website" />
-		<meta property="og:site_name" content="today.duinlab.nl" />
+		<meta property="og:site_name" content={site.site.title} />
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
-		<meta property="og:url" content="https://today.duinlab.nl/" />
-		<meta property="og:image" content={`https://today.duinlab.nl/og.png?v=${__OG_VERSION__}`} />
+		<meta property="og:url" content={site.site.url + "/"} />
+		<meta property="og:image" content={`${site.site.url}/og.png?v=${__OG_VERSION__}`} />
 		<meta property="og:image:width" content="1200" />
 		<meta property="og:image:height" content="630" />
-		<meta property="og:image:alt" content="today.duinlab.nl: one picture, a few facts, a word, a quiz and ten games, over a night sky and pale dunes" />
+		<meta property="og:image:alt" content={site.site.description} />
 		<meta name="twitter:card" content="summary_large_image" />
 		<link rel="preload" href="/fonts/literata.woff2" as="font" type="font/woff2" crossorigin />
 		<link rel="preload" href="/fonts/barlow-600.woff2" as="font" type="font/woff2" crossorigin />

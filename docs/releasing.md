@@ -1,24 +1,36 @@
 # Releasing
 
-The website deploys from `main`. A release tag records a reviewed version; it does not deploy it.
+This repository deploys from `main`. Forks can use the manual deployment steps in [configuration and deployment](configuration.md).
+A release tag records a reviewed version; it does not deploy it.
 
 ## First canonical-day deployment
 
-Version 0.1.0 introduces the SQLite-backed `DayCoordinator` binding and migration in
-`wrangler.jsonc`. Existing public days import from KV; subsequent reads use canonical storage.
-Browser progress and public JSON fields keep their existing format.
+This section applies only when upgrading a deployment from before version 0.1.0.
+The SQLite-backed `DayCoordinator` binding and migration are in `wrangler.jsonc`.
+Existing public days import from KV; later reads use the Durable Object.
+Browser progress and public JSON fields keep their format.
 
 KV cannot establish a fresh winner while an older Worker version is still publishing the same
-day. Complete the first deployment before the next Amsterdam midnight, with no household visits
+day. Complete the first deployment before midnight in the configured time zone, with no household visits
 during the deployment transition. Confirm the old deployment has drained before the new day
 starts. Verify the next day's quiz from two fresh browser contexts before publishing the release.
 Treat the remainder of the imported legacy day as legacy data; consistency cannot be recovered
 retroactively for different quizzes that an older version may already have served.
 
 Use a full deployment for this migration, not a gradual split between old and new publishers.
-Both canonical storage and its KV mirror expire after two Amsterdam days. SQLite Durable Objects
+Both canonical storage and its KV mirror expire after two days in the configured time zone. SQLite Durable Objects
 are [supported on the Workers Free plan](https://developers.cloudflare.com/durable-objects/platform/pricing/);
 no paid-plan change is required.
+
+## Configuration changes
+
+Settings in `site.toml` take effect at build time. Restart development servers after editing them.
+For a fork, follow [configuration and deployment](configuration.md) before running any Wrangler deployment or secret command.
+Each deployment needs its own Worker, KV namespace and domain settings.
+
+Changing location or content settings uses a separate daily cache. Branding, display units and games do not regenerate the quiz.
+The original Hague configuration keeps its existing canonical day when upgrading.
+Check a changed profile’s local date, clock, weather and omitted sections on `/` and `/today.json` before release.
 
 ## Prepare and publish
 
@@ -26,8 +38,7 @@ no paid-plan change is required.
    Run builds and browser tests sequentially: both write `dist/`.
 2. Merge the reviewed release PR and wait for main's checks and production deployment. Verify
    pictures, almanac Close, quiz review, yesterday's paper and `/today.json` on production.
-3. Publish the release manually from the verified merged commit, using `docs/releases/0.1.0.md`
-   as the release body. Keep the tag, package version and changelog version aligned.
+3. Prepare the release notes in `docs/releases/`, following `docs/releases/0.1.0.md`.
+   Publish manually from the verified merged commit. Keep the tag, package version and changelog version aligned.
 
-The first release has no previous tag for an API or benchmark comparison. It ships a website,
-not a package or binary archive; there are no downloadable build assets to attach.
+The release ships a website. There are no package or binary build assets to attach.

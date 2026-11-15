@@ -1,4 +1,5 @@
-import { allPlayed, amsterdamDay } from "../lib/day";
+import { site } from "../lib/config";
+import { allPlayed, localDay } from "../lib/day";
 import { moonNow, planetsAt, starNow } from "../lib/moon";
 import { phaseAt, type SkyPhase, sunAltitude } from "../lib/sun";
 import type { Sun } from "../lib/types";
@@ -22,11 +23,12 @@ const INLINED = {
 	planetsAt,
 	moonPath,
 	overlap,
-	amsterdamDay,
+	localDay,
 	allPlayed,
 };
 
 type Cfg = {
+	location: Pick<typeof site.location, "latitude" | "longitude" | "timezone">;
 	sun: Sun;
 	forced: string | null;
 	ids: string[];
@@ -42,11 +44,11 @@ type Cfg = {
 const boot = (cfg: Cfg) => {
 	const root = document.documentElement;
 	root.classList.add("js");
-	const today = () => cfg.amsterdamDay();
+	const today = () => cfg.localDay(new Date(), cfg.location.timezone);
 	// compared with the load day, not the server's: a wrong device clock must not loop
 	const loaded = today();
 	const fmt = new Intl.DateTimeFormat("en-GB", {
-		timeZone: "Europe/Amsterdam",
+		timeZone: cfg.location.timezone,
 		hour: "2-digit",
 		minute: "2-digit",
 		hour12: false,
@@ -86,8 +88,22 @@ const boot = (cfg: Cfg) => {
 			: cfg.forced
 				? cfg.phaseSun[p]
 				: {
-						alt: cfg.sunAltitude(skyNow),
-						rising: cfg.sunAltitude(skyNow + 600000) > cfg.sunAltitude(skyNow),
+						alt: cfg.sunAltitude(
+							skyNow,
+							cfg.location.latitude,
+							cfg.location.longitude,
+						),
+						rising:
+							cfg.sunAltitude(
+								skyNow + 600000,
+								cfg.location.latitude,
+								cfg.location.longitude,
+							) >
+							cfg.sunAltitude(
+								skyNow,
+								cfg.location.latitude,
+								cfg.location.longitude,
+							),
 					};
 		const sky = cfg.skyAt(sun.alt, sun.rising, cfg.table);
 		for (const [k, v] of Object.entries(sky.vars)) root.style.setProperty(k, v);
@@ -97,9 +113,15 @@ const boot = (cfg: Cfg) => {
 			cfg.sun,
 			skyNow,
 			sun.alt,
-			cfg.moonNow,
-			cfg.starNow,
-			(t) => cfg.planetsAt(cfg.planets, t),
+			(t) => cfg.moonNow(t, cfg.location.latitude, cfg.location.longitude),
+			(t) => cfg.starNow(t, cfg.location.latitude, cfg.location.longitude),
+			(t) =>
+				cfg.planetsAt(
+					cfg.planets,
+					t,
+					cfg.location.latitude,
+					cfg.location.longitude,
+				),
 		);
 		for (const el of document.querySelectorAll<HTMLElement>("[data-orb]")) {
 			const b = sky2[el.dataset.orb as "sun" | "moon" | "star"];
@@ -131,14 +153,11 @@ const boot = (cfg: Cfg) => {
 		for (const el of document.querySelectorAll("[data-moon-line]"))
 			el.textContent = m.line;
 		for (const el of document.querySelectorAll("[data-moon-label]"))
-			el.setAttribute("aria-label", `${m.label}: sun, moon and tide times`);
+			el.setAttribute("aria-label", `${m.label}: sun and moon times`);
 		for (const el of document.querySelectorAll("[data-star-line]"))
 			el.textContent = `${sky2.star.name}, ${Math.round(sky2.star.alt)}° above the horizon`;
 		for (const el of document.querySelectorAll("[data-star-label]"))
-			el.setAttribute(
-				"aria-label",
-				`${sky2.star.name}: sun, moon and tide times`,
-			);
+			el.setAttribute("aria-label", `${sky2.star.name}: sun and moon times`);
 	};
 	try {
 		const saved = JSON.parse(localStorage.getItem(cfg.key) ?? "{}");
@@ -188,6 +207,11 @@ export function skyBootScript(day: {
 	planets?: [string, number, number][];
 }): string {
 	const cfg = {
+		location: {
+			latitude: site.location.latitude,
+			longitude: site.location.longitude,
+			timezone: site.location.timezone,
+		},
 		sun: day.sun,
 		forced: day.forced,
 		ids: day.ids,

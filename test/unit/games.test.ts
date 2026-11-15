@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { stubStorage } from "./stub-storage";
 
 beforeEach(() => {
+	vi.useFakeTimers({ now: new Date("2026-11-14T12:00:00Z") });
 	vi.resetModules();
 	vi.stubGlobal("$state", <T>(value: T) => value);
 	vi.stubGlobal("document", {
@@ -10,7 +11,10 @@ beforeEach(() => {
 	});
 	vi.stubGlobal("localStorage", stubStorage());
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+	vi.useRealTimers();
+	vi.unstubAllGlobals();
+});
 
 describe("games store", () => {
 	it("merges durable and in-memory plays after acquiring the lock", async () => {

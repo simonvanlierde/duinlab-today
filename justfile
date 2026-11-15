@@ -19,6 +19,7 @@ fmt:
 # Browser tests against a production build on wrangler (phone and desktop).
 e2e:
     pnpm e2e
+    pnpm exec playwright test --config playwright.apod.config.ts
 
 # Dev server in the background; `pnpm exec astro dev stop` ends it.
 dev:

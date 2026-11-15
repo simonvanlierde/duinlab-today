@@ -1,0 +1,42 @@
+# Public settings only. Keep API keys in deployment secrets.
+[site]
+title = "Today in Evanston"
+url = "https://evanston.example.org"
+description = "A quiet daily page for Evanston."
+
+[location]
+name = "Evanston"
+latitude = 42.0451
+longitude = -87.6877
+timezone = "America/Chicago"
+country = "US"
+
+[units]
+temperature = "fahrenheit"
+wind = "mph"
+
+[content]
+pictures = ["apod", "met", "wikipedia"]
+tides = false
+sea = false
+events = false
+radar = "none"
+holidays = "none"
+
+[[games]]
+id = "timeguessr"
+name = "TimeGuessr"
+url = "https://timeguessr.com/"
+blurb = "Guess where and when a photo was taken."
+
+[[games]]
+id = "connections"
+name = "Connections"
+url = "https://www.nytimes.com/games/connections"
+blurb = "Sort sixteen words into four groups."
+
+[[games]]
+id = "wordle"
+name = "Wordle"
+url = "https://www.nytimes.com/games/wordle/index.html"
+blurb = "Five letters, six tries."

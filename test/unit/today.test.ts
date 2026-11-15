@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Day } from "../../src/lib/build";
+import { configKey } from "../../src/lib/config";
 
 const store = new Map<string, string>();
 const durable = new Map<string, Day>();
@@ -60,7 +61,7 @@ const { refreshDay, getToday, getYesterday } = await import(
 );
 
 const NOW = new Date("2026-11-10T08:00:00Z");
-const KEY = "day/v2/2026-11-10";
+const KEY = `day/v3/${configKey}/2026-11-10`;
 const day = (quiz: string) =>
 	({
 		date: "2026-11-10",
@@ -126,6 +127,20 @@ describe("canonical day publication", () => {
 			);
 		},
 	);
+	it("keeps the canonical original owner when its KV mirror is absent", async () => {
+		durable.set("day", day("canonical"));
+		buildDay.mockResolvedValue(day("replacement"));
+		expect((await refreshDay(NOW)).quiz).toEqual(day("canonical").quiz);
+		expect(namespace.getByName).toHaveBeenCalledWith("2026-11-10");
+	});
+
+	it("preserves the original Hague deployment's published quiz on migration", async () => {
+		store.set("day/v2/2026-11-10", JSON.stringify(day("published")));
+		buildDay.mockResolvedValue(day("replacement"));
+		expect((await refreshDay(NOW)).quiz).toEqual(day("published").quiz);
+		expect(store.has(KEY)).toBe(true);
+	});
+
 	it("imports the published KV quiz before filling missing sections", async () => {
 		store.set(KEY, JSON.stringify(day("published")));
 		buildDay.mockResolvedValue(day("replacement"));
@@ -202,7 +217,7 @@ describe("canonical day publication", () => {
 
 	it("reads yesterday through its own canonical owner and expires after two Amsterdam days", async () => {
 		store.set(
-			"day/v2/2026-11-09",
+			`day/v3/${configKey}/2026-11-09`,
 			JSON.stringify({ ...day("yesterday"), date: "2026-11-09" }),
 		);
 		expect((await getYesterday(NOW))?.quiz).toEqual(day("yesterday").quiz);

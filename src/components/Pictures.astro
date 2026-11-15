@@ -34,10 +34,16 @@ const { pictures } = Astro.props;
 							<span class="picture-hint" aria-hidden="true">Look closer</span>
 						</a>
 						<figcaption>
-							<a href={p.pageUrl}><em>{p.title}</em></a>
-							{p.by && <>, {p.by}</>}
-							{p.date && <>, {p.date}</>}.{" "}
-							<span class="src"><a href={p.credit.url}>{p.credit.name}</a></span>
+							<span class="picture-credit">
+								<a href={p.pageUrl}><em>{p.title}</em></a>
+								{p.by && <>, {p.by}</>}
+								{p.date && <>, {p.date}</>}.{" "}
+								<span class="src"><a href={p.credit.url}>{p.credit.name}</a></span>
+							</span>
+							{p.explanation && <details class="picture-explanation">
+								<summary>About this picture</summary>
+								<p>{p.explanation}</p>
+							</details>}
 						</figcaption>
 					</figure>
 				))
@@ -155,9 +161,17 @@ const { pictures } = Astro.props;
 			image.alt = source.alt;
 			previewUrl = source.src;
 			image.src = link?.href ?? previewUrl;
+			const captionHadFocus = caption.contains(document.activeElement);
 			caption.replaceChildren(...[...credit.childNodes].map((node) => node.cloneNode(true)));
+			caption.querySelector("details")?.removeAttribute("open");
+			const original = document.createElement("a");
+			original.href = link?.href ?? previewUrl;
+			original.textContent = "Open original";
+			const line = caption.querySelector(".picture-credit");
+			line?.appendChild(document.createTextNode(" · "));
+			line?.appendChild(original);
 			count.textContent = `${at + 1} of ${slides.length}`;
-			if ((document.activeElement === prev && at === 0) ||
+			if (captionHadFocus || (document.activeElement === prev && at === 0) ||
 				(document.activeElement === next && at === slides.length - 1)) {
 				stage.focus({ preventScroll: true });
 			}
@@ -223,3 +237,16 @@ const { pictures } = Astro.props;
 		});
 	}
 </script>
+
+<style>
+	.picture-explanation {
+		margin-top: 8px;
+	}
+	.picture-explanation summary {
+		display: list-item;
+		align-content: center;
+	}
+	.picture-explanation p {
+		margin: 0 0 8px;
+	}
+</style>

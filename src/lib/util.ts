@@ -1,6 +1,7 @@
 import { decodeHTML } from "entities";
+import { site } from "./config";
 
-const UA = "duinlab-today/1.0 (https://today.duinlab.nl)";
+const UA = `duinlab-today/1.0 (${site.site.url})`;
 const TIMEOUT_MS = 4000;
 
 // e2e only: wrangler dev sets FIXTURE_ORIGIN; outside the Worker (unit tests) the module is absent

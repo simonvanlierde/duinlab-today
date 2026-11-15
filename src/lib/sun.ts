@@ -1,14 +1,14 @@
-import { isoAmsterdam } from "./day";
+import { site } from "./config";
+import { isoLocal, localDay, shift } from "./day";
 import { moonNow } from "./moon";
 import type { Moon, Sun } from "./types";
 
-const LAT = 52.08;
-const LON = 4.31;
+const { latitude: LAT, longitude: LON } = site.location;
 const rad = (d: number) => (d * Math.PI) / 180;
 const deg = (r: number) => (r * 180) / Math.PI;
 
 /** NOAA solar calculator: UTC minutes of the day when the sun crosses `zenith` degrees, for `date` (YYYY-MM-DD). */
-function crossing(date: string, zenith: number, rising: boolean): Date {
+function crossingUtc(date: string, zenith: number, rising: boolean): Date {
 	const [y, m, d] = date.split("-").map(Number) as [number, number, number];
 	const noonUtc = Date.UTC(y, m - 1, d, 12);
 	const jc = (noonUtc / 86400000 + 2440587.5 - 2451545) / 36525;
@@ -46,23 +46,31 @@ function crossing(date: string, zenith: number, rising: boolean): Date {
 	return new Date(Date.UTC(y, m - 1, d) + minutes * 60000);
 }
 
+/** The same meridian can use the next calendar day across the international date line. */
+function crossing(date: string, zenith: number, rising: boolean): Date {
+	const at = crossingUtc(date, zenith, rising);
+	const actual = localDay(at);
+	const by = Math.round((Date.parse(date) - Date.parse(actual)) / 86400000);
+	return by === 0 ? at : crossingUtc(shift(date, by), zenith, rising);
+}
+
 /** Dawn and dusk are civil twilight (sun 6 degrees down); rise and set use the standard 0.833 degrees. */
 export function sunTimes(date: string): Sun {
 	return {
-		dawn: isoAmsterdam(crossing(date, 96, true)),
-		sunrise: isoAmsterdam(crossing(date, 90.833, true)),
-		sunset: isoAmsterdam(crossing(date, 90.833, false)),
-		dusk: isoAmsterdam(crossing(date, 96, false)),
+		dawn: isoLocal(crossing(date, 96, true)),
+		sunrise: isoLocal(crossing(date, 90.833, true)),
+		sunset: isoLocal(crossing(date, 90.833, false)),
+		dusk: isoLocal(crossing(date, 96, false)),
 	};
 }
 
-/** When the sun passes `altitude` degrees on `date`, in the morning or the evening, in Amsterdam time. */
+/** When the sun passes `altitude` degrees on `date`, in the morning or the evening, in the city’s time zone. */
 export const sunPasses = (date: string, altitude: number, morning: boolean) =>
-	isoAmsterdam(crossing(date, 90 - altitude, morning));
+	isoLocal(crossing(date, 90 - altitude, morning));
 
 /** The moon's phase and its name at `at` (see `moonNow`). */
 export function moonAt(at: Date): Moon {
-	const { phase, name } = moonNow(at.getTime());
+	const { phase, name } = moonNow(at.getTime(), LAT, LON);
 	return { phase, name };
 }
 
@@ -90,10 +98,14 @@ export function phaseAt(
 }
 
 /**
- * Sun altitude in degrees over The Hague (low-precision almanac formula, good to a few
+ * Sun altitude in degrees at the given coordinates (low-precision almanac formula, good to a few
  * tenths of a degree). Self-contained: the layout inlines it into the page.
  */
-export function sunAltitude(now: number): number {
+export function sunAltitude(
+	now: number,
+	latitude: number,
+	longitude: number,
+): number {
 	const r = Math.PI / 180;
 	const d = now / 86400000 - 10957.5; // days since J2000.0
 	const g = (357.529 + 0.98560028 * d) * r;
@@ -103,8 +115,8 @@ export function sunAltitude(now: number): number {
 	const dec = Math.asin(Math.sin(tilt) * Math.sin(lon));
 	const ra = Math.atan2(Math.cos(tilt) * Math.sin(lon), Math.cos(lon));
 	const gmst = (18.697374558 + 24.06570982441908 * d) * 15 * r;
-	const ha = gmst + 4.31 * r - ra;
-	const lat = 52.08 * r;
+	const ha = gmst + longitude * r - ra;
+	const lat = latitude * r;
 	return (
 		Math.asin(
 			Math.sin(lat) * Math.sin(dec) +

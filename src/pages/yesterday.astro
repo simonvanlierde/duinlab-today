@@ -2,6 +2,7 @@
 import Cue from "../components/Cue.astro";
 import Pictures from "../components/Pictures.astro";
 import Plain from "../layouts/Plain.astro";
+import { site } from "../lib/config";
 import { longDate } from "../lib/format";
 import { getYesterday } from "../lib/today";
 
@@ -10,9 +11,8 @@ const quiz = day?.quiz?.questions.length ? day.quiz : null;
 ---
 
 <Plain
-	title="Yesterday · today.duinlab.nl"
-	description="Yesterday's page from The Hague: its pictures, facts, word and quiz answers."
-	label="yesterday"
+	title={`Yesterday · ${site.site.title}`}
+	description={`Yesterday's page from ${site.location.name}: pictures, facts, a word and quiz answers.`}
 >
 	<Fragment slot="title">{day ? longDate(day.date) : "Yesterday"}</Fragment>
 
@@ -27,7 +27,7 @@ const quiz = day?.quiz?.questions.length ? day.quiz : null;
 	{
 		day?.featured && (
 			<section aria-labelledby="h-featured">
-				<Cue id="h-featured">Featured article</Cue>
+				<Cue id="h-featured" sr>Featured article</Cue>
 				<p>
 					<a href={day.featured.url}><strong>{day.featured.title}</strong></a>. {day.featured.extract}
 				</p>
@@ -51,7 +51,7 @@ const quiz = day?.quiz?.questions.length ? day.quiz : null;
 	{
 		day?.word && (
 			<section aria-labelledby="h-word">
-				<Cue id="h-word">Word</Cue>
+				<Cue id="h-word" sr>Word</Cue>
 				<p>
 					<a href={day.word.url}><strong lang="en">{day.word.word}</strong></a>
 					{day.word.partOfSpeech && <em> {day.word.partOfSpeech}</em>} {day.word.gloss}

@@ -201,6 +201,28 @@ describe("parsers", () => {
 		);
 	});
 
+	it("keeps APOD explanations as plain text and tolerates older answers without them", () => {
+		const moon = {
+			title: "Moon",
+			date: "2026-11-06",
+			media_type: "image",
+			url: "https://images.example/moon.jpg",
+		};
+		expect(
+			parseApod(
+				{
+					...moon,
+					explanation: "  The <b>Moon</b> &amp; stars.\n A second sentence. ",
+				},
+				moon.date,
+			)?.explanation,
+		).toBe("The Moon & stars. A second sentence.");
+		expect(parseApod(moon, moon.date)?.explanation).toBeUndefined();
+		expect(
+			parseApod({ ...moon, explanation: " <p> </p> " }, moon.date)?.explanation,
+		).toBeUndefined();
+	});
+
 	it("takes only public-domain Met objects with an image", () => {
 		const p = parseMet(metObject);
 		expect(p).toMatchObject({
@@ -475,6 +497,7 @@ describe("pictures", () => {
 		<apod:hdurl>https://assets.science.nasa.gov/moon.jpg?w=2000&#038;h=1800</apod:hdurl>
 		<apod:credit><![CDATA[<a href="https://example.com">A Photographer</a>]]></apod:credit>
 		<apod:alt>The Moon above a field of stars.</apod:alt>
+		<apod:explanation><![CDATA[<p>The <b>Moon</b> &amp; stars.</p>]]></apod:explanation>
 	</item></channel></rss>`;
 
 	it("reads the dated official NASA feed without taking a stale day or unsafe image", () => {
@@ -484,6 +507,7 @@ describe("pictures", () => {
 			by: "A Photographer",
 			imageUrl: "https://assets.science.nasa.gov/moon.jpg?w=2000&h=1800",
 			alt: "The Moon above a field of stars.",
+			explanation: "The Moon & stars.",
 			pageUrl:
 				"https://science.nasa.gov/image-article/apod-2026-november-6-moon/",
 		});

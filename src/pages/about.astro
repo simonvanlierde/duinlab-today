@@ -1,16 +1,24 @@
 ---
 import Plain from "../layouts/Plain.astro";
+import { site } from "../lib/config";
+
+const pictureNames = {
+	apod: "NASA Astronomy Picture of the Day",
+	met: "The Metropolitan Museum of Art",
+	wikipedia: "Wikipedia’s picture of the day",
+	aic: "Art Institute of Chicago",
+	rijks: "Rijksmuseum",
+};
 ---
 
 <Plain
-	title="About · today.duinlab.nl"
-	description="What today.duinlab.nl is, what it keeps, where its facts come from, and its code."
+	title={`About · ${site.site.title}`}
+	description={`About ${site.site.title}: sources, privacy, accessibility and code.`}
 >
 	<Fragment slot="title">About this page</Fragment>
 
 	<p>
-		A daily page for the two of us in The Hague, open to anyone: the weather, a few pictures, a few facts, a
-		word, a quiz, a handful of games, new recipes, and what's on nearby. It changes at midnight, Amsterdam time.
+		A daily page for {site.location.name}: pictures, facts, weather, a word, a quiz, games and recipes{site.content.events ? ", plus what's on nearby" : ""}. A new paper starts at midnight, local time.
 	</p>
 
 	<p>
@@ -21,9 +29,9 @@ import Plain from "../layouts/Plain.astro";
 
 	<h2>Accessibility</h2>
 	<p>
-		The aim is WCAG 2.2 AA. Text contrast holds in every sky, games and answers are at least 44 pixels tall,
-		keyboard focus is visible, motion stops when your system asks for less, and the page reads in full without
-		JavaScript. CI scans today, yesterday, about and 404 pages with axe. If something gets in your way,{" "}
+		The aim is WCAG 2.2 AA: readable contrast and visible keyboard focus.
+		The page respects your reduced-motion setting and reads in full without JavaScript.
+		If something gets in your way,{" "}
 		<a href="https://github.com/simonvanlierde/duinlab-today/issues">open an issue</a>.
 	</p>
 
@@ -31,30 +39,24 @@ import Plain from "../layouts/Plain.astro";
 	<p>Each item on the page links to where it came from.</p>
 	<ul>
 		<li>Facts, the featured article and on this day: Wikipedia. The word: Wiktionary.</li>
-		<li>
-			The pictures: NASA APOD, The Metropolitan Museum of Art, Wikipedia's picture of the day, the Art
-			Institute of Chicago and the Rijksmuseum.
-		</li>
+		{site.content.pictures.length > 0 && <li>Pictures: {site.content.pictures.map((kind) => pictureNames[kind]).join(", ")}.</li>}
 		<li>The quiz: Open Trivia DB (CC BY-SA 4.0). The quote: ZenQuotes.</li>
 		<li>
 			The weather: <a href="https://open-meteo.com/">Open-Meteo</a>. The rain line comes from{" "}
-			<a href="https://dataplatform.knmi.nl/dataset/radar-forecast-2-0">KNMI</a>'s radar when fresh,
-			falling back to <a href="https://www.buienradar.nl/">Buienradar</a> or Open-Meteo.
+			{site.content.radar === "knmi" ? "KNMI’s radar when fresh, falling back to Buienradar or Open-Meteo." : site.content.radar === "buienradar" ? "Buienradar when available, falling back to Open-Meteo." : "Open-Meteo’s forecast."}{" "}
 			The weather line opens the week ahead on{" "}
-			<a href="https://www.meteoblue.com/en/weather/week/the-hague_netherlands_2747373">meteoblue</a>.
+			<a href={`https://www.meteoblue.com/en/weather/week/${site.location.latitude}N${site.location.longitude}E`}>meteoblue</a>.
 		</li>
 		<li>
 			Air quality and pollen: Open-Meteo, shown only when the European AQI is 60 or more or a pollen count
 			is high by MeteoSwiss's classes.
 		</li>
-		<li>
-			Tide times at Scheveningen: <a href="https://waterinfo.rws.nl/">Rijkswaterstaat</a>. The sea temperature
-			and waves: <a href="https://open-meteo.com/en/docs/marine-weather-api">Open-Meteo's marine API</a>.
-		</li>
-		<li>
+		{site.content.tides && <li>Tide times at Scheveningen: <a href="https://waterinfo.rws.nl/">Rijkswaterstaat</a>.</li>}
+		{site.content.sea && <li>Sea temperature and waves: <a href="https://open-meteo.com/en/docs/marine-weather-api">Open-Meteo's marine API</a>.</li>}
+		{site.content.events && <li>
 			This week's shows and events: <a href="https://www.paard.nl/">Paard</a>,{" "}
 			<a href="https://www.amare.nl/">Amare</a> and <a href="https://denhaag.com/en/agenda">DenHaag.com</a>.
-		</li>
+		</li>}
 		<li>Recipes: the newest from the Guardian, BBC Good Food and Love and Lemons.</li>
 		<li>
 			The planets, full moons, solstices, equinoxes and eclipses:{" "}
@@ -62,14 +64,12 @@ import Plain from "../layouts/Plain.astro";
 			are fixed approximate dates.
 		</li>
 	</ul>
-	<p>Your browser works out the sky from the sun's position over The Hague.</p>
+	<p>Your browser works out the sky from the sun's position over {site.location.name}.</p>
 
 	<h2>Privacy</h2>
 	<p>
-		No cookies, no analytics. Your progress is kept in local storage
-		(<code>today.games.v1</code>, <code>today.quiz.v1</code>,{" "}
-		and <code>today.sunrise.v1</code> for the date of your last visit) and is never sent anywhere.
-		Clear the site's data to remove it.
+		No cookies or analytics. Your game marks, streaks and quiz answers stay in this browser.
+		Clear this site's data in your browser settings to remove them.
 	</p>
 	<p>
 		A Cloudflare Worker serves the page. Cloudflare keeps request logs for a few days: the address asked for,
@@ -79,7 +79,7 @@ import Plain from "../layouts/Plain.astro";
 
 	<h2>Code</h2>
 	<p>
-		<a href="https://github.com/simonvanlierde/duinlab-today">github.com/simonvanlierde/duinlab-today</a>, MIT
-		licence. The day's data is at <a href="/today.json">today.json</a>.
+		<a href="https://github.com/simonvanlierde/duinlab-today">Code on GitHub</a> (MIT licence).
+		The day's data is at <a href="/today.json">today.json</a>.
 	</p>
 </Plain>

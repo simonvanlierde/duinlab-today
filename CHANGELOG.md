@@ -5,14 +5,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- One TOML file configures the city, time zone, weather units, pictures and games, with Utrecht and Evanston examples and fork deployment instructions.
+- The picture viewer links directly to the original image. NASA pictures include an expandable explanation from their source.
+- The almanac shows moonrise and moonset for the configured city, including days without either event.
+
 ### Changed
 
+- Page labels, game controls and documentation use shorter, clearer wording.
 - The picture viewer uses source originals when available and falls back to previews if they fail.
 - Picture selectors sit below captions, and the almanac groups sun, moon, planets and sea details.
 - Short desktop layouts use tighter spacing while keeping body text and game controls readable.
 
 ### Fixed
 
+- Games tests use a fixed clock, so checks keep passing after the fixture date.
+- Yesterday's page description and the documented local time-zone contract match the configured city.
+- Picture navigation keeps keyboard focus when a caption link or explanation is selected.
 - NASA's official APOD feed recovers the day's astronomy picture when its API returns a placeholder or fails.
 - The occasion line stays readable in daylight, and inline source credits keep their word spacing.
 - Word definitions omit colour-swatch captions, and generic artwork descriptions use the title and artist.

@@ -7,15 +7,19 @@ import Pictures from "../components/Pictures.astro";
 import Quiz from "../components/Quiz.svelte";
 import { bodiesAt, moonPath, PHASE_SUN, saturation } from "../components/sky";
 import Base from "../layouts/Base.astro";
+import { site } from "../lib/config";
 import {
 	clock,
 	longDate,
 	rainLine,
 	sunLines,
+	temperature,
+	temperatureUnit,
 	weekday,
 	windLine,
 } from "../lib/format";
 import { moonNow, planetsAt, starNow } from "../lib/moon";
+import { moonTimes } from "../lib/moon-times";
 import { occasionLine } from "../lib/occasions";
 import { planetPositions, planetsTonight } from "../lib/planets";
 import { previewEvents } from "../lib/sources/events";
@@ -50,28 +54,33 @@ const rain = weather
 const fact = today.didYouKnow[0];
 const heading = longDate(today.date);
 const hasQuiz = !!quiz && quiz.questions.length > 0;
-const FORECAST =
-	"https://www.meteoblue.com/en/weather/week/the-hague_netherlands_2747373";
+const FORECAST = `https://www.meteoblue.com/en/weather/week/${site.location.latitude}N${site.location.longitude}E`;
 const almanac = sunLines(today);
+const moon = moonTimes(today.date);
 // the moon, sun and star where they are right now; the sky script keeps them current
 const planets = planetPositions(now);
 const tonight = planetsTonight(today.date, now);
 const bodies = bodiesAt(
 	today.sun,
 	now.getTime(),
-	forced ? PHASE_SUN[phase].alt : sunAltitude(now.getTime()),
-	moonNow,
-	starNow,
-	(t) => planetsAt(planets, t),
+	forced
+		? PHASE_SUN[phase].alt
+		: sunAltitude(
+				now.getTime(),
+				site.location.latitude,
+				site.location.longitude,
+			),
+	(t) => moonNow(t, site.location.latitude, site.location.longitude),
+	(t) => starNow(t, site.location.latitude, site.location.longitude),
+	(t) => planetsAt(planets, t, site.location.latitude, site.location.longitude),
 );
 const orb = (b: { x: number; alt: number }) =>
 	`--x:${b.x.toFixed(4)};--alt:${b.alt.toFixed(2)}`;
 const occasion = occasionLine(today.date);
-const SKY_EVENTS =
-	"https://www.timeanddate.com/astronomy/netherlands/the-hague";
+const SKY_EVENTS = `https://www.timeanddate.com/astronomy/@${site.location.latitude},${site.location.longitude}`;
 const HOLIDAYS =
 	"https://calendar.google.com/calendar/embed?src=en.dutch%23holiday%40group.v.calendar.google.com&ctz=Europe%2FAmsterdam";
-const what = `A daily page from The Hague: the weather, a few pictures, sourced facts, a word, a quiz and ${today.games.length} daily games.`;
+const what = site.site.description;
 ---
 
 <Base
@@ -80,7 +89,7 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 	forced={forced}
 	saturation={saturation(weather)}
 	planets={planets}
-	title={`today.duinlab.nl - ${heading}`}
+	title={`${site.site.title} - ${heading}`}
 	description={what}
 >
 	<a class="skip" href="#paper">Skip to the paper</a>
@@ -91,7 +100,7 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 				{
 					occasion && (
 						<p class="occasion">
-							<a href={occasion.sky ? SKY_EVENTS : HOLIDAYS} title={occasion.sky ? "Sky events in The Hague on timeanddate.com" : "Dutch holidays on Google Calendar"}>{occasion.text}<span class="sr"> ({occasion.sky ? "Sky events on timeanddate.com" : "Dutch holidays on Google Calendar"})</span></a>
+							<a href={occasion.sky ? SKY_EVENTS : HOLIDAYS} title={occasion.sky ? `Sky events in ${site.location.name} on timeanddate.com` : "Dutch holidays on Google Calendar"}>{occasion.text}<span class="sr"> ({occasion.sky ? "Sky events on timeanddate.com" : "Dutch holidays on Google Calendar"})</span></a>
 						</p>
 					)
 				}
@@ -101,8 +110,8 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 					<ul class="plain strip">
 						<li>
 							<a class="wx" href={FORECAST} title={`${windLine(weather.now)}. The week ahead on meteoblue`}>
-								<span class="temp">{Math.round(weather.now.temperatureC)}&deg;</span>
-								{` ${weather.now.description}, ${Math.round(weather.today.maxC)}° / ${Math.round(weather.today.minC)}° · wind ${weather.now.windFrom} ${weather.now.windBeaufort}`}
+								<span class="temp" aria-label={`${temperature(weather.now.temperatureC)} ${temperatureUnit}`}>{temperature(weather.now.temperatureC)}{site.units.temperature === "fahrenheit" ? "°F" : "°"}</span>
+								{` ${weather.now.description}, ${temperature(weather.today.maxC)}° / ${temperature(weather.today.minC)}° · wind ${weather.now.windFrom} ${weather.now.windBeaufort}`}
 								<span class="sr">. {windLine(weather.now)}. The week ahead on meteoblue</span>
 							</a>
 							{rain && (
@@ -125,17 +134,17 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 				)
 			}
 		</div>
-		<button class="orb sun" type="button" popovertarget="almanac" data-orb="sun" hidden={!bodies.sun.show} style={orb(bodies.sun)} aria-label="Sun: sun, moon and tide times"></button>
-		<button class="orb moon" type="button" popovertarget="almanac" data-orb="moon" data-moon-label hidden={!bodies.moon.show} style={orb(bodies.moon)} aria-label={`${bodies.moon.label}: sun, moon and tide times`}>
+		<button class="orb sun" type="button" popovertarget="almanac" data-orb="sun" hidden={!bodies.sun.show} style={orb(bodies.sun)} aria-label="Sun: sun and moon times"></button>
+		<button class="orb moon" type="button" popovertarget="almanac" data-orb="moon" data-moon-label hidden={!bodies.moon.show} style={orb(bodies.moon)} aria-label={`${bodies.moon.label}: sun and moon times`}>
 			<svg viewBox="0 0 18 18" width="26" height="26" aria-hidden="true">
 				<circle cx="9" cy="9" r="8.6" fill="currentColor" opacity=".16" />
 				<path data-moon-path d={moonPath(bodies.moon, 9)} fill="currentColor" />
 			</svg>
 		</button>
-		<button class="orb star" type="button" popovertarget="almanac" data-orb="star" data-star-label hidden={!bodies.star.show} style={orb(bodies.star)} aria-label={`${bodies.star.name}: sun, moon and tide times`}></button>
+		<button class="orb star" type="button" popovertarget="almanac" data-orb="star" data-star-label hidden={!bodies.star.show} style={orb(bodies.star)} aria-label={`${bodies.star.name}: sun and moon times`}></button>
 		{
 			bodies.planets.map((p) => (
-				<button class="orb planet" type="button" popovertarget="almanac" data-planet={p.name} hidden={!p.show} style={orb(p)} aria-label={`${p.name}: planets, sun, moon and tide times`}>
+				<button class="orb planet" type="button" popovertarget="almanac" data-planet={p.name} hidden={!p.show} style={orb(p)} aria-label={`${p.name}: planets, sun and moon times`}>
 					<span class="pt"></span><span class="tag" aria-hidden="true">{p.name}</span>
 				</button>
 			))
@@ -150,12 +159,14 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 				<section class="almanac-group" aria-labelledby="almanac-sun-moon">
 					<h3 id="almanac-sun-moon">Sun and moon</h3>
 					<div data-almanac-body="sun" data-almanac-name="Sun">
-						<p>Sun up <b>{almanac.sunrise}</b>, down <b>{almanac.sunset}</b></p>
+						<p>Sunrise <b>{almanac.sunrise}</b>, sunset <b>{almanac.sunset}</b></p>
 						<p>Golden hour from <b>{almanac.golden}</b></p>
 						<p>{almanac.daylight}</p>
 					</div>
 					<div data-almanac-body="moon" data-almanac-name="Moon">
 						<p data-moon-line>{bodies.moon.line}</p>
+						<p>{moon.rise ? <>Moonrise <b>{clock(moon.rise)}</b></> : "No moonrise today"}</p>
+						<p>{moon.set ? <>Moonset <b>{clock(moon.set)}</b></> : "No moonset today"}</p>
 					</div>
 					<div data-almanac-body="star" data-almanac-name="Star" hidden={!bodies.star.show}>
 						<p data-star-line>{bodies.star.name}, {Math.round(bodies.star.alt)}° above the horizon</p>
@@ -183,8 +194,8 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 						)}
 						{sea && (
 							<p>
-								Sea at Scheveningen{" "}
-								<b>{[sea.temperatureC !== null && `${sea.temperatureC.toFixed(1)} °C`, sea.waveHeightM !== null && `waves ${sea.waveHeightM.toFixed(1)} m`].filter(Boolean).join(", ")}</b>{" "}
+								Water{" "}
+								<b>{[sea.temperatureC !== null && `${temperature(sea.temperatureC, 1).toFixed(1)} ${temperatureUnit}`, sea.waveHeightM !== null && `waves ${sea.waveHeightM.toFixed(1)} m`].filter(Boolean).join(", ")}</b>{" "}
 								<span class="src"><a href={sea.credit.url}>{sea.credit.name}</a></span>
 							</p>
 						)}
@@ -212,7 +223,7 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 			{
 				word && (
 					<section class="sec" aria-labelledby="h-word">
-						<Cue id="h-word">Word</Cue>
+						<Cue id="h-word" sr>Word</Cue>
 						<p>
 							<strong class="word" lang="en">{word.word}</strong>{" "}
 							{word.partOfSpeech && <><em class="pos">{word.partOfSpeech}</em>{" "}</>}
@@ -249,7 +260,7 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 			{
 				featured && (
 					<section class="sec feat" aria-labelledby="h-featured">
-						<Cue id="h-featured">Featured article</Cue>
+						<Cue id="h-featured" sr>Featured article</Cue>
 						<p>
 							<a href={featured.url}><strong>{featured.title}</strong></a>. {featured.extract}{" "}
 							<span class="src"><a href={featured.credit.url}>{featured.credit.name}</a></span>
@@ -284,7 +295,7 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 				<section class="rail" aria-labelledby="h-games">
 					<Games client:load games={today.games} />
 					<p class="the-end" aria-live="polite">
-						That's the paper. The sun is back at {almanac.nextSunrise} tomorrow.
+						Tomorrow's sunrise: {almanac.nextSunrise}.
 					</p>
 				</section>
 			)
@@ -320,7 +331,7 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 	{
 		events && (
 			<section class="local" aria-labelledby="h-events">
-				<Cue id="h-events">This week in The Hague</Cue>
+				<Cue id="h-events">This week in {site.location.name}</Cue>
 				<ul class="plain">
 					{eventPreview.map((e) => (
 						<li>
@@ -346,7 +357,7 @@ const what = `A daily page from The Hague: the weather, a few pictures, sourced 
 
 	</div>
 
-	<Foot>New every midnight.{" "}<a href="/yesterday">Yesterday's paper</a> &middot; <a href="/about">About</a> &middot;</Foot>
+	<Foot><a href="/yesterday">Yesterday's paper</a> &middot; <a href="/about">About</a> &middot;</Foot>
 	<script>
 		const almanac = document.querySelector<HTMLElement>("#almanac");
 		const title = almanac?.querySelector<HTMLElement>("#almanac-title");

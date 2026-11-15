@@ -1,8 +1,9 @@
 import { DurableObject, type env } from "cloudflare:workers";
 import { allFailed, buildDay, type Day, incomplete, mergeDay } from "./build";
-import { amsterdamDay, isoAmsterdam, shift } from "./day";
+import { configKey, usesLegacyDay } from "./config";
+import { isoLocal, localDay, shift } from "./day";
 
-const keyFor = (date: string) => `day/v2/${date}`;
+const keyFor = (date: string) => `day/v3/${configKey}/${date}`;
 
 /** One durable owner publishes each day; requests never read the eventually consistent mirror. */
 export class DayCoordinator extends DurableObject<typeof env> {
@@ -13,7 +14,11 @@ export class DayCoordinator extends DurableObject<typeof env> {
 			const stored = await this.ctx.storage.get<Day>("day");
 			if (stored) return stored;
 			// A failed legacy read must stop publication: it may conceal an existing quiz.
-			const legacy = await this.env.DAYS.get<Day>(keyFor(date), "json");
+			const legacy =
+				(await this.env.DAYS.get<Day>(keyFor(date), "json")) ??
+				(usesLegacyDay
+					? await this.env.DAYS.get<Day>(`day/v2/${date}`, "json")
+					: null);
 			if (legacy) await this.save(legacy);
 			return legacy;
 		});
@@ -29,7 +34,7 @@ export class DayCoordinator extends DurableObject<typeof env> {
 	}
 
 	private async rebuild(now: Date): Promise<Day> {
-		const date = amsterdamDay(now);
+		const date = localDay(now);
 		const prev = await this.read(date);
 		if (prev && !incomplete(prev, !!this.env.NASA_API_KEY)) return prev;
 		const day = mergeDay(
@@ -43,10 +48,16 @@ export class DayCoordinator extends DurableObject<typeof env> {
 
 	private async save(day: Day): Promise<void> {
 		const end = shift(day.date, 2);
-		const offset = isoAmsterdam(new Date(`${end}T00:00:00Z`)).slice(-6);
-		const expiration = allFailed(day)
-			? Date.now() + 60_000
-			: Date.parse(`${end}T00:00:00${offset}`);
+		const midnight = `${end}T00:00:00`;
+		const initial = Date.parse(
+			`${midnight}${isoLocal(new Date(`${midnight}Z`)).slice(-6)}`,
+		);
+		const corrected = Date.parse(
+			`${midnight}${isoLocal(new Date(initial)).slice(-6)}`,
+		);
+		// Use the offset at local midnight; a forward jump can make midnight itself nonexistent.
+		const boundary = localDay(new Date(corrected)) < end ? initial : corrected;
+		const expiration = allFailed(day) ? Date.now() + 60_000 : boundary;
 		await this.ctx.storage.transaction(async (storage) => {
 			await storage.put("day", day);
 			await storage.setAlarm(expiration);

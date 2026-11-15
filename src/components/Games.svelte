@@ -64,8 +64,6 @@ async function unfold() {
 	<p class="count" aria-live={announce ? "polite" : "off"}>
 		{#if !live}
 			{games.length} daily games
-		{:else if done}
-			<span class="figure some roll" style={`--n:${playedCount()}`} aria-hidden="true"></span><span class="sr">{playedCount()}</span> of {games.length}. The sky agrees.
 		{:else}
 			<span class="figure roll" class:some={playedCount() > 0} style={`--n:${playedCount()}`} aria-hidden="true"></span><span class="sr">{playedCount()}</span> of {games.length} played
 		{/if}
@@ -73,7 +71,7 @@ async function unfold() {
 </div>
 
 {#if done && !unfolded}
-	<button type="button" class="link unfold" bind:this={unfoldBtn} onclick={unfold}>Show the board</button>
+	<button type="button" class="link unfold" bind:this={unfoldBtn} onclick={unfold}>Show games</button>
 {/if}
 <ol class="games" bind:this={board} class:off={!live} class:folded={done && !unfolded}>
 	{#each games as g (g.id)}

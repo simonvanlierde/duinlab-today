@@ -1,5 +1,5 @@
 // Quiz answers and finished days, kept in this browser only: the quiz island reads and writes them.
-import { amsterdamDay, streak } from "../lib/day";
+import { localDay, streak } from "../lib/day";
 import type { Quiz } from "../lib/types";
 
 export const KEY = "today.quiz.v1";
@@ -14,7 +14,7 @@ export const signature = (quiz: Quiz) =>
  */
 export function loadQuiz(
 	quiz: Quiz,
-	day = amsterdamDay(),
+	day = localDay(),
 ): { picks: (number | null)[]; done: string[] } {
 	let picks: (number | null)[] = quiz.questions.map(() => null);
 	let done: string[] = [];
@@ -45,7 +45,7 @@ export async function saveQuiz(
 	quiz: Quiz,
 	picks: (number | null)[],
 	done: string[],
-	day = amsterdamDay(),
+	day = localDay(),
 ): Promise<{ picks: (number | null)[]; done: string[] }> {
 	const save = () => {
 		const saved = loadQuiz(quiz, day);
@@ -78,5 +78,5 @@ export async function saveQuiz(
 }
 
 /** Consecutive days with the whole quiz answered, ending today or yesterday. */
-export const quizStreak = (done: string[], day = amsterdamDay()) =>
+export const quizStreak = (done: string[], day = localDay()) =>
 	streak((d) => done.includes(d), day);

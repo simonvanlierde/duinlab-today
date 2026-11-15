@@ -1,8 +1,9 @@
 ---
 import Plain from "../layouts/Plain.astro";
+import { site } from "../lib/config";
 ---
 
-<Plain title="Not found · today.duinlab.nl" description="This page is below the horizon." sky="night">
+<Plain title={`Not found · ${site.site.title}`} description="This page is below the horizon." sky="night">
 	<Fragment slot="title">Below the horizon</Fragment>
-	<p>There is no page here, and there may never have been. <a href="/">Today's paper</a> is up, though.</p>
+	<p>This page doesn't exist. <a href="/">Back to today's paper</a>.</p>
 </Plain>

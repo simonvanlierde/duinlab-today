@@ -1,7 +1,7 @@
 // Played-today state, kept in this browser only: the games island reads and writes it.
 import {
 	allPlayed as allPlayedOn,
-	amsterdamDay,
+	localDay,
 	streak as run,
 	shift,
 } from "../lib/day";
@@ -58,7 +58,7 @@ function load() {
 	} catch {
 		store.off = true;
 	}
-	store.day = amsterdamDay();
+	store.day = localDay();
 	store.ready = true;
 	syncSky();
 }
@@ -81,7 +81,7 @@ export function init(ids: string[]) {
 	load();
 	if (wired) return;
 	wired = true;
-	// another tab, or a tab left open past Amsterdam midnight
+	// another tab, or a tab left open past local midnight
 	addEventListener("storage", (e) => e.key === KEY && load());
 	document.addEventListener("visibilitychange", () => {
 		if (!document.hidden) load();

@@ -1,3 +1,4 @@
+import { site } from "./config";
 import { skyYear } from "./sky-events";
 
 /** Dutch public holidays and customs, and sky events, for one line under the date. */
@@ -134,7 +135,7 @@ const years = new Map<number, Occasion[]>();
 function year(y: number): Occasion[] {
 	let all = years.get(y);
 	if (!all) {
-		const holiday = holidays(y);
+		const holiday = site.content.holidays === "nl" ? holidays(y) : [];
 		const days = new Set(holiday.map((o) => o.date));
 		all = [...holiday, ...skyYear(y).filter((o) => !days.has(o.date))];
 		years.set(y, all);

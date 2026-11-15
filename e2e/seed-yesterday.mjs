@@ -1,9 +1,20 @@
 // Stores a day for yesterday in the e2e KV, so /yesterday has something to show.
 import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
-import { amsterdamDay, shift } from "../src/lib/day.ts";
+import { loadSiteConfig } from "../scripts/site-config.mjs";
 
-const date = shift(amsterdamDay(), -1);
+const { site, configKey } = loadSiteConfig();
+const localDay = () =>
+	new Intl.DateTimeFormat("en-CA", { timeZone: site.location.timezone }).format(
+		new Date(),
+	);
+const shift = (date, n) => {
+	const at = new Date(`${date}T12:00:00Z`);
+	at.setUTCDate(at.getUTCDate() + n);
+	return at.toISOString().slice(0, 10);
+};
+
+const date = shift(localDay(), -1);
 const credit = { name: "Wikipedia", url: "https://en.wikipedia.org/" };
 const day = {
 	date,
@@ -56,7 +67,7 @@ execFileSync(
 		"kv",
 		"key",
 		"put",
-		`day/v2/${date}`,
+		`day/v3/${configKey}/${date}`,
 		"--path",
 		file,
 		"--binding",

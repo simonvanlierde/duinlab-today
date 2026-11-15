@@ -1,7 +1,7 @@
 // The day's data, as rendered by the page and served at /today.json. When a source fails its
 // section is dropped: `didYouKnow` and `pictures` are [], and onThisDay, featured, word, quote, quiz,
 // tides, events, weather and sea are null. Instants are ISO strings (`generatedAt` and `fetchedAt` in UTC, `sun`
-// with the Amsterdam offset); `rainNext2h` times are bare HH:MM on the Amsterdam clock.
+// with the configured time-zone offset); `rainNext2h` times are bare HH:MM on that local clock.
 
 /** Where an item came from, shown as its credit line. */
 export interface Credit {
@@ -19,6 +19,8 @@ export interface Picture {
 	imageUrl: string;
 	/** Source original for closer viewing; older stored days have only the preview. */
 	fullImageUrl?: string;
+	/** Plain-text source context, when supplied; absent on older stored days. */
+	explanation?: string;
 	/** Pixel size when the source gives it, so the page can reserve the right aspect ratio. */
 	width: number | null;
 	height: number | null;
@@ -111,7 +113,7 @@ export interface Weather {
 	credit: Credit;
 }
 
-/** Instants as ISO strings with offset, for The Hague (52.08 N, 4.31 E). */
+/** Instants as ISO strings with offset, for the configured location. */
 export interface Sun {
 	/** Civil dawn: the sun 6 degrees below the horizon. */
 	dawn: string;
@@ -162,9 +164,9 @@ export interface Sea {
 
 export interface Happening {
 	name: string;
-	/** YYYY-MM-DD, Europe/Amsterdam */
+	/** YYYY-MM-DD, the configured timezone */
 	day: string;
-	/** HH:MM, Europe/Amsterdam; null when the event has no clock time */
+	/** HH:MM, the configured timezone; null when the event has no clock time */
 	time: string | null;
 	venue: string;
 	url: string;
@@ -177,7 +179,7 @@ export interface Events {
 }
 
 export interface Today {
-	/** The day in Europe/Amsterdam, YYYY-MM-DD. */
+	/** The day in the configured timezone, YYYY-MM-DD. */
 	date: string;
 	/** ISO instant the day's data was built. */
 	generatedAt: string;
