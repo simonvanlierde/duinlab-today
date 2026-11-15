@@ -72,6 +72,19 @@ test("closer viewing loads the source original while the paper keeps its preview
 		"src",
 		original,
 	);
+	await expect(
+		page.getByRole("dialog").getByRole("link", { name: "Open original" }),
+	).toHaveAttribute("href", original);
+	await page.keyboard.press("ArrowRight");
+	await expect(
+		page.getByRole("dialog").getByRole("link", { name: "Open original" }),
+	).toHaveAttribute(
+		"href",
+		await page
+			.locator(".picture-open")
+			.nth(1)
+			.evaluate((el) => (el as HTMLAnchorElement).href),
+	);
 });
 
 test("a failed original falls back to the preview before showing an image error", async ({
@@ -89,9 +102,30 @@ test("a failed original falls back to the preview before showing an image error"
 		.poll(() => image.evaluate((el) => (el as HTMLImageElement).naturalWidth))
 		.toBeGreaterThan(0);
 	await expect(viewer.locator(".viewer-error")).toBeHidden();
+	await expect(
+		viewer.getByRole("link", { name: "Open original" }),
+	).toHaveAttribute("href", /\/original\/DP-42549-001.jpg$/);
 	await image.evaluate((el) => el.dispatchEvent(new Event("error")));
 	await expect(viewer.locator(".viewer-error")).toBeVisible();
 	await expect(viewer.getByRole("button", { name: "Zoom in" })).toBeDisabled();
+});
+
+test("keyboard picture changes keep focus after replacing a caption link", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page
+		.getByRole("link", { name: "Look closer: Wheat Field with Cypresses" })
+		.click();
+	const viewer = page.getByRole("dialog", { name: "Picture viewer" });
+	await viewer.getByRole("link", { name: "Open original" }).focus();
+	await page.keyboard.press("ArrowRight");
+	await expect(
+		viewer.getByRole("region", { name: "Enlarged picture" }),
+	).toBeFocused();
+	await expect(viewer.locator("figcaption")).toContainText("Wikimedia");
+	await page.keyboard.press("ArrowLeft");
+	await expect(viewer.locator("figcaption")).toContainText("Vincent van Gogh");
 });
 
 test("the viewer stays usable with long captions, reduced motion and a broken image", async ({
@@ -185,6 +219,9 @@ test("yesterday's single picture opens without active navigation", async ({
 		.click();
 	const viewer = page.getByRole("dialog", { name: "Picture viewer" });
 	await expect(viewer).toBeVisible();
+	await expect(
+		viewer.getByRole("link", { name: "Open original" }),
+	).toHaveAttribute("href", /\/web-large\/DP-42549-001.jpg$/);
 	await expect(
 		viewer.getByRole("button", { name: "Previous picture" }),
 	).toBeDisabled();

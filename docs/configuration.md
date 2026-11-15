@@ -1,12 +1,12 @@
 # Configure your own daily page
 
-Edit `site.toml` to choose the location, display units, picture sources and games for one deployment.
-The default file describes The Hague. TOML is the only supported format.
-Settings are public: the build includes them in the website. Keep API keys out of this file.
+Edit `site.toml` to choose your page's location, units, picture sources and games.
+The default is The Hague. TOML is the only supported format.
+All settings appear in the built website. Keep API keys out of this file.
 
 ## Start with a city
 
-Copy a complete example into the default file:
+Copy an example to `site.toml`:
 
 ```sh
 cp examples/utrecht.toml site.toml
@@ -71,7 +71,7 @@ There is no generic local agenda or tide-station setting.
 
 All profiles use Open-Meteo for the weather at their configured coordinates.
 `holidays` accepts `nl` for Dutch holidays when `country = "NL"`, or `none` to omit holidays.
-These settings select existing adapters; they do not accept custom feed URLs.
+These settings use the built-in sources. Custom feed URLs are not supported.
 
 ### Games
 
@@ -103,18 +103,24 @@ Use your own Cloudflare account, Worker and storage. Before any deployment or se
 4. Keep the `DAY_COORDINATOR` binding and `v1` SQLite migration. The first deployment creates that Worker’s Durable Objects.
 
 Do not reuse the original Worker name, KV namespace or domain route.
-Creating a profile does not create Cloudflare resources or change any account settings.
+Editing the TOML file does not create Cloudflare resources or change account settings.
 
 Set `site.url` to your intended HTTPS origin. For a first deployment, use your Worker’s `workers.dev` origin.
 If you later add a custom domain, set the matching route in your own account and update `site.url` before rebuilding.
 
-Build and deploy the selected profile in one command:
+Build and deploy your edited `site.toml`:
+
+```sh
+pnpm deploy
+```
+
+To use a separate profile, edit that file's settings and `site.url` first, then select it explicitly:
 
 ```sh
 SITE_CONFIG=examples/utrecht.toml pnpm deploy
 ```
 
-That command builds the selected profile before deploying it.
+Both commands build the selected configuration before deploying it.
 If you run `wrangler deploy` separately, it uses the existing build; it does not reread the TOML file.
 
 For local NASA images, put `NASA_API_KEY=<your key>` in the ignored `.dev.vars` file.

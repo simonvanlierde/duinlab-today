@@ -1,7 +1,7 @@
 // The day's data, as rendered by the page and served at /today.json. When a source fails its
 // section is dropped: `didYouKnow` and `pictures` are [], and onThisDay, featured, word, quote, quiz,
 // tides, events, weather and sea are null. Instants are ISO strings (`generatedAt` and `fetchedAt` in UTC, `sun`
-// with the Amsterdam offset); `rainNext2h` times are bare HH:MM on the Amsterdam clock.
+// with the configured time-zone offset); `rainNext2h` times are bare HH:MM on that local clock.
 
 /** Where an item came from, shown as its credit line. */
 export interface Credit {
@@ -19,6 +19,8 @@ export interface Picture {
 	imageUrl: string;
 	/** Source original for closer viewing; older stored days have only the preview. */
 	fullImageUrl?: string;
+	/** Plain-text source context, when supplied; absent on older stored days. */
+	explanation?: string;
 	/** Pixel size when the source gives it, so the page can reserve the right aspect ratio. */
 	width: number | null;
 	height: number | null;

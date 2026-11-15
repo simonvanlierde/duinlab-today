@@ -44,7 +44,9 @@ test("the moon leads on keyboard opening and the rest of the almanac stays avail
 		almanac.locator(".almanac-group [data-almanac-body=sun]"),
 	).toHaveAttribute("data-almanac-body", "sun");
 	await expect(almanac.locator("[data-moon-line]")).toHaveCount(1);
-	await expect(almanac).toContainText(/Sun up \d\d:\d\d/);
+	await expect(almanac).toContainText(/Moonrise \d\d:\d\d|No moonrise today/);
+	await expect(almanac).toContainText(/Moonset \d\d:\d\d|No moonset today/);
+	await expect(almanac).toContainText(/Sunrise \d\d:\d\d/);
 	await expect(almanac).toContainText("Scheveningen");
 	await expect(almanac.getByRole("link", { name: "Open-Meteo" })).toBeVisible();
 	await page.clock.fastForward(60000);
@@ -192,7 +194,9 @@ test.describe("the almanac without JavaScript", () => {
 		await expect(
 			almanac.getByRole("heading", { name: "Almanac", exact: true }),
 		).toBeVisible();
-		await expect(almanac).toContainText(/Sun up \d\d:\d\d/);
+		await expect(almanac).toContainText(/Sunrise \d\d:\d\d/);
+		await expect(almanac).toContainText(/Moonrise \d\d:\d\d|No moonrise today/);
+		await expect(almanac).toContainText(/Moonset \d\d:\d\d|No moonset today/);
 		await expect(almanac).toContainText(/% lit/);
 		await expect(almanac).toContainText("Scheveningen");
 		if (await page.locator("button[data-orb=star]").isVisible())

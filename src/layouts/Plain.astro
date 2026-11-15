@@ -14,15 +14,8 @@ interface Props {
 	description: string;
 	/** Override the current sky for a missing page. */
 	sky?: "day" | "night";
-	/** The word in the top bar beside the site name. */
-	label?: string;
 }
-const {
-	title,
-	description,
-	sky,
-	label = sky === "night" ? "below the horizon" : "about",
-} = Astro.props;
+const { title, description, sky } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const now = Date.now();
 const s = sky
@@ -70,7 +63,6 @@ const style = Object.entries(s.vars)
 		<nav class="bar" aria-label="Site">
 			<span class="wrap bar-in">
 				<a href="/">{site.site.title}</a>
-				<span>{label}</span>
 			</span>
 		</nav>
 		<header class="sky sky-slim">

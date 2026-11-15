@@ -13,6 +13,7 @@ const fixtures = "http://127.0.0.1:4332";
 
 export default defineConfig({
 	testDir: "e2e",
+	testIgnore: "**/apod.spec.ts",
 	fullyParallel: true,
 	reporter: "list",
 	use: { baseURL: `http://localhost:${port}` },

@@ -174,15 +174,13 @@ test("the sky's bright body opens the sun and moon times, and Escape closes them
 	await expect(almanac).toBeHidden();
 	await orbs(page).first().click();
 	await expect(almanac).toBeVisible();
-	await expect(almanac).toContainText(/Sun up \d\d:\d\d, down \d\d:\d\d/);
+	await expect(almanac).toContainText(/Sunrise \d\d:\d\d, sunset \d\d:\d\d/);
 	await expect(almanac).toContainText(/% lit/);
 	await expect(almanac).toContainText(
 		/High water \d\d:\d\d and \d\d:\d\d, low \d\d:\d\d and \d\d:\d\d at Scheveningen/,
 	);
 	// the Open-Meteo marine fixture
-	await expect(almanac).toContainText(
-		"Sea at Scheveningen 11.6 °C, waves 0.1 m",
-	);
+	await expect(almanac).toContainText("Water 11.6 °C, waves 0.1 m");
 	await expect(almanac.getByRole("link", { name: "Open-Meteo" })).toBeVisible();
 	// which planets show depends on the date: the line is there only when one is up tonight
 	const tonight = almanac.locator(".planet-window:visible");
@@ -694,7 +692,7 @@ test("games keep keyboard focus when another tab finishes the board", async ({
 	await other.locator(".games .name").first().focus();
 	for (const link of await page.locator(".games .name").all())
 		await link.click();
-	const unfold = other.getByRole("button", { name: "Show the board" });
+	const unfold = other.getByRole("button", { name: "Show games" });
 	await expect(unfold).toBeFocused();
 	await other.keyboard.press("Enter");
 	await expect(other.locator(".games .name").first()).toBeFocused();
@@ -754,7 +752,7 @@ test("all ten played lights the white-out, and it persists", async ({
 		.evaluateAll((els) => els.map((e) => e.textContent?.trim() ?? ""));
 	expect(names).toHaveLength(10);
 	for (const n of names) await play(page, n);
-	await expect(page.locator(".count")).toContainText("The sky agrees");
+	await expect(page.locator(".count")).toContainText("10 of 10 played");
 	await expect(page.locator("html")).toHaveAttribute("data-whiteout", "");
 	await page.reload();
 	await expect(page.locator("html")).toHaveAttribute("data-whiteout", "");
@@ -888,7 +886,7 @@ test("the about page says what is kept and links the source", async ({
 		fullPage: true,
 	});
 	await expect(
-		page.getByRole("link", { name: /github\.com\/simonvanlierde/ }),
+		page.getByRole("link", { name: "Code on GitHub" }),
 	).toBeVisible();
 	const missing = await page.goto("/no-such-page");
 	expect(missing?.status()).toBe(404);

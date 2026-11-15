@@ -1,18 +1,20 @@
 # duinlab-today
 
-A small daily page at <https://today.duinlab.nl>: up to five pictures in a swipe strip, a few sourced facts, the
-weather in The Hague, a three-question quiz and a short list of daily web
-games with played-today marks and streaks. The sky at the top follows the sun's position over
-The Hague, minute by minute. Checkmarks and streaks stay in your browser. The server stores two days of public content
-and cached feeds, alongside Cloudflare's request logs; it stores no personal progress.
+[Today's paper](https://today.duinlab.nl) brings together pictures, sourced facts, weather in
+The Hague, a three-question quiz and daily web games. The sky follows the real sun, minute by minute.
+Opening a game marks it as played. Marks and streaks stay in your browser.
 
-Tap the moon, a planet or the bright star to see its details first in the almanac, followed by the sun times,
-other planets, tides and sea conditions. Without JavaScript, the same controls open the complete overview.
+Tap a picture to enlarge it, zoom in or browse the day's images. Captions and source links stay in view.
+The viewer uses the original image when available and the preview if it fails. "Open original"
+opens the image directly. NASA pictures include an "About this picture" explanation when the source
+supplies one; it starts collapsed and works without JavaScript. Without JavaScript, pictures link
+directly to their images.
 
-Tap a picture to open a larger view, zoom into details and browse the day's images. Captions and
-source links stay within reach. Close the viewer to return to the paper; without JavaScript,
-the picture links directly to its image.
-The viewer loads the source's original image when supplied, with the preview as a fallback.
+Tap the sun, moon, a planet or the bright star to open the almanac: sun and moon times, planets, tides and sea
+conditions. It opens the selected object's details first; without JavaScript, it shows the full overview.
+Moonrise and moonset follow the configured local day; the almanac says when either does not occur that day.
+After the quiz, open "Review answers" to revisit your choices. Answers sync across tabs in the same
+browser; the first saved answer is kept.
 
 ## Make your own version
 
@@ -22,10 +24,6 @@ time zone, units, picture sources and daily games. Unsupported local sections ar
 See [configuration and fork deployment](docs/configuration.md) before deploying to your own Cloudflare account.
 
 ## How it works
-
-After finishing the quiz, open “Review answers” to revisit your choices and the correct answers.
-Quiz answers stay in sync across tabs in the same browser; the first saved answer is kept.
-See [release preparation](docs/releasing.md) before the first canonical-day deployment or a release tag.
 
 ```mermaid
 flowchart LR
@@ -46,15 +44,12 @@ flowchart LR
 
 One Worker serves everything ([`src/worker.ts`](src/worker.ts)).
 
-- **The day** (pictures, facts, featured article, word, quote, quiz, tides and
-  events) is built by a cron run at five past every hour. A per-day Durable Object persists one canonical
-  copy for every Cloudflare location, with a mirror in Workers KV. The run after
-  midnight builds the new day. Later runs only touch a day that is incomplete: they retry a
-  failed source and pick up APOD once it publishes. A rebuild keeps
-  every section the day already had, so the quiz never changes under you, and every picture it
-  already has (each source picks its artwork from the date). A request that finds
-  no day builds it through the same coordinator ([`src/lib/today.ts`](src/lib/today.ts)). An incomplete
-  stored day is returned while missing sources retry in the background. Both stores retain two days in the configured time zone.
+- **The day** (pictures, facts, featured article, word, quote, quiz, tides and events) is built at
+  five past every hour. A per-day Durable Object stores one shared copy, mirrored in Workers KV.
+  Both retain two days in the configured time zone. Later runs retry incomplete days and keep
+  existing content, so the quiz and pictures stay the same. Each artwork source picks by date.
+  A request with no stored day builds it through the same coordinator
+  ([`src/lib/today.ts`](src/lib/today.ts)). An incomplete day is served while missing sources retry in the background.
 - **Weather, sea and recipes** change during the day, so each request reads them through the
   Workers cache: 15 minutes for the weather, an hour for the sea, 3 hours for the recipes. An entry
   past that is still served while the request refreshes it in the background (`waitUntil`): for 2
@@ -62,10 +57,9 @@ One Worker serves everything ([`src/worker.ts`](src/worker.ts)).
 - **Planets and sky events** are worked out on the server with Astronomy Engine for each request:
   the planets tonight in the almanac, the sky events in the line under the date. The browser gets
   each planet's position for the day and works out altitude itself, like the moon and the bright star.
-- **The page** is rendered on the server with all of this in it, so it reads fine without
-  JavaScript. In the browser, a small inline script moves the sky with the clock, and two
-  Svelte islands keep the games and the quiz in `localStorage`. Nothing goes back to the
-  server.
+- **The page** is rendered on the server and reads in full without JavaScript. A browser script
+  moves the sky with the clock. Svelte components save game and quiz progress in `localStorage`;
+  progress never goes to the server. Cloudflare keeps request logs.
 - **`/today.json`** returns the same data for scripts (see [Data](#data)). Browsers and
   proxies may cache it for 5 minutes.
 
@@ -81,12 +75,15 @@ pnpm exec playwright install chromium
 just dev
 ```
 
-`just dev` starts the dev server in the background; `pnpm exec astro dev stop` ends it.
+`just dev` starts the dev server in the background. Use `pnpm exec astro dev status` to check it,
+`pnpm exec astro dev logs` to read its output and `pnpm exec astro dev stop` to end it.
 Checks and builds generate Cloudflare runtime and binding types from `wrangler.jsonc`.
 `just check` runs CI's lint, types, unit tests, build, licence check and production dependency audit. `just e2e` runs the browser tests
-against a production build, including axe scans of today, yesterday, about and 404 pages and a print-layout check. The Worker
+against a production build, including axe scans of today, yesterday, about and 404 pages and a print-layout check.
+It runs the default suite and a separate APOD suite with a fixture key; no real NASA key is required. The Worker
 reads every source from a local fixture server ([`e2e/fixture-server.mjs`](e2e/fixture-server.mjs))
-through the `FIXTURE_ORIGIN` variable, so the tests run offline and give the same page every time.
+through the `FIXTURE_ORIGIN` variable, so the tests run offline with repeatable content.
+See [release preparation](docs/releasing.md) before a deployment or release tag.
 
 The social card `public/og.png` is rendered from `docs/og-card.html`. Keep its text inside the centred 630 px
 column, because some link previews crop to it. After editing, run:
@@ -97,7 +94,7 @@ pnpm exec playwright screenshot --viewport-size=1200,630 "file://$PWD/docs/og-ca
 
 For the NASA slide, put a line `NASA_API_KEY=<your key>` in `.dev.vars` for local runs. In
 production it is a Worker secret (`pnpm wrangler secret put NASA_API_KEY`). Without a key the
-strip simply has no NASA slide. The tests don't need it.
+strip has no NASA slide. The tests don't need it.
 
 NASA leads the picture strip when available. If its API returns a placeholder or fails, the
 Worker reads the same day's image, credit and description from NASA's official APOD feed.
@@ -118,6 +115,9 @@ are:
 | `didYouKnow` | a list of facts | `[]` |
 | `pictures` | up to five enabled sources, in configured order; one per source | `[]` |
 | `recipes` | up to nine recipes (`title`, `url`, `source`), three per site | `[]` |
+
+Pictures may include an optional `explanation` from the source. Older stored days can omit it.
+Moonrise and moonset are calculated on the server for the page; the JSON `moon` fields are unchanged.
 
 Sun times carry the configured time zone’s offset. `weather.rainNext2h[].time` is `HH:MM` on the
 local clock, and `mm` is mm per hour: 5-minute steps from KNMI's radar nowcast (`rain/v1` in KV)

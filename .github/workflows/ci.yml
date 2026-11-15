@@ -57,6 +57,7 @@ jobs:
           node-version: "26"
       - run: pnpm install --frozen-lockfile
       - run: pnpm run e2e
+      - run: pnpm exec playwright test --config playwright.apod.config.ts
 
   city-profiles:
     name: city profile (${{ matrix.city }})

@@ -13,13 +13,12 @@ const pictureNames = {
 
 <Plain
 	title={`About · ${site.site.title}`}
-	description={`What ${site.site.title} is, what it keeps, where its facts come from, and its code.`}
+	description={`About ${site.site.title}: sources, privacy, accessibility and code.`}
 >
 	<Fragment slot="title">About this page</Fragment>
 
 	<p>
-		A daily page for {site.location.name}, open to anyone: the weather, a few pictures, a few facts, a
-		word, a quiz, a handful of games and new recipes{site.content.events ? ", plus what's on nearby" : ""}. It changes at midnight in {site.location.timezone}.
+		A daily page for {site.location.name}: pictures, facts, weather, a word, a quiz, games and recipes{site.content.events ? ", plus what's on nearby" : ""}. A new paper starts at midnight, local time.
 	</p>
 
 	<p>
@@ -30,9 +29,9 @@ const pictureNames = {
 
 	<h2>Accessibility</h2>
 	<p>
-		The aim is WCAG 2.2 AA. Text contrast holds in every sky, games and answers are at least 44 pixels tall,
-		keyboard focus is visible, motion stops when your system asks for less, and the page reads in full without
-		JavaScript. CI scans today, yesterday, about and 404 pages with axe. If something gets in your way,{" "}
+		The aim is WCAG 2.2 AA: readable contrast and visible keyboard focus.
+		The page respects your reduced-motion setting and reads in full without JavaScript.
+		If something gets in your way,{" "}
 		<a href="https://github.com/simonvanlierde/duinlab-today/issues">open an issue</a>.
 	</p>
 
@@ -40,7 +39,7 @@ const pictureNames = {
 	<p>Each item on the page links to where it came from.</p>
 	<ul>
 		<li>Facts, the featured article and on this day: Wikipedia. The word: Wiktionary.</li>
-		{site.content.pictures.length > 0 && <li>The pictures: {site.content.pictures.map((kind) => pictureNames[kind]).join(", ")}. {site.content.pictures.includes("apod") && " NASA’s slide needs a configured API key."}</li>}
+		{site.content.pictures.length > 0 && <li>Pictures: {site.content.pictures.map((kind) => pictureNames[kind]).join(", ")}.</li>}
 		<li>The quiz: Open Trivia DB (CC BY-SA 4.0). The quote: ZenQuotes.</li>
 		<li>
 			The weather: <a href="https://open-meteo.com/">Open-Meteo</a>. The rain line comes from{" "}
@@ -69,10 +68,8 @@ const pictureNames = {
 
 	<h2>Privacy</h2>
 	<p>
-		No cookies, no analytics. Your progress is kept in local storage
-		(<code>today.games.v1</code>, <code>today.quiz.v1</code>,{" "}
-		and <code>today.sunrise.v1</code> for the date of your last visit) and is never sent anywhere.
-		Clear the site's data to remove it.
+		No cookies or analytics. Your game marks, streaks and quiz answers stay in this browser.
+		Clear this site's data in your browser settings to remove them.
 	</p>
 	<p>
 		A Cloudflare Worker serves the page. Cloudflare keeps request logs for a few days: the address asked for,
@@ -82,7 +79,7 @@ const pictureNames = {
 
 	<h2>Code</h2>
 	<p>
-		<a href="https://github.com/simonvanlierde/duinlab-today">github.com/simonvanlierde/duinlab-today</a>, MIT
-		licence. The day's data is at <a href="/today.json">today.json</a>.
+		<a href="https://github.com/simonvanlierde/duinlab-today">Code on GitHub</a> (MIT licence).
+		The day's data is at <a href="/today.json">today.json</a>.
 	</p>
 </Plain>

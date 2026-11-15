@@ -94,6 +94,18 @@ function weather() {
 
 /** host -> (path) -> [content type, body] */
 const HOSTS = {
+	"api.nasa.gov": () => [
+		"application/json",
+		JSON.stringify({
+			date: today(),
+			title: "Moon & stars",
+			media_type: "image",
+			url: "https://images.metmuseum.org/apod/preview.png",
+			hdurl: "https://images.metmuseum.org/apod/original.png",
+			explanation: "The Moon & stars. A second sentence.",
+			copyright: "Fixture image",
+		}),
+	],
 	"api.wikimedia.org": () => ["application/json", text("wikipedia.json")],
 	"en.wiktionary.org": () => ["application/atom+xml", wordFeed()],
 	"collectionapi.metmuseum.org": (path) =>

@@ -8,15 +8,12 @@ web
 
 Astro 7 rendered on Cloudflare Workers (the Worker fetches and caches the day's data until
 midnight in the configured time zone and also serves `/today.json`), with Svelte 5 islands for the
-interactive parts. TypeScript, pnpm, biome, wrangler. Chosen with the user against the
-frontend-stack ruling of 2026-11-04 (content site: Astro, Adopt; Svelte 5 islands as a Trial).
+interactive parts. TypeScript, pnpm, biome, wrangler.
 
 ## Users
 
-- **Primary:** two people in one household who open it daily, on phone and desktop about
-  equally: with morning coffee, on the train, or in a work break. Both are researchers; one
-  of them builds and runs the page.
-- **Secondary:** anyone who finds the public link. They know nothing of the household.
+Household readers come first, on phone and desktop. One maintains the page; the other needs no
+technical context. Visitors and people making their own version need it to make sense on first opening.
 
 ## Product Purpose
 
@@ -27,7 +24,7 @@ a dozen open tabs.
 
 ## Positioning
 
-Hand-picked for two people rather than an aggregator: a short, fixed set of daily games, a
+Hand-picked daily games, a
 quiz scored on the page, and facts and pictures from sourced feeds (Wikipedia, Wiktionary, NASA APOD, The
 Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The same `/today.json` feeds the household's email digests.
 
@@ -59,14 +56,14 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
 - Local Hague, below the paper: high and low water at Scheveningen (Rijkswaterstaat, in the
   moon's popover), and this week's shows and events from Paard, Amare and DenHaag.com. The five-item preview
   takes at most two per site when several are available; More events expands the rest.
-  Palace Noordeinde, Namuso Gallery, Laan van Meerdervoort 7B and Pulchri Studio are excluded. Amare and DenHaag.com block scripts, so a weekly homelab job reads them through a headless
+  Palace Noordeinde, Namuso Gallery, Laan van Meerdervoort 7B and Pulchri Studio are excluded. Amare and DenHaag.com block scripts, so a weekly job reads them through a headless
   browser and writes `agenda/v1` to Workers KV; the Worker merges it with Paard's.
 - Yesterday's paper at `/yesterday`: the stored day before today, read-only, quiz answers shown.
 - Sea: temperature and wave height off Scheveningen from Open-Meteo's marine API (keyless, credited),
   in the almanac popover beside the tides, cached for an hour.
 - Sky: Astronomy Engine (MIT) gives the bright planets, full moons, solstices, equinoxes and
   eclipses seen from the configured location; meteor shower peaks are fixed approximate dates.
-- Also on the page: the moon in its real phase, high in the sky, which opens the sun times,
+- Also on the page: the moon in its real phase, high in the sky, which opens the sun times, moonrise and moonset,
   golden hour, day length, moon phase, the planets up tonight, the sea and the tides. At night
   the bright planets are small named points in the sky like the moon; Dutch holidays and customs ahead (a
   static table) and sky events (full moons, meteor peaks, solstices, equinoxes, eclipses; a holiday wins), day length, and an About page (privacy, accessibility,
@@ -81,8 +78,8 @@ Local Hague adapters are disabled for other cities. Configuration and fork deplo
 
 ## Capabilities and Constraints
 
-- Public, no accounts, nothing personal on the server. Checkmarks and streaks live in each
-  browser (`localStorage`) and must survive their absence (private windows).
+- Public, no accounts. Checkmarks and streaks stay in each browser (`localStorage`).
+  Games and the quiz must still work when storage is unavailable, such as in private windows.
 - Each source fails on its own: a missing source drops its section, never the page. The pictures are a swipe strip of up to five, one per source, each with its own caption and credit; a source that fails drops only its slide.
 - The page must read fully without JavaScript; only checkmarks, streaks and the quiz need it.
 - English only.
@@ -99,7 +96,7 @@ Local Hague adapters are disabled for other cities. Configuration and fork deplo
 ## Evidence on Hand
 
 No logo, photography or brand assets exist. Daily imagery comes from APOD, The Met, Wikipedia, the Art Institute and the Rijksmuseum; credit
-lines come with each source. There are no users, metrics or testimonials to cite.
+lines come with each source. There are no measured usage figures or testimonials to cite.
 
 ## Product Principles
 
@@ -114,6 +111,8 @@ lines come with each source. There are no users, metrics or testimonials to cite
 - Pictures open in a larger viewer with zoom, touch and keyboard navigation, and their existing
   captions and source links. Closing returns to the same place in the paper.
   The viewer uses source originals when supplied and falls back to the preview if they fail.
+  "Open original" links to the image directly. NASA's source explanation, when available, starts
+  collapsed under "About this picture" and works without JavaScript.
 - Picture selectors sit below the caption, leaving the whole work visible. NASA leads when
   available; its official daily feed recovers pictures missing from the API.
 - Quiz answers stay in sync across tabs in the same browser. The first saved answer is kept.

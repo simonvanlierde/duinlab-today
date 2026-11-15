@@ -68,7 +68,7 @@ test("configured paper uses its city, clock, units, sources and identity", async
 	});
 	await page.goto("/about");
 	await expect(page.locator("main")).toContainText(site.location.name);
-	await expect(page.locator("main")).toContainText(site.location.timezone);
+	await expect(page.locator("main")).toContainText("midnight, local time");
 	if (!site.content.events && !site.content.sea && !site.content.tides) {
 		await expect(page.locator("main")).not.toContainText(
 			/Scheveningen|Paard|Amare|DenHaag/,

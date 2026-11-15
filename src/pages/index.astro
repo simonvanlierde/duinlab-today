@@ -19,6 +19,7 @@ import {
 	windLine,
 } from "../lib/format";
 import { moonNow, planetsAt, starNow } from "../lib/moon";
+import { moonTimes } from "../lib/moon-times";
 import { occasionLine } from "../lib/occasions";
 import { planetPositions, planetsTonight } from "../lib/planets";
 import { previewEvents } from "../lib/sources/events";
@@ -55,6 +56,7 @@ const heading = longDate(today.date);
 const hasQuiz = !!quiz && quiz.questions.length > 0;
 const FORECAST = `https://www.meteoblue.com/en/weather/week/${site.location.latitude}N${site.location.longitude}E`;
 const almanac = sunLines(today);
+const moon = moonTimes(today.date);
 // the moon, sun and star where they are right now; the sky script keeps them current
 const planets = planetPositions(now);
 const tonight = planetsTonight(today.date, now);
@@ -157,12 +159,14 @@ const what = site.site.description;
 				<section class="almanac-group" aria-labelledby="almanac-sun-moon">
 					<h3 id="almanac-sun-moon">Sun and moon</h3>
 					<div data-almanac-body="sun" data-almanac-name="Sun">
-						<p>Sun up <b>{almanac.sunrise}</b>, down <b>{almanac.sunset}</b></p>
+						<p>Sunrise <b>{almanac.sunrise}</b>, sunset <b>{almanac.sunset}</b></p>
 						<p>Golden hour from <b>{almanac.golden}</b></p>
 						<p>{almanac.daylight}</p>
 					</div>
 					<div data-almanac-body="moon" data-almanac-name="Moon">
 						<p data-moon-line>{bodies.moon.line}</p>
+						<p>{moon.rise ? <>Moonrise <b>{clock(moon.rise)}</b></> : "No moonrise today"}</p>
+						<p>{moon.set ? <>Moonset <b>{clock(moon.set)}</b></> : "No moonset today"}</p>
 					</div>
 					<div data-almanac-body="star" data-almanac-name="Star" hidden={!bodies.star.show}>
 						<p data-star-line>{bodies.star.name}, {Math.round(bodies.star.alt)}° above the horizon</p>
@@ -190,7 +194,7 @@ const what = site.site.description;
 						)}
 						{sea && (
 							<p>
-								Sea at Scheveningen{" "}
+								Water{" "}
 								<b>{[sea.temperatureC !== null && `${temperature(sea.temperatureC, 1).toFixed(1)} ${temperatureUnit}`, sea.waveHeightM !== null && `waves ${sea.waveHeightM.toFixed(1)} m`].filter(Boolean).join(", ")}</b>{" "}
 								<span class="src"><a href={sea.credit.url}>{sea.credit.name}</a></span>
 							</p>
@@ -219,7 +223,7 @@ const what = site.site.description;
 			{
 				word && (
 					<section class="sec" aria-labelledby="h-word">
-						<Cue id="h-word">Word</Cue>
+						<Cue id="h-word" sr>Word</Cue>
 						<p>
 							<strong class="word" lang="en">{word.word}</strong>{" "}
 							{word.partOfSpeech && <><em class="pos">{word.partOfSpeech}</em>{" "}</>}
@@ -256,7 +260,7 @@ const what = site.site.description;
 			{
 				featured && (
 					<section class="sec feat" aria-labelledby="h-featured">
-						<Cue id="h-featured">Featured article</Cue>
+						<Cue id="h-featured" sr>Featured article</Cue>
 						<p>
 							<a href={featured.url}><strong>{featured.title}</strong></a>. {featured.extract}{" "}
 							<span class="src"><a href={featured.credit.url}>{featured.credit.name}</a></span>
@@ -291,7 +295,7 @@ const what = site.site.description;
 				<section class="rail" aria-labelledby="h-games">
 					<Games client:load games={today.games} />
 					<p class="the-end" aria-live="polite">
-						That's the paper. The sun is back at {almanac.nextSunrise} tomorrow.
+						Tomorrow's sunrise: {almanac.nextSunrise}.
 					</p>
 				</section>
 			)
@@ -353,7 +357,7 @@ const what = site.site.description;
 
 	</div>
 
-	<Foot>New every midnight.{" "}<a href="/yesterday">Yesterday's paper</a> &middot; <a href="/about">About</a> &middot;</Foot>
+	<Foot><a href="/yesterday">Yesterday's paper</a> &middot; <a href="/about">About</a> &middot;</Foot>
 	<script>
 		const almanac = document.querySelector<HTMLElement>("#almanac");
 		const title = almanac?.querySelector<HTMLElement>("#almanac-title");
