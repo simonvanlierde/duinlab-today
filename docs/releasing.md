@@ -1,6 +1,7 @@
 # Releasing
 
-The website deploys from `main`. A release tag records a reviewed version; it does not deploy it.
+This repository deploys from `main`. Forks can use the manual deployment steps in [configuration and deployment](configuration.md).
+A release tag records a reviewed version; it does not deploy it.
 
 ## First canonical-day deployment
 
@@ -16,9 +17,19 @@ Treat the remainder of the imported legacy day as legacy data; consistency canno
 retroactively for different quizzes that an older version may already have served.
 
 Use a full deployment for this migration, not a gradual split between old and new publishers.
-Both canonical storage and its KV mirror expire after two Amsterdam days. SQLite Durable Objects
+Both canonical storage and its KV mirror expire after two days in the configured time zone. SQLite Durable Objects
 are [supported on the Workers Free plan](https://developers.cloudflare.com/durable-objects/platform/pricing/);
 no paid-plan change is required.
+
+## Configuration changes
+
+Settings in `site.toml` take effect at build time. Restart development servers after editing them.
+For a fork, follow [configuration and deployment](configuration.md) before running any Wrangler deployment or secret command.
+Each deployment needs its own Worker, KV namespace and domain settings.
+
+Changing location or content settings uses a separate daily cache. Branding, display units and games do not regenerate the quiz.
+The original Hague configuration keeps its existing canonical day when upgrading.
+Check a changed profile’s local date, clock, weather and omitted sections on `/` and `/today.json` before release.
 
 ## Prepare and publish
 

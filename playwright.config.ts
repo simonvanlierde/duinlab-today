@@ -1,3 +1,11 @@
+import { loadSiteConfig } from "./scripts/site-config.mjs";
+
+const configured = loadSiteConfig();
+Object.assign(globalThis, {
+	__SITE_CONFIG__: configured.site,
+	__SITE_CONFIG_KEY__: configured.configKey,
+});
+
 import { defineConfig } from "@playwright/test";
 
 const port = 4331;

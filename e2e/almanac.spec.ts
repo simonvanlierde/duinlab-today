@@ -1,6 +1,10 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { moonNow, starNow } from "../src/lib/moon";
+import { site } from "../src/lib/config";
+import {
+	moonNow as moonPosition,
+	starNow as starPosition,
+} from "../src/lib/moon";
 
 test.beforeEach(async ({ page }) => {
 	await page.route(
@@ -161,7 +165,7 @@ test("the selected star leads with its current position and stays current", asyn
 	);
 	await expect(page.locator("button[data-orb=star]")).toHaveAttribute(
 		"aria-label",
-		`${next.name}: sun, moon and tide times`,
+		`${next.name}: sun and moon times`,
 	);
 	await page.screenshot({
 		path: `test-results/almanac-star-${testInfo.project.name}.png`,
@@ -197,3 +201,10 @@ test.describe("the almanac without JavaScript", () => {
 			);
 	});
 });
+
+function moonNow(at: number) {
+	return moonPosition(at, site.location.latitude, site.location.longitude);
+}
+function starNow(at: number) {
+	return starPosition(at, site.location.latitude, site.location.longitude);
+}

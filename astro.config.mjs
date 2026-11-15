@@ -4,6 +4,9 @@ import { readFileSync } from "node:fs";
 import cloudflare from "@astrojs/cloudflare";
 import svelte from "@astrojs/svelte";
 import { defineConfig } from "astro/config";
+import { loadSiteConfig } from "./scripts/site-config.mjs";
+
+const { site, configKey } = loadSiteConfig();
 
 // Platforms cache a preview by image URL, so the URL carries the PNG's hash. The worker has no
 // file system, hence a build-time constant.
@@ -19,8 +22,14 @@ export default defineConfig({
 	adapter: cloudflare({ imageService: "passthrough" }),
 	session: false,
 	integrations: [svelte()],
-	site: "https://today.duinlab.nl",
-	vite: { define: { __OG_VERSION__: JSON.stringify(ogVersion) } },
+	site: site.site.url,
+	vite: {
+		define: {
+			__OG_VERSION__: JSON.stringify(ogVersion),
+			__SITE_CONFIG__: JSON.stringify(site),
+			__SITE_CONFIG_KEY__: JSON.stringify(configKey),
+		},
+	},
 	// Astro hashes its own scripts; Base.astro adds the hash of the inline sky script. Style
 	// attributes carry the sky's colours, hence 'unsafe-inline' for attributes only.
 	security: {

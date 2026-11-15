@@ -1,7 +1,8 @@
 import { env, waitUntil } from "cloudflare:workers";
 import { type Day, incomplete } from "./build";
 import { cached } from "./cache";
-import { amsterdamDay, shift } from "./day";
+import { configKey, site, usesLegacyDay } from "./config";
+import { localDay, shift } from "./day";
 import { games } from "./games";
 import { withAgenda } from "./sources/events";
 import { fetchRecipes } from "./sources/recipes";
@@ -20,24 +21,26 @@ const FAILED = { ttl: 60, stale: 0 };
 /** A request rebuilds an incomplete day at most this often; the hourly refresh does the rest. */
 const RETRY_MS = 10 * 60 * 1000;
 const hasApodKey = () => !!env.NASA_API_KEY;
+const coordinatorName = (date: string) =>
+	usesLegacyDay ? date : `${configKey}/${date}`;
 
-/** All locations use the same durable coordinator for each Amsterdam day. */
+/** Each configuration has one durable coordinator per local day. */
 export function refreshDay(now: Date): Promise<Day> {
-	return env.DAY_COORDINATOR.getByName(amsterdamDay(now)).refresh(
+	return env.DAY_COORDINATOR.getByName(coordinatorName(localDay(now))).refresh(
 		now.toISOString(),
 	);
 }
 
 function readDay(date: string): Promise<Day | null> {
-	return env.DAY_COORDINATOR.getByName(date).read(date);
+	return env.DAY_COORDINATOR.getByName(coordinatorName(date)).read(date);
 }
 
 /** Yesterday's stored day, or null after its two-day retention. */
 export const getYesterday = (now: Date = new Date()) =>
-	readDay(shift(amsterdamDay(now), -1));
+	readDay(shift(localDay(now), -1));
 
 async function getDay(now: Date): Promise<Day> {
-	const stored = await readDay(amsterdamDay(now));
+	const stored = await readDay(localDay(now));
 	const fresh =
 		stored &&
 		(!incomplete(stored, hasApodKey()) ||
@@ -83,22 +86,24 @@ export async function getToday(now: Date = new Date()): Promise<Today> {
 	const cache = (caches as unknown as { default: Cache }).default;
 	const [day, agenda, knmiRain, weather, sea, recipes] = await Promise.all([
 		getDay(now),
-		readAgenda(),
-		readKnmiRain(),
+		site.content.events ? readAgenda() : Promise.resolve(null),
+		site.content.radar === "knmi" ? readKnmiRain() : Promise.resolve(null),
 		cached(
 			cache,
-			`weather/${amsterdamDay(now)}`,
+			`weather/${localDay(now)}`,
 			() => fetchWeather(now),
 			(w) => (w ? WEATHER_LIFE : FAILED),
 			waitUntil,
 		),
-		cached(
-			cache,
-			"sea",
-			() => fetchSea(),
-			(x) => (x ? SEA_LIFE : FAILED),
-			waitUntil,
-		),
+		site.content.sea
+			? cached(
+					cache,
+					"sea",
+					() => fetchSea(),
+					(x) => (x ? SEA_LIFE : FAILED),
+					waitUntil,
+				)
+			: Promise.resolve(null),
 		cached(
 			cache,
 			"recipes",
@@ -110,7 +115,9 @@ export async function getToday(now: Date = new Date()): Promise<Today> {
 	// games are static: added here so a change to the list shows without waiting for midnight
 	return {
 		...day,
-		events: withAgenda(day.events, agenda, day.date),
+		events: site.content.events
+			? withAgenda(day.events, agenda, day.date)
+			: null,
 		games,
 		weather: withKnmiRain(weather, knmiRain, now),
 		sea,

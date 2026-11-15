@@ -14,6 +14,13 @@ source links stay within reach. Close the viewer to return to the paper; without
 the picture links directly to its image.
 The viewer loads the source's original image when supplied, with the preview as a fallback.
 
+## Make your own version
+
+Edit [`site.toml`](site.toml), or start from the [Utrecht](examples/utrecht.toml) or
+[Evanston, Illinois](examples/evanston.toml) example. The configuration covers the location,
+time zone, units, picture sources and daily games. Unsupported local sections are omitted.
+See [configuration and fork deployment](docs/configuration.md) before deploying to your own Cloudflare account.
+
 ## How it works
 
 After finishing the quiz, open “Review answers” to revisit your choices and the correct answers.
@@ -43,11 +50,11 @@ One Worker serves everything ([`src/worker.ts`](src/worker.ts)).
   events) is built by a cron run at five past every hour. A per-day Durable Object persists one canonical
   copy for every Cloudflare location, with a mirror in Workers KV. The run after
   midnight builds the new day. Later runs only touch a day that is incomplete: they retry a
-  failed source and pick up APOD once it publishes at 06:00 Amsterdam time. A rebuild keeps
+  failed source and pick up APOD once it publishes. A rebuild keeps
   every section the day already had, so the quiz never changes under you, and every picture it
   already has (each source picks its artwork from the date). A request that finds
   no day builds it through the same coordinator ([`src/lib/today.ts`](src/lib/today.ts)). An incomplete
-  stored day is returned while missing sources retry in the background. Both stores retain two Amsterdam days.
+  stored day is returned while missing sources retry in the background. Both stores retain two days in the configured time zone.
 - **Weather, sea and recipes** change during the day, so each request reads them through the
   Workers cache: 15 minutes for the weather, an hour for the sea, 3 hours for the recipes. An entry
   past that is still served while the request refreshes it in the background (`waitUntil`): for 2
@@ -103,18 +110,20 @@ are:
 
 | Key | Type | When its source fails |
 |---|---|---|
-| `date` | the Amsterdam day, `YYYY-MM-DD` | always present |
+| `date` | the configured local day, `YYYY-MM-DD` | always present |
 | `generatedAt` | ISO instant (UTC) the day was built | always present |
 | `sun`, `moon` | worked out locally | always present |
 | `games` | the daily games | always present |
 | `onThisDay`, `featured`, `word`, `quote`, `quiz`, `tides`, `events`, `weather`, `sea` | objects | `null` |
 | `didYouKnow` | a list of facts | `[]` |
-| `pictures` | up to five, in this order: APOD, The Met, Wikipedia picture of the day, Art Institute of Chicago, Rijksmuseum; one per source | `[]` |
+| `pictures` | up to five enabled sources, in configured order; one per source | `[]` |
 | `recipes` | up to nine recipes (`title`, `url`, `source`), three per site | `[]` |
 
-Sun times carry the Amsterdam offset. `weather.rainNext2h[].time` is `HH:MM` on the
-Amsterdam clock, and `mm` is mm per hour: 5-minute steps from KNMI's radar nowcast (`rain/v1` in KV)
+Sun times carry the configured time zone’s offset. `weather.rainNext2h[].time` is `HH:MM` on the
+local clock, and `mm` is mm per hour: 5-minute steps from KNMI's radar nowcast (`rain/v1` in KV)
 or Buienradar's radar, or 15-minute steps from Open-Meteo when both are unavailable (`weather.rainCredit` says which).
+The JSON API keeps metric weather values (including Celsius and km/h) regardless of display units.
+Disabled tides, events and sea sections return `null`.
 Elapsed intervals are removed on each request, so the remaining forecast can cover less than two hours.
 An empty list means no usable rain forecast. New fields may
 appear at any time. A commit that renames or removes a field says so in its message.

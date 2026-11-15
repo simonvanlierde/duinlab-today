@@ -2,6 +2,7 @@
 import Cue from "../components/Cue.astro";
 import Pictures from "../components/Pictures.astro";
 import Plain from "../layouts/Plain.astro";
+import { site } from "../lib/config";
 import { longDate } from "../lib/format";
 import { getYesterday } from "../lib/today";
 
@@ -10,8 +11,8 @@ const quiz = day?.quiz?.questions.length ? day.quiz : null;
 ---
 
 <Plain
-	title="Yesterday · today.duinlab.nl"
-	description="Yesterday's page from The Hague: its pictures, facts, word and quiz answers."
+	title={`Yesterday · ${site.site.title}`}
+	description={`Yesterday's page from ${site.location.name}: its pictures, facts, word and quiz answers.}`}
 	label="yesterday"
 >
 	<Fragment slot="title">{day ? longDate(day.date) : "Yesterday"}</Fragment>

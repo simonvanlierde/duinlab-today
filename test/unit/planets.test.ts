@@ -1,13 +1,26 @@
 import { Horizon, Observer } from "astronomy-engine";
 import { describe, expect, it } from "vitest";
 import { bodiesAt } from "../../src/components/sky";
-import { moonNow, planetsAt, starNow } from "../../src/lib/moon";
+import {
+	moonNow as moonAtCoordinates,
+	planetsAt as planetsAtCoordinates,
+	starNow as starAtCoordinates,
+} from "../../src/lib/moon";
 import {
 	planetPositions,
 	planetsBetween,
 	planetsTonight,
 } from "../../src/lib/planets";
-import { sunAltitude, sunTimes } from "../../src/lib/sun";
+import {
+	sunAltitude as altitudeAtCoordinates,
+	sunTimes,
+} from "../../src/lib/sun";
+
+const sunAltitude = (now: number) => altitudeAtCoordinates(now, 52.08, 4.31);
+const moonNow = (now: number) => moonAtCoordinates(now, 52.08, 4.31);
+const starNow = (now: number) => starAtCoordinates(now, 52.08, 4.31);
+const planetsAt = (planets: [string, number, number][], now: number) =>
+	planetsAtCoordinates(planets, now, 52.08, 4.31);
 
 describe("planets", () => {
 	it("the sky script's altitude agrees with astronomy-engine within a degree", () => {

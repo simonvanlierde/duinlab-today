@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- One TOML file configures the city, time zone, weather units, pictures and games, with Utrecht and Evanston examples and fork deployment instructions.
+
 ### Changed
 
 - The picture viewer uses source originals when available and falls back to previews if they fail.

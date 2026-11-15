@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { bodiesAt } from "../../src/components/sky";
-import { moonNow, starNow } from "../../src/lib/moon";
-import { sunAltitude, sunTimes } from "../../src/lib/sun";
+import {
+	moonNow as moonAtCoordinates,
+	starNow as starAtCoordinates,
+} from "../../src/lib/moon";
+import {
+	sunAltitude as altitudeAtCoordinates,
+	sunTimes,
+} from "../../src/lib/sun";
 
 // References: astronomy-engine (airless altitude, observer 52.08 N 4.31 E, sea level).
 // The series is good to about 1.5 degrees, which is under a pixel at the page's 3 px/degree.
@@ -11,6 +17,10 @@ const ALTITUDES: [string, number][] = [
 	["2026-07-15T03:30:00Z", -7.8],
 	["2026-03-03T18:00:00Z", 1.92],
 ];
+
+const sunAltitude = (now: number) => altitudeAtCoordinates(now, 52.08, 4.31);
+const moonNow = (now: number) => moonAtCoordinates(now, 52.08, 4.31);
+const starNow = (now: number) => starAtCoordinates(now, 52.08, 4.31);
 
 describe("moonNow", () => {
 	it.each(ALTITUDES)(

@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
-import { amsterdamDay, shift } from "../src/lib/day";
+import { localDay, shift } from "../src/lib/day";
 import type { Quiz } from "../src/lib/types";
 
 const KEY = "today.games.v1";
@@ -166,7 +166,7 @@ test("sky controls provide 44px targets", async ({ page }) => {
 	}
 });
 
-test("the sky's bright body opens the sun, moon and tide times, and Escape closes them", async ({
+test("the sky's bright body opens the sun and moon times, and Escape closes them", async ({
 	page,
 }) => {
 	await page.goto("/");
@@ -221,7 +221,7 @@ test("by day the sun is a named, focusable button that opens the times", async (
 }) => {
 	await page.goto("/?phase=day");
 	const sun = page.getByRole("button", {
-		name: "Sun: sun, moon and tide times",
+		name: "Sun: sun and moon times",
 	});
 	await expect(sun).toBeVisible();
 	await sun.focus();
@@ -704,7 +704,7 @@ test("games keep keyboard focus when another tab finishes the board", async ({
 test("long game streaks survive another game's save and a reload", async ({
 	page,
 }) => {
-	const today = amsterdamDay();
+	const today = localDay();
 	const history = Array.from({ length: 64 }, (_, i) => shift(today, i - 64));
 	await page.addInitScript(
 		({ history, key }) => {

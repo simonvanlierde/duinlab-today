@@ -1,7 +1,7 @@
 // Played-today state, kept in this browser only: the games island reads and writes it.
 import {
 	allPlayed as allPlayedOn,
-	amsterdamDay,
+	localDay,
 	streak as run,
 	shift,
 } from "../lib/day";
@@ -58,7 +58,7 @@ function load() {
 	} catch {
 		store.off = true;
 	}
-	store.day = amsterdamDay();
+	store.day = localDay();
 	store.ready = true;
 	syncSky();
 }

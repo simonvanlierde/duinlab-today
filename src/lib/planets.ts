@@ -1,11 +1,12 @@
 // Server side only: astronomy-engine stays out of the browser, which gets right ascension and
 // declination for the day and works out altitude itself (`planetsAt` in moon.ts).
 import { Body, Equator, Horizon, Observer } from "astronomy-engine";
+import { site } from "./config";
 import { shift } from "./day";
 import { clock } from "./format";
 import { sunTimes } from "./sun";
 
-const HERE = new Observer(52.08, 4.31, 0);
+const HERE = new Observer(site.location.latitude, site.location.longitude, 0);
 const PLANETS = [
 	["Mercury", Body.Mercury],
 	["Venus", Body.Venus],

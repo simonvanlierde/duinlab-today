@@ -1,5 +1,5 @@
 /**
- * Moon, bright stars and planets over The Hague. Both functions are self-contained on purpose: the
+ * Moon, bright stars and planets at the given coordinates. The functions are self-contained: the
  * layout inlines their source into the page, so the server render and the browser clock agree.
  */
 
@@ -9,7 +9,7 @@
  * the sun-moon longitude difference, and the words for it. Low-precision series (the
  * suncalc / Meeus simplified terms): about 1 degree in position.
  */
-export function moonNow(now: number) {
+export function moonNow(now: number, latitude: number, longitude: number) {
 	const r = Math.PI / 180;
 	const d = now / 86400000 - 10957.5; // days since J2000.0
 	const lunarLon = (218.316 + 13.176396 * d) * r;
@@ -27,8 +27,8 @@ export function moonNow(now: number) {
 		Math.sin(lat) * Math.cos(tilt) +
 			Math.cos(lat) * Math.sin(tilt) * Math.sin(lon),
 	);
-	const h = (280.16 + 360.9856235 * d + 4.31) * r - ra;
-	const phi = 52.08 * r;
+	const h = (280.16 + 360.9856235 * d + longitude) * r - ra;
+	const phi = latitude * r;
 	const geo = Math.asin(
 		Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(h),
 	);
@@ -63,14 +63,14 @@ export function moonNow(now: number) {
 }
 
 /**
- * The bright star highest over The Hague at `now` (ms), for a night without the moon. J2000
+ * The highest star in the bright-star catalog at `now` (ms), for a night without the moon. J2000
  * positions, not precessed: a quarter of a degree off today.
  */
-export function starNow(now: number) {
+export function starNow(now: number, latitude: number, longitude: number) {
 	const r = Math.PI / 180;
 	const d = now / 86400000 - 10957.5;
-	const lst = 280.16 + 360.9856235 * d + 4.31;
-	const phi = 52.08 * r;
+	const lst = 280.16 + 360.9856235 * d + longitude;
+	const phi = latitude * r;
 	// name, right ascension and declination in degrees
 	const stars: [string, number, number][] = [
 		["Capella", 79.17, 46],
@@ -84,6 +84,10 @@ export function starNow(now: number) {
 		["Betelgeuse", 88.79, 7.41],
 		["Regulus", 152.09, 11.97],
 		["Altair", 297.7, 8.87],
+		["Canopus", 95.99, -52.7],
+		["Rigil Kentaurus", 219.9, -60.83],
+		["Achernar", 24.43, -57.24],
+		["Acrux", 186.65, -63.1],
 	];
 	let best = { name: "", alt: -90, h: 0 };
 	for (const [name, ra, dec] of stars) {
@@ -104,11 +108,16 @@ export function starNow(now: number) {
  * planets: the server gives right ascension (of date) and declination for the day, and a
  * planet moves under a degree a day (Mercury up to two), enough for a point in the masthead.
  */
-export function planetsAt(planets: [string, number, number][], now: number) {
+export function planetsAt(
+	planets: [string, number, number][],
+	now: number,
+	latitude: number,
+	longitude: number,
+) {
 	const r = Math.PI / 180;
 	const d = now / 86400000 - 10957.5;
-	const lst = 280.16 + 360.9856235 * d + 4.31;
-	const phi = 52.08 * r;
+	const lst = 280.16 + 360.9856235 * d + longitude;
+	const phi = latitude * r;
 	return planets.map(([name, ra, dec]) => {
 		const h = (lst - ra) * r;
 		const alt =

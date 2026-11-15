@@ -111,7 +111,7 @@ export interface Weather {
 	credit: Credit;
 }
 
-/** Instants as ISO strings with offset, for The Hague (52.08 N, 4.31 E). */
+/** Instants as ISO strings with offset, for the configured location. */
 export interface Sun {
 	/** Civil dawn: the sun 6 degrees below the horizon. */
 	dawn: string;
@@ -162,9 +162,9 @@ export interface Sea {
 
 export interface Happening {
 	name: string;
-	/** YYYY-MM-DD, Europe/Amsterdam */
+	/** YYYY-MM-DD, the configured timezone */
 	day: string;
-	/** HH:MM, Europe/Amsterdam; null when the event has no clock time */
+	/** HH:MM, the configured timezone; null when the event has no clock time */
 	time: string | null;
 	venue: string;
 	url: string;
@@ -177,7 +177,7 @@ export interface Events {
 }
 
 export interface Today {
-	/** The day in Europe/Amsterdam, YYYY-MM-DD. */
+	/** The day in the configured timezone, YYYY-MM-DD. */
 	date: string;
 	/** ISO instant the day's data was built. */
 	generatedAt: string;

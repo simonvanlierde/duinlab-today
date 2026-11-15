@@ -1,12 +1,14 @@
-// The paper's day is the Europe/Amsterdam calendar day: it turns over at Amsterdam midnight.
+import { site } from "./config";
 
 /**
- * The Europe/Amsterdam day, YYYY-MM-DD. Self-contained: the layout inlines this function's
- * source into the page.
+ * The city's calendar day, YYYY-MM-DD. Inlined callers pass the time zone explicitly.
  */
-export function amsterdamDay(d = new Date()): string {
+export function localDay(
+	d = new Date(),
+	timezone = site.location.timezone,
+): string {
 	return new Intl.DateTimeFormat("en-CA", {
-		timeZone: "Europe/Amsterdam",
+		timeZone: timezone,
 	}).format(d);
 }
 
@@ -17,10 +19,10 @@ export function shift(day: string, by: number): string {
 	return d.toISOString().slice(0, 10);
 }
 
-/** ISO string with the Europe/Amsterdam offset ("2026-11-06T07:46:12+01:00"). */
-export function isoAmsterdam(at: Date): string {
+/** ISO string with the city's offset ("2026-11-06T07:46:12+01:00"). */
+export function isoLocal(at: Date, timezone = site.location.timezone): string {
 	const f = new Intl.DateTimeFormat("en-CA", {
-		timeZone: "Europe/Amsterdam",
+		timeZone: timezone,
 		year: "numeric",
 		month: "2-digit",
 		day: "2-digit",

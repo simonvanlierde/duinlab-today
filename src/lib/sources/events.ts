@@ -1,4 +1,4 @@
-import { isoAmsterdam, shift } from "../day";
+import { isoLocal, shift } from "../day";
 import type { Events, Happening } from "../types";
 import { decodeEntities, getText, httpsUrl, safe } from "../util";
 
@@ -46,7 +46,7 @@ function amsterdamStart(
 	if (/(Z|[+-]\d{2}:?\d{2})$/.test(s) && s.includes("T")) {
 		const at = new Date(s);
 		if (Number.isNaN(at.getTime())) return null;
-		const iso = isoAmsterdam(at);
+		const iso = isoLocal(at);
 		return { day: iso.slice(0, 10), time: iso.slice(11, 16) };
 	}
 	const m = LOCAL.exec(s);

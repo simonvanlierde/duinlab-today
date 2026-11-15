@@ -7,7 +7,7 @@ web
 ## Stack
 
 Astro 7 rendered on Cloudflare Workers (the Worker fetches and caches the day's data until
-midnight Europe/Amsterdam and also serves `/today.json`), with Svelte 5 islands for the
+midnight in the configured time zone and also serves `/today.json`), with Svelte 5 islands for the
 interactive parts. TypeScript, pnpm, biome, wrangler. Chosen with the user against the
 frontend-stack ruling of 2026-11-04 (content site: Astro, Adopt; Svelte 5 islands as a Trial).
 
@@ -33,7 +33,7 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
 
 ## Operating Context
 
-- The day turns over at midnight Europe/Amsterdam; everyone sees the same page that day (the
+- The day turns over at midnight in the configured time zone; everyone sees the same page that day (the
   day is stored once in a per-day Durable Object, with a Workers KV mirror).
 - Games open on their own sites in a new tab; the page cannot see whether a game was finished,
   so opening one counts as playing it.
@@ -65,12 +65,19 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
 - Sea: temperature and wave height off Scheveningen from Open-Meteo's marine API (keyless, credited),
   in the almanac popover beside the tides, cached for an hour.
 - Sky: Astronomy Engine (MIT) gives the bright planets, full moons, solstices, equinoxes and
-  eclipses seen from The Hague; meteor shower peaks are fixed approximate dates.
+  eclipses seen from the configured location; meteor shower peaks are fixed approximate dates.
 - Also on the page: the moon in its real phase, high in the sky, which opens the sun times,
   golden hour, day length, moon phase, the planets up tonight, the sea and the tides. At night
   the bright planets are small named points in the sky like the moon; Dutch holidays and customs ahead (a
   static table) and sky events (full moons, meteor peaks, solstices, equinoxes, eclipses; a holiday wins), day length, and an About page (privacy, accessibility,
   sources, code).
+
+## Configuration
+
+One TOML file configures each deployment’s identity, location, units, picture sources, supported local feeds and games.
+The default remains The Hague; complete Utrecht and Evanston, Illinois examples are in `examples/`.
+The sky supports latitudes between −55° and 55°. Content remains in English.
+Local Hague adapters are disabled for other cities. Configuration and fork deployment are documented in `docs/configuration.md`.
 
 ## Capabilities and Constraints
 

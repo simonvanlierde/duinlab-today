@@ -1,9 +1,10 @@
+import { site } from "../config";
 import type { Credit, Weather } from "../types";
 import { getJson, getText, safe } from "../util";
 
 const CLOCK = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 const rainClock = new Intl.DateTimeFormat("en-GB", {
-	timeZone: "Europe/Amsterdam",
+	timeZone: site.location.timezone,
 	hour: "2-digit",
 	minute: "2-digit",
 	hourCycle: "h23",
@@ -47,18 +48,17 @@ function remainingRain(
 }
 
 const URL =
-	"https://api.open-meteo.com/v1/forecast?latitude=52.08&longitude=4.31" +
+	`https://api.open-meteo.com/v1/forecast?latitude=${site.location.latitude}&longitude=${site.location.longitude}` +
 	"&current=temperature_2m,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m" +
 	"&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max" +
-	"&minutely_15=precipitation&forecast_minutely_15=8&timezone=Europe/Amsterdam&forecast_days=1";
+	`&minutely_15=precipitation&forecast_minutely_15=8&timezone=${encodeURIComponent(site.location.timezone)}&forecast_days=1`;
 
 const AIR =
-	"https://air-quality-api.open-meteo.com/v1/air-quality?latitude=52.08&longitude=4.31" +
+	`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${site.location.latitude}&longitude=${site.location.longitude}` +
 	"&current=european_aqi,grass_pollen,birch_pollen,alder_pollen,ragweed_pollen,mugwort_pollen";
 
 // Buienradar's radar nowcast: 5-minute steps for the next two hours.
-const RADAR =
-	"https://gpsgadget.buienradar.nl/data/raintext?lat=52.08&lon=4.31";
+const RADAR = `https://gpsgadget.buienradar.nl/data/raintext?lat=${site.location.latitude}&lon=${site.location.longitude}`;
 const BUIENRADAR: Credit = {
 	name: "Buienradar",
 	url: "https://www.buienradar.nl/",
@@ -224,11 +224,13 @@ export function airLine(r: AirRaw): string | null {
 export async function fetchWeather(now: Date): Promise<Weather | null> {
 	const [weather, radar, air] = await Promise.all([
 		safe("open-meteo", async () => parseWeather(await getJson<Raw>(URL), now)),
-		safe("buienradar", async () => {
-			const steps = parseRaintext(await getText(RADAR, "text/plain"));
-			if (steps.length === 0) throw new Error("no rain steps");
-			return steps;
-		}),
+		site.content.radar !== "none"
+			? safe("buienradar", async () => {
+					const steps = parseRaintext(await getText(RADAR, "text/plain"));
+					if (steps.length === 0) throw new Error("no rain steps");
+					return steps;
+				})
+			: Promise.resolve(null),
 		safe("open-meteo air", async () => airLine(await getJson<AirRaw>(AIR))),
 	]);
 	if (!weather) return null;
@@ -281,7 +283,8 @@ export function withKnmiRain(
 	now: Date,
 ): Weather | null {
 	if (!weather) return null;
-	const steps = parseKnmiRain(rawRain, now);
+	const steps =
+		site.content.radar === "knmi" ? parseKnmiRain(rawRain, now) : null;
 	return steps
 		? { ...weather, rainNext2h: steps, rainCredit: KNMI }
 		: {
