@@ -17,9 +17,9 @@
 		"deploy": "pnpm run build && wrangler deploy"
 	},
 	"dependencies": {
-		"@astrojs/cloudflare": "14.4.3",
-		"@astrojs/svelte": "9.1.2",
-		"astro": "7.4.7",
+		"@astrojs/cloudflare": "14.4.8",
+		"@astrojs/svelte": "9.1.6",
+		"astro": "7.4.12",
 		"astronomy-engine": "2.1.19",
 		"entities": "4.5.0",
 		"svelte": "5.57.3"
@@ -35,5 +35,5 @@
 		"vitest": "4.1.12",
 		"wrangler": "4.163.0"
 	},
-	"packageManager": "pnpm@12.17.0"
+	"packageManager": "pnpm@12.21.0"
 }
