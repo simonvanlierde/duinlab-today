@@ -257,17 +257,27 @@ const what = site.site.description;
 				)
 			}
 		</div>
-			{
-				featured && (
-					<section class="sec feat" aria-labelledby="h-featured">
-						<Cue id="h-featured" sr>Featured article</Cue>
-						<p>
-							<a href={featured.url}><strong>{featured.title}</strong></a>. {featured.extract}{" "}
-							<span class="src"><a href={featured.credit.url}>{featured.credit.name}</a></span>
-						</p>
-					</section>
-				)
-			}
+		{
+			today.games.length > 0 && (
+				<section class="rail" aria-labelledby="h-games">
+					<Games client:load games={today.games} />
+					<p class="the-end" aria-live="polite">
+						Tomorrow's sunrise: {almanac.nextSunrise}.
+					</p>
+				</section>
+			)
+		}
+		{
+			featured && (
+				<section class="sec feat" aria-labelledby="h-featured">
+					<Cue id="h-featured" sr>Featured article</Cue>
+					<p>
+						<a href={featured.url}><strong>{featured.title}</strong></a>. {featured.extract}{" "}
+						<span class="src"><a href={featured.credit.url}>{featured.credit.name}</a></span>
+					</p>
+				</section>
+			)
+		}
 		{
 			onThisDay && (
 				<section class="sec otd" aria-labelledby="h-otd">
@@ -288,16 +298,6 @@ const what = site.site.description;
 						<span class="src"><a href={quote.credit.url}>{quote.credit.name}</a></span>
 					</figcaption>
 				</figure>
-			)
-		}
-		{
-			today.games.length > 0 && (
-				<section class="rail" aria-labelledby="h-games">
-					<Games client:load games={today.games} />
-					<p class="the-end" aria-live="polite">
-						Tomorrow's sunrise: {almanac.nextSunrise}.
-					</p>
-				</section>
 			)
 		}
 	</main>

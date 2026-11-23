@@ -275,16 +275,79 @@ test("the paper leads on phones and games stay visible on desktop", async ({
 	const box = await page.locator(".games").boundingBox();
 	if (testInfo.project.name === "phone") {
 		await expect(page.locator("#paper > :first-child")).toHaveClass(/\bpic\b/);
-		for (const selector of [".reading", ".feat", ".otd", ".quote"]) {
-			const reading = await page.locator(selector).boundingBox();
+		const reading = await page.locator(".reading").boundingBox();
+		expect(box && reading && reading.y + reading.height <= box.y).toBeTruthy();
+		for (const selector of [".feat", ".otd", ".quote"]) {
+			const secondary = await page.locator(selector).boundingBox();
 			expect(
-				box && reading && reading.y + reading.height <= box.y,
+				box && secondary && box.y + box.height <= secondary.y,
 			).toBeTruthy();
 		}
+		const order = await page.locator("#paper").evaluate((paper) => {
+			const games = paper.querySelector(".rail");
+			if (!games) return false;
+			return [".feat", ".otd", ".quote"].every((selector) => {
+				const section = paper.querySelector(selector);
+				return (
+					section &&
+					Boolean(
+						games.compareDocumentPosition(section) &
+							Node.DOCUMENT_POSITION_FOLLOWING,
+					)
+				);
+			});
+		});
+		expect(order).toBe(true);
 		return;
 	}
 	const view = page.viewportSize();
 	expect(box && view && box.y + box.height <= view.height).toBe(true);
+});
+
+test("desktop reading keeps the complete article and closes the gap below the quiz", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await page.goto("/");
+	const article = page.locator(".feat p");
+	await expect(article.locator(".src a")).toBeVisible();
+	expect(
+		await article.evaluate((p) => p.scrollHeight <= p.clientHeight + 1),
+	).toBe(true);
+	const boxes = await page.locator("#paper").evaluate((paper) => {
+		const box = (selector: string) =>
+			paper.querySelector(selector)?.getBoundingClientRect();
+		return {
+			picture: box(".pic")?.bottom ?? 0,
+			reading: box(".reading")?.bottom ?? 0,
+			article: box(".feat")?.top ?? 0,
+		};
+	});
+	expect(
+		boxes.article - Math.max(boxes.picture, boxes.reading),
+	).toBeLessThanOrEqual(9);
+	expect(boxes.article - boxes.reading).toBeLessThan(100);
+});
+
+test("primary reading fills the first column when picture and article sources are missing", async ({
+	page,
+}) => {
+	for (const height of [600, 900]) {
+		await page.setViewportSize({ width: 1280, height });
+		await page.goto("/");
+		await page.locator(".pic, .feat").evaluateAll((sections) => {
+			for (const section of sections) section.remove();
+		});
+		const paper = await page
+			.locator("#paper")
+			.evaluate(
+				(paper) =>
+					paper.getBoundingClientRect().left +
+					Number.parseFloat(getComputedStyle(paper).paddingLeft),
+			);
+		const reading = await page.locator(".reading").boundingBox();
+		expect(reading && Math.abs(paper - reading.x) < 1).toBeTruthy();
+	}
 });
 
 test("the picture strip moves with arrows, dots and the keyboard", async ({
@@ -345,7 +408,7 @@ test("the desktop page fits one screen", async ({ page }) => {
 	}
 });
 
-test("on a short desktop the picture, reading and games fit, and the quote waits under the fold", async ({
+test("on a short desktop primary reading and games fit while the complete article can scroll", async ({
 	page,
 }) => {
 	for (const [width, height] of [
@@ -359,9 +422,7 @@ test("on a short desktop the picture, reading and games fit, and the quote waits
 			const box = (s: string) =>
 				document.querySelector(s)?.getBoundingClientRect();
 			return {
-				above: [".pic", ".feat", ".reading", ".rail"].map(
-					(s) => box(s)?.bottom ?? 0,
-				),
+				above: [".pic", ".reading", ".rail"].map((s) => box(s)?.bottom ?? 0),
 				rail: box(".rail")?.bottom ?? 0,
 				quote: box(".quote")?.top ?? 0,
 			};
@@ -369,6 +430,10 @@ test("on a short desktop the picture, reading and games fit, and the quote waits
 		for (const bottom of edges.above)
 			expect(bottom).toBeLessThanOrEqual(height);
 		expect(edges.quote).toBeGreaterThan(edges.rail);
+		const article = page.locator(".feat p");
+		expect(
+			await article.evaluate((p) => p.scrollHeight <= p.clientHeight + 1),
+		).toBe(true);
 	}
 });
 

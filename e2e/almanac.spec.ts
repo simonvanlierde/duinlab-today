@@ -188,7 +188,8 @@ test.describe("the almanac without JavaScript", () => {
 		await page
 			.locator("button[popovertarget=almanac]:not([hidden])")
 			.first()
-			.click();
+			.focus();
+		await page.keyboard.press("Enter");
 		const almanac = page.locator("#almanac");
 		await expect(almanac).toBeVisible();
 		await expect(
