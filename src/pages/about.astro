@@ -1,24 +1,11 @@
 ---
 import Plain from "../layouts/Plain.astro";
 import { forecastUrl, site } from "../lib/config";
+import { PICTURE_SOURCES } from "../lib/picture-sources";
 
-const pictureNames = {
-  apod: "NASA Astronomy Picture of the Day",
-  met: "The Metropolitan Museum of Art",
-  wikipedia: "Wikipedia’s picture of the day",
-  aic: "Art Institute of Chicago",
-  rijks: "Rijksmuseum",
-};
-const pictureHosts = {
-  apod: "NASA",
-  met: "The Met",
-  wikipedia: "Wikimedia",
-  aic: "the Art Institute",
-  rijks: "the Rijksmuseum",
-};
 // NASA's video days embed YouTube
 const hosts = [
-  ...site.content.pictures.map((kind) => pictureHosts[kind]),
+  ...site.content.pictures.map((kind) => PICTURE_SOURCES[kind].host),
   ...(site.content.pictures.includes("apod") ? ["YouTube"] : []),
 ];
 const hostList = hosts.length > 1 ? `${hosts.slice(0, -1).join(", ")} or ${hosts.at(-1)}` : (hosts[0] ?? "");
@@ -52,7 +39,7 @@ const hostList = hosts.length > 1 ? `${hosts.slice(0, -1).join(", ")} or ${hosts
 	<p>Each item on the page links to where it came from.</p>
 	<ul>
 		<li>Facts, the featured article and on this day: Wikipedia. The word: Wiktionary.</li>
-		{site.content.pictures.length > 0 && <li>Pictures: {site.content.pictures.map((kind) => pictureNames[kind]).join(", ")}.</li>}
+		{site.content.pictures.length > 0 && <li>Pictures: {site.content.pictures.map((kind) => PICTURE_SOURCES[kind].name).join(", ")}.</li>}
 		<li>The quiz: Open Trivia DB (CC BY-SA 4.0). The quote: ZenQuotes.</li>
 		<li>
 			The weather: <a href="https://open-meteo.com/">Open-Meteo</a>. The rain line comes from{" "}

@@ -43,7 +43,8 @@ read them only to trace a fault.
 duinlab-today loads its scripts, styles and fonts from today.duinlab.nl.
 
 The day's pictures load straight from the site that serves each one: the museums (The
-Metropolitan Museum of Art, the Art Institute of Chicago), Wikimedia, or the
+Metropolitan Museum of Art, the Art Institute of Chicago, the Cleveland Museum of Art, SMK, the
+Wellcome Collection), Wikimedia, or the
 host NASA links that day, which on a video day is a video host such as YouTube. Those sites see
 your IP address and browser details, as in any image request. They also see that the request came
 from today.duinlab.nl. Some museums refuse a picture request that doesn't say where it came from.

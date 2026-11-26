@@ -16,12 +16,16 @@ temperature = "celsius"
 wind = "kmh"
 
 [content]
-pictures = ["apod", "met", "wikipedia", "aic"]
+pictures = ["apod", "met", "wikipedia", "aic", "cleveland", "smk", "wellcome"]
 tides = true
 sea = true
 events = true
 radar = "knmi"
 holidays = "nl"
+
+# Wellcome is mostly medical: keep its pictures to these subjects.
+[content.wellcome]
+subjects = ["Botany", "Plants", "Plants, Ornamental", "Birds", "Animals"]
 
 [[games]]
 id = "factmap"

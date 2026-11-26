@@ -109,6 +109,27 @@ describe("site configuration", () => {
       "content.pictures",
     ],
     [
+      "unknown Wellcome setting",
+      (c: ReturnType<typeof raw>) => {
+        c.content.wellcome = { subjects: ["Birds"], genres: ["Prints"] };
+      },
+      "content.wellcome.genres",
+    ],
+    [
+      "empty Wellcome subjects",
+      (c: ReturnType<typeof raw>) => {
+        c.content.wellcome = { subjects: [] };
+      },
+      "content.wellcome.subjects",
+    ],
+    [
+      "Wellcome settings without the source",
+      (c: ReturnType<typeof raw>) => {
+        c.content.pictures = ["met"];
+      },
+      "content.wellcome",
+    ],
+    [
       "inherited Hague feed",
       (c: ReturnType<typeof raw>) => {
         c.location.latitude = 52.09;
@@ -173,6 +194,7 @@ describe("site configuration", () => {
   it("allows explicitly empty picture and game lists", () => {
     const config = raw();
     config.content.pictures = [];
+    delete config.content.wellcome;
     config.games = [];
     expect(validateSiteConfig(config).games).toEqual([]);
   });

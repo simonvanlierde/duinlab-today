@@ -1,10 +1,9 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-
-const hosts = /^https:\/\/(images\.metmuseum\.org|thumb\.wikimedia\.org|www\.artic\.edu\/iiif|iiif\.micr\.io)\//;
+import { imageHosts, SLIDES } from "./fixture-pictures";
 
 test.beforeEach(async ({ page }) => {
-  await page.route(hosts, (route) =>
+  await page.route(imageHosts, (route) =>
     route.fulfill({
       path: "e2e/fixtures/picture.png",
       contentType: "image/png",
@@ -115,16 +114,21 @@ test("the viewer stays usable with long captions, reduced motion and a broken im
   await page.screenshot({
     path: `test-results/viewer-${testInfo.project.name}.png`,
   });
-  await viewer.getByRole("button", { name: "Next picture" }).click();
-  await viewer.getByRole("button", { name: "Next picture" }).click();
+  for (let i = 1; i < SLIDES; i++) await viewer.getByRole("button", { name: "Next picture" }).click();
   await expect(viewer.getByRole("button", { name: "Next picture" })).toBeDisabled();
   await expect(viewer.getByRole("region", { name: "Enlarged picture" })).toBeFocused();
   await page.keyboard.press("ArrowLeft");
-  await expect(viewer.locator(".viewer-count")).toHaveText("2 of 3");
+  await expect(viewer.locator(".viewer-count")).toHaveText(`${SLIDES - 1} of ${SLIDES}`);
   await viewer.getByRole("button", { name: "Previous picture" }).click();
   await page.keyboard.press("ArrowRight");
-  await expect(viewer.locator(".viewer-count")).toHaveText("2 of 3");
-  await viewer.locator("img").evaluate((img) => img.dispatchEvent(new Event("error")));
+  await expect(viewer.locator(".viewer-count")).toHaveText(`${SLIDES - 1} of ${SLIDES}`);
+  // once the original is in, it fails, and then the preview it falls back to
+  const original = await page
+    .locator(".pic .picture-open")
+    .nth(SLIDES - 2)
+    .getAttribute("href");
+  await expect(viewer.locator(".viewer-stage img")).toHaveAttribute("src", original ?? "");
+  for (let i = 0; i < 2; i++) await viewer.locator("img").evaluate((img) => img.dispatchEvent(new Event("error")));
   await expect(viewer.getByText("This image couldn’t load. Try its source below.")).toBeVisible();
   await expect(viewer.locator("figcaption a").first()).toHaveAttribute("href", /^https:/);
   await close.click();
@@ -263,7 +267,7 @@ test("an arrow press past the last picture leaves it as it is", async ({ page })
 });
 
 test("a small object on a plain backdrop opens framed, and Whole picture shows all of it", async ({ page }) => {
-  await page.route(hosts, (route) =>
+  await page.route(imageHosts, (route) =>
     route.fulfill({
       path: "e2e/fixtures/object.png",
       contentType: "image/png",
@@ -342,16 +346,16 @@ test("a second finger and interrupted swipes do not strand the viewer", async ({
   await pointer("pointerdown", 1, 250);
   await pointer("pointerdown", 2, 280);
   await pointer("pointerup", 1, 100);
-  await expect(viewer.locator(".viewer-count")).toHaveText("2 of 3");
+  await expect(viewer.locator(".viewer-count")).toHaveText(`2 of ${SLIDES}`);
   await pointer("pointerup", 2, 280);
   for (const interrupt of ["pointercancel", "lostpointercapture", "blur"]) {
     await pointer("pointerdown", 1, 250);
     if (interrupt === "blur") await page.evaluate(() => window.dispatchEvent(new Event("blur")));
     else await pointer(interrupt, 1, 250);
     await pointer("pointerup", 1, 100);
-    await expect(viewer.locator(".viewer-count")).toHaveText("2 of 3");
+    await expect(viewer.locator(".viewer-count")).toHaveText(`2 of ${SLIDES}`);
   }
   await pointer("pointerdown", 1, 250);
   await pointer("pointerup", 1, 100);
-  await expect(viewer.locator(".viewer-count")).toHaveText("3 of 3");
+  await expect(viewer.locator(".viewer-count")).toHaveText(`3 of ${SLIDES}`);
 });

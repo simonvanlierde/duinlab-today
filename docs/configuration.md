@@ -53,8 +53,33 @@ Browser progress stays on its original origin; changing domains does not transfe
 
 ### Pictures and local sources
 
-Set `content.pictures` to any subset of `apod`, `met`, `wikipedia`, `aic` and `rijks`, in your preferred order.
+Set `content.pictures` to any subset of these sources, in your preferred order:
+
+| Source | Pictures |
+|---|---|
+| `apod` | NASA's Astronomy Picture of the Day |
+| `met` | Public-domain highlights from The Metropolitan Museum of Art |
+| `wikipedia` | Wikipedia's picture of the day |
+| `aic` | Public-domain works from the Art Institute of Chicago |
+| `rijks` | Public-domain paintings from the Rijksmuseum |
+| `cleveland` | CC0 paintings from the Cleveland Museum of Art |
+| `smk` | Public-domain paintings from SMK, the National Gallery of Denmark |
+| `wellcome` | Openly licensed images from the Wellcome Collection, limited to the subjects you choose |
+
 Use `pictures = []` to omit the picture strip.
+Each source picks one picture a day, the same for every visitor. A source skips a work much wider or taller than 3:1,
+and the strip shows an image only once when two sources return it.
+
+The Wellcome Collection is mostly medical history. Its pictures come only from the subjects in
+`[content.wellcome]`, as the collection's catalogue names them; without that table they come from botany,
+plants, birds and animals:
+
+```toml
+[content.wellcome]
+subjects = ["Botany", "Plants", "Birds"]
+```
+
+To add a source of your own, see [Adding a source](adding-a-source.md).
 `apod` is NASA's **Astronomy Picture of the Day**. It needs the `NASA_API_KEY` secret, even when the official APOD feed supplies the image.
 A source that fails is omitted while the other sources continue.
 

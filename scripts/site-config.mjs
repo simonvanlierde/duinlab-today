@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { parse } from "smol-toml";
+import { PICTURE_SOURCES } from "../src/lib/picture-sources.ts";
 
 const fields = {
   site: ["title", "url", "description"],
@@ -13,10 +14,10 @@ function fail(path, message) {
   throw new Error(`Site configuration: ${path} ${message}`);
 }
 
-function keys(value, expected, path) {
+function keys(value, expected, path, optional = []) {
   if (!value || typeof value !== "object" || Array.isArray(value)) fail(path, "must be a table");
   for (const key of Object.keys(value)) {
-    if (!expected.includes(key)) fail(`${path}.${key}`, "is unknown");
+    if (!expected.includes(key) && !optional.includes(key)) fail(`${path}.${key}`, "is unknown");
   }
   for (const key of expected) {
     if (!(key in value)) fail(`${path}.${key}`, "is required");
@@ -47,7 +48,10 @@ function https(value, path) {
 /** Validate public settings before they enter the browser or Worker bundle. */
 export function validateSiteConfig(config) {
   keys(config, [...Object.keys(fields), "games"], "config");
-  for (const [section, expected] of Object.entries(fields)) keys(config[section], expected, section);
+  // a picture source with settings takes an optional [content.<source>] table
+  const sourceTables = Object.keys(PICTURE_SOURCES).filter((kind) => PICTURE_SOURCES[kind].options);
+  for (const [section, expected] of Object.entries(fields))
+    keys(config[section], expected, section, section === "content" ? sourceTables : []);
   for (const key of fields.site) text(config.site[key], `site.${key}`);
   const url = https(config.site.url, "site.url");
   if (url.pathname !== "/" || url.search || url.hash)
@@ -75,8 +79,18 @@ export function validateSiteConfig(config) {
   choice(config.units.temperature, ["celsius", "fahrenheit"], "units.temperature");
   choice(config.units.wind, ["kmh", "mph"], "units.wind");
   if (!Array.isArray(config.content.pictures)) fail("content.pictures", "must be a list");
-  for (const source of config.content.pictures)
-    choice(source, ["apod", "met", "wikipedia", "aic", "rijks"], "content.pictures");
+  for (const source of config.content.pictures) choice(source, Object.keys(PICTURE_SOURCES), "content.pictures");
+  for (const kind of sourceTables) {
+    const table = config.content[kind];
+    if (table === undefined) continue;
+    const path = `content.${kind}`;
+    if (!config.content.pictures.includes(kind)) fail(path, `needs "${kind}" in content.pictures`);
+    keys(table, [], path, Object.keys(PICTURE_SOURCES[kind].options));
+    for (const [key, list] of Object.entries(table)) {
+      if (!Array.isArray(list) || list.length === 0) fail(`${path}.${key}`, "must be a nonempty list of text");
+      for (const item of list) text(item, `${path}.${key}`);
+    }
+  }
   if (new Set(config.content.pictures).size !== config.content.pictures.length)
     fail("content.pictures", "must not contain duplicates");
   const { latitude, longitude, country, timezone } = config.location;

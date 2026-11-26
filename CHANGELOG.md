@@ -7,10 +7,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Three new picture sources: `cleveland` (Cleveland Museum of Art), `smk` (SMK, the National Gallery of Denmark) and `wellcome` (Wellcome Collection). Wellcome pictures come only from the subjects in `[content.wellcome]`, botany, plants, birds and animals by default.
+- [Adding a source](docs/adding-a-source.md) explains how to add a picture source or a game.
 - The picture viewer frames a small object on a plain museum backdrop so it fills the screen; "Whole picture" shows all of it. A click or tap zooms in where you point, a mouse drag pans, and a swipe down closes the viewer.
 
 ### Changed
 
+- A picture source skips works wider or taller than 3:1, such as handscrolls, and the strip shows an image only once when two sources return it.
 - On wide screens the featured article follows the pictures in their column, so no empty band waits below the caption.
 - The masthead leaves room above the date.
 - The viewer grows out of the picture you open and shows the preview at once while the original loads.

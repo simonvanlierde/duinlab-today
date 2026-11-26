@@ -1,0 +1,75 @@
+{
+  "totalPages": 605,
+  "totalResults": 1815,
+  "results": [
+    {
+      "id": "bqc32pau",
+      "aspectRatio": 0.7325,
+      "locations": [
+        {
+          "url": "https://iiif.wellcomecollection.org/image/V0043271/info.json",
+          "credit": "Wellcome Collection",
+          "license": {
+            "id": "pdm",
+            "label": "Public Domain Mark"
+          }
+        }
+      ],
+      "source": {
+        "id": "cqjjtmfd",
+        "title": "An orchid (Cattleya Schofieldianum): flowering stem. Watercolour.",
+        "contributors": []
+      }
+    },
+    {
+      "id": "bqd4hnbp",
+      "aspectRatio": 1.2422360248447204,
+      "locations": [
+        {
+          "url": "https://iiif.wellcomecollection.org/image/V0042657/info.json",
+          "credit": "Wellcome Collection",
+          "license": {
+            "id": "pdm",
+            "label": "Public Domain Mark"
+          }
+        }
+      ],
+      "source": {
+        "id": "cnkdxws8",
+        "title": "East Indian or Malabar Kino (Pterocarpus marsupium Roxb.): branch with flowers, separate shoot bearing flowers and fruit and sections of flowers. Coloured line engraving.",
+        "contributors": [
+          {
+            "agent": {
+              "label": "Hendrik van Rheede"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "bqq6wqer",
+      "aspectRatio": 0.75,
+      "locations": [
+        {
+          "url": "https://iiif.wellcomecollection.org/image/B0006261/info.json",
+          "credit": "Liz Hirst, Medical Research Council",
+          "license": {
+            "id": "cc-by",
+            "label": "Attribution 4.0 International (CC BY 4.0)"
+          }
+        }
+      ],
+      "source": {
+        "id": "mytf98ju",
+        "title": "Hedge mustard pollen",
+        "contributors": [
+          {
+            "agent": {
+              "label": "Liz Hirst, Medical Research Council"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

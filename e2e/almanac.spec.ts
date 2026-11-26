@@ -1,15 +1,14 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { imageHosts } from "./fixture-pictures";
 import { moonNow, pinSky, starNow } from "./sky";
 
 test.beforeEach(async ({ page }) => {
-  await page.route(
-    /^https:\/\/(images\.metmuseum\.org|thumb\.wikimedia\.org|www\.artic\.edu\/iiif|iiif\.micr\.io)\//,
-    (route) =>
-      route.fulfill({
-        path: "e2e/fixtures/picture.png",
-        contentType: "image/png",
-      }),
+  await page.route(imageHosts, (route) =>
+    route.fulfill({
+      path: "e2e/fixtures/picture.png",
+      contentType: "image/png",
+    }),
   );
 });
 

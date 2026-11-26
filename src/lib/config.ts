@@ -1,3 +1,5 @@
+import type { PictureKind } from "./picture-sources";
+
 export interface SiteConfig {
   site: { title: string; url: string; description: string };
   location: {
@@ -9,7 +11,9 @@ export interface SiteConfig {
   };
   units: { temperature: "celsius" | "fahrenheit"; wind: "kmh" | "mph" };
   content: {
-    pictures: ("apod" | "met" | "wikipedia" | "aic" | "rijks")[];
+    pictures: PictureKind[];
+    /** Subjects the Wellcome Collection pictures come from; picture-sources.ts has the default. */
+    wellcome?: { subjects: string[] };
     tides: boolean;
     sea: boolean;
     events: boolean;
