@@ -192,7 +192,10 @@ test("an arrow press past the last picture leaves it as it is", async ({ page })
   for (let i = 1; i < n; i++) await page.keyboard.press("ArrowRight");
   await expect(viewer.locator(".viewer-count")).toHaveText(`${n} of ${n}`);
   const image = viewer.locator(".viewer-stage img");
-  const original = await page.locator(".picture-open").nth(n - 1).getAttribute("href");
+  const original = await page
+    .locator(".picture-open")
+    .nth(n - 1)
+    .getAttribute("href");
   await expect(image).toHaveAttribute("src", original ?? "");
   // read in the same task as the key press: a reload of the preview would show here at once
   const after = await viewer.evaluate((dialog) => {
