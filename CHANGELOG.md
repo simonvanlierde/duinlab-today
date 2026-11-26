@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - One TOML file configures the city, time zone, weather units, pictures and games, with Utrecht and Evanston examples and fork deployment instructions.
 - The picture viewer links directly to the original image. NASA pictures include an expandable explanation from their source.
 - The almanac shows moonrise and moonset for the configured city, including days without either event.
+- The rain forecast uses KNMI's two-hour radar nowcast in 5-minute steps, with Buienradar and Open-Meteo as fallbacks. A missing radar cell never shows as dry.
+- A [privacy statement](docs/privacy.md) says what the page keeps and which sites your browser contacts. The About page links it.
 
 ### Changed
 
@@ -17,10 +19,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The picture viewer uses source originals when available and falls back to previews if they fail.
 - Picture selectors sit below captions, and the almanac groups sun, moon, planets and sea details.
 - Short desktop layouts use tighter spacing while keeping body text and game controls readable.
+- On phones, games follow the picture, facts, word and quiz instead of the longer reading. On desktop, the full article spans both reading columns.
 
 ### Fixed
 
-- Games tests use a fixed clock, so checks keep passing after the fixture date.
 - Yesterday's page description and the documented local time-zone contract match the configured city.
 - Picture navigation keeps keyboard focus when a caption link or explanation is selected.
 - NASA's official APOD feed recovers the day's astronomy picture when its API returns a placeholder or fails.
@@ -34,6 +36,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Games and quiz saves preserve progress when tabs write at the same time, and remote updates keep keyboard focus visible.
 - Rain forecasts discard elapsed intervals and show the remaining horizon; daily weather summaries refresh after Amsterdam midnight.
 - Imported titles decode accented HTML entities, and about and yesterday pages include sharing cards.
+- The moon keeps a full 44px tap target when it sits at the right edge of the sky.
 
 ## [0.1.0] - 2026-11-10
 

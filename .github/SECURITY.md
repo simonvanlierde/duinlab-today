@@ -7,8 +7,7 @@
 
 Report it privately, through
 [a GitHub security advisory](https://github.com/simonvanlierde/duinlab-today/security/advisories/new)
-or by email to <code@duinlab.nl>. Don't open a public issue or pull request for it:
-anyone can read those before there is a fix.
+or by email to <code@duinlab.nl>. Don't open a public issue or pull request: anyone can read those before there is a fix.
 
 Please include:
 
@@ -16,8 +15,7 @@ Please include:
 - Steps to reproduce it, or a proof of concept.
 - The impact you expect, and the release or commit you saw it in.
 
-I acknowledge a report within 14 days, then tell you whether I can reproduce it and when I
-expect a fix.
+I reply within 14 days. I'll say whether I can reproduce it and when I expect a fix.
 
 ## Fixes and disclosure
 

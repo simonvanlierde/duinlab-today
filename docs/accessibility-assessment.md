@@ -2,24 +2,24 @@
 
 This is the criterion-by-criterion check behind the [accessibility statement](accessibility.md).
 It has a row for every level A and AA success criterion of [WCAG 2.2](https://www.w3.org/TR/WCAG22/).
-The app does not serve this page; it lives in the repository only.
+The app doesn't serve this page. It lives in the repository only.
 
 ## How to fill it in
 
-Follow the steps of [WCAG-EM](https://www.w3.org/TR/WCAG-EM/): set the scope, pick a sample of
-pages and states, judge each criterion on that sample, and report.
+Follow [WCAG-EM](https://www.w3.org/TR/WCAG-EM/): set the scope, pick a sample of pages and
+states, judge each criterion on that sample, and report.
 
-1. Fill in the lines below: the date, who checked, and the browsers and widths used.
+1. Fill in the date, who checked, and the browsers and widths used.
 2. List the sample: every page, and the dialogs, menus and states a user meets on them.
-3. Judge each row on the whole sample. Base each result on something seen in the browser, not
-   on reading the code alone. Set Result to Pass (no failure found after a real check), Fail
-   (at least one failure in the sample) or N/A (the app has nothing the criterion applies to).
-4. In Evidence, say what you checked and how, and name the test that guards it, if there is one.
+3. Judge each row on the whole sample, from what you see in the browser, not from the code alone.
+   Set Result to Pass (no failure found after a real check), Fail (at least one failure in the
+   sample) or N/A (nothing in the app falls under the criterion).
+4. In Evidence, say what you checked and how. Name the test that guards it, if there is one.
 5. Count the results in the summary. Copy each Fail to "Known problems" in the statement.
 
-The statement may say "partially conformant" only once every row has a result, and its status
+The statement may say "partially conformant" only once every row has a result. Its status
 sentence must then link this page. Check the rows again when a change adds a page or a control,
-and at least at each yearly review of the statement.
+and at each yearly review of the statement.
 
 - **Date:** TODO
 - **Who:** TODO, such as "the developer. This is not an external audit."
@@ -27,7 +27,7 @@ and at least at each yearly review of the statement.
 
 ## Sample
 
-TODO: list the states checked by hand on each page: the picture viewer, the almanac, the quiz and its review, and the games list. The pages are today, yesterday, about and 404, as the axe-core test in `e2e/` scans them.
+TODO: list the states checked by hand on each page: the picture viewer, the almanac, the quiz and its review, and the games list. The pages are today, yesterday, about and 404, the same four the axe-core test in `e2e/` scans.
 
 ## Results
 
@@ -106,9 +106,8 @@ TODO: list the states checked by hand on each page: the picture viewer, the alma
 | 4.1.2 Name, Role, Value | A | Not assessed | |
 | 4.1.3 Status Messages | AA | Not assessed | |
 
-WCAG 2.2 removed 4.1.1 Parsing, so it is not listed.
+4.1.1 Parsing is not listed: WCAG 2.2 removed it.
 
 ## Summary
 
-TODO: of the 55 level A and AA criteria, say how many fail, pass and do not apply, and what
-the next check is.
+TODO: of the 55 level A and AA criteria, how many fail, pass and don't apply, and when the next check is.

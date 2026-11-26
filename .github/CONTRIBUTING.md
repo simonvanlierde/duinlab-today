@@ -1,8 +1,8 @@
 # Contributing
 
-Thank you for your interest in duinlab-today. Bug reports, feature requests and pull
-requests are welcome. Please read the [Code of Conduct](CODE_OF_CONDUCT.md) first, and
-report vulnerabilities as [SECURITY.md](SECURITY.md) describes, not in a public issue.
+Bug reports, feature requests and pull requests are welcome. Read the
+[Code of Conduct](CODE_OF_CONDUCT.md) first. Report vulnerabilities as
+[SECURITY.md](SECURITY.md) describes, not in a public issue.
 
 ## Report a bug or ask for a feature
 
@@ -13,17 +13,17 @@ a feature request for it.
 
 ## Scope and response
 
-One person maintains duinlab-today, in their own time. Expect a reply to an issue or
+I maintain duinlab-today in my own time. Expect a reply to an issue or
 pull request within about two weeks.
 
 Before a large pull request, such as a new feature or a change to how something works,
-open an issue and agree on the change there first. A small fix needs no issue. A pull
-request outside what the project sets out to do is closed with a link to this section.
+open an issue and agree on the change there first. A small fix needs no issue. I close a pull
+request outside the project's scope with a link to this section.
 
 ## Set up and check
 
 The [README](../README.md) says how to install the tools, the dependencies
-and the git hooks. `just check` runs the checks CI runs, and `just fmt` fixes and
+and the git hooks. `just check` runs the checks CI runs. `just fmt` fixes and
 formats.
 
 pnpm locks only releases at least a week old. If `just check` fails on
@@ -84,8 +84,8 @@ The `dco` workflow checks every pull request from a fork and fails on a commit w
 
 ## Who maintains this
 
-Simon van Lierde maintains duinlab-today: reviews pull requests, merges them and
-makes releases. The repository belongs to [simonvanlierde](https://github.com/simonvanlierde)
+I (Simon van Lierde) maintain duinlab-today. I review and merge pull requests and
+make releases. The repository belongs to [simonvanlierde](https://github.com/simonvanlierde)
 on GitHub. Only maintainers can merge to `main`. A new maintainer is added by an existing one, by name in this section.
 If no maintainer can continue, the repository is archived with a note in the README,
 and anyone may fork it under its license.

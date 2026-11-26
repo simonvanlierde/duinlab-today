@@ -85,11 +85,10 @@ Checks and builds generate Cloudflare runtime and binding types from `wrangler.j
 
 `just e2e` runs the browser tests against a production build, after a one-time
 `pnpm exec playwright install chromium`. They include axe scans of today, yesterday, about and 404 pages and
-a print-layout check. It runs the default suite and a separate APOD suite with a fixture key; no real NASA key
-is required. The Worker reads every source from a local fixture server
+a print-layout check. It runs the default suite and a separate APOD suite with a fixture key, so no real NASA key is needed. The Worker reads every source from a local fixture server
 ([`e2e/fixture-server.mjs`](e2e/fixture-server.mjs)) through the `FIXTURE_ORIGIN` variable, so the tests run
 offline with repeatable content.
-See [release preparation](docs/releasing.md) before a deployment or release tag.
+Read [release preparation](docs/releasing.md) before a deployment or release tag.
 
 The social card `public/og.png` is rendered from `docs/og-card.html`. Keep its text inside the centred 630 px
 column, because some link previews crop to it. After editing, run `just og-card`.
@@ -143,7 +142,7 @@ Love and Lemons. Each item on the page links to its source.
 
 ## Privacy and accessibility
 
-The [privacy statement](docs/privacy.md) says what the site keeps and which sites your browser contacts. The [accessibility statement](docs/accessibility.md) says what is checked and what is known to fail.
+The [privacy statement](docs/privacy.md) lists what the site keeps and which sites your browser contacts. The [accessibility statement](docs/accessibility.md) lists what is checked and what is known to fail.
 
 ## Licence
 
