@@ -1,0 +1,263 @@
+name: ts
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Pull requests only: a newer push to main must not cancel a production deploy in flight.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: "ts: lint, types, tests"
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "26"
+
+      # The pnpm store is cached by hand: setup-node's cache saves on every event and has
+      # no switch to stop that. A cache a pull request saves is readable by that pull
+      # request alone, and it pushes main's entries out of the 10 GB per-repo limit, so
+      # pull requests only restore.
+      - id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - id: pnpm-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-check-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-check-${{ runner.os }}-
+
+      - run: pnpm install --frozen-lockfile
+      - if: github.event_name != 'pull_request' && steps.pnpm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ steps.pnpm-cache.outputs.cache-primary-key }}
+
+      - run: pnpm run check
+      - run: pnpm run typecheck
+      - run: pnpm run test
+      - run: pnpm run build
+
+      # Kept for inspection: the production job rebuilds, because wrangler deploys Astro's
+      # build through .wrangler/deploy/config.json, which this artifact does not carry.
+      - if: github.event_name == 'pull_request' || github.event_name == 'push'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          include-hidden-files: true
+          path: dist
+          if-no-files-found: error
+          retention-days: 7
+      # Known advisories, moderate and up, in what ships: dependencies, not dev tooling.
+      - run: pnpm audit --prod --audit-level=moderate
+      # Lists the license of each package that ships (dependencies, not dev tooling) and
+      # fails on one MIT cannot take. The allow-list is in scripts/checkLicenses.mjs.
+      - run: pnpm run licenses
+
+  # The e2e container's tag must match the locked Playwright exactly. A job of its own reads it,
+  # so e2e starts beside check instead of waiting for all of it.
+  playwright:
+    name: "ts: playwright version"
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: pnpm-lock.yaml
+          sparse-checkout-cone-mode: false
+      - id: version
+        run: |
+          version=$(grep -oPm1 "^  '@playwright/test@\K[0-9.]+(?=':)" pnpm-lock.yaml)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  e2e:
+    name: e2e (chromium)
+    needs: playwright
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The browser and its system libraries come with the image, at the version the
+    # playwright job read, so a Playwright bump needs no edit here and no digest can sit beside it.
+    container:
+      # jactionlint ignore=unpinned-images
+      image: mcr.microsoft.com/playwright:v${{ needs.playwright.outputs.version }}-noble
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Without a Latin font, the image falls back to a CJK font whose narrow Latin
+      # glyphs can hide text that overflows with the fonts real browsers use.
+      - run: apt-get update && apt-get install -y --no-install-recommends fonts-dejavu-core
+
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "26"
+
+      # Cached by hand, saved off pull requests only, as in the check job. The container's
+      # store path differs from the runner's, so this is a cache of its own.
+      - id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - id: pnpm-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-e2e-${{ runner.os }}-
+
+      - run: pnpm install --frozen-lockfile
+      - if: github.event_name != 'pull_request' && steps.pnpm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ steps.pnpm-cache.outputs.cache-primary-key }}
+      - run: pnpm run test:e2e
+      - run: pnpm exec playwright test --config playwright.apod.config.ts
+
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  city-profiles:
+    name: city profile (${{ matrix.city }})
+    needs: playwright
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        city: [utrecht, evanston]
+    container:
+      # jactionlint ignore=unpinned-images
+      image: mcr.microsoft.com/playwright:v${{ needs.playwright.outputs.version }}-noble
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: apt-get update && apt-get install -y --no-install-recommends fonts-dejavu-core
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "26"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run test:e2e e2e/city.spec.ts
+        env:
+          SITE_CONFIG: examples/${{ matrix.city }}.toml
+
+  # A preview Worker would carry this app's Durable Object, its KV binding, the hourly cron
+  # and the custom-domain route from wrangler.jsonc: it would fetch upstream sources every
+  # hour per pull request, write to production's KV namespace and contend for today.duinlab.nl.
+  # The job stays so the retire workflow and the README keep one lifecycle.
+  preview:
+    name: preview
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - run: |-
+          echo "::notice::Preview skipped: this Worker has a cron trigger, a Durable Object and a KV binding that a per-PR copy must not share."
+
+  # Production: every push to main builds and deploys. The token lives only in the
+  # production environment; without it, the job skips with a notice.
+  production:
+    name: production
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Never cancelled halfway, so a deploy in flight finishes before the next starts.
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    needs: [check, e2e, city-profiles]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: gate
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: '"$GITHUB_WORKSPACE/.github/scripts/cloudflare-gate.sh" "Production deploy"'
+
+      - if: steps.gate.outputs.run == 'true'
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - if: steps.gate.outputs.run == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "26"
+          cache: pnpm
+
+      - if: steps.gate.outputs.run == 'true'
+        run: pnpm install --frozen-lockfile
+
+      # Built here, not downloaded: wrangler finds the adapter's generated config through
+      # .wrangler/deploy/config.json, which the build writes outside dist/.
+      - if: steps.gate.outputs.run == 'true'
+        run: pnpm run build
+
+      # The route (today.duinlab.nl) is in wrangler.jsonc, so no --domain.
+      - if: steps.gate.outputs.run == 'true'
+        id: deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: '"$GITHUB_WORKSPACE/.github/scripts/deploy-worker.sh" Production'
+
+      # Re-putting an unchanged secret is harmless; without it the picture falls back to The Met.
+      - if: steps.gate.outputs.run == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          NASA_API_KEY: ${{ secrets.NASA_API_KEY }}
+        run: |
+          if [ -n "$NASA_API_KEY" ]; then
+            printf '%s' "$NASA_API_KEY" | pnpm exec wrangler secret put NASA_API_KEY
+          fi
+
+      # The workers.dev URL, not today.duinlab.nl: the zone's bot challenge answers this runner's
+      # datacenter IP with 403 "Just a moment...".
+      - if: steps.gate.outputs.run == 'true'
+        env:
+          SITE: ${{ steps.deploy.outputs.url }}
+        run: |-
+          # a just-enabled workers.dev route can take minutes to resolve, and an HTTP error is not a
+          # curl error, so --retry would not retry it: loop, and print what came back
+          for _ in $(seq 1 12); do
+            code=$(curl -sS -o today.out -w '%{http_code}' "$SITE/today.json" || true)
+            [ "$code" = 200 ] && break
+            echo "today.json answered ${code:-nothing}: $(head -c 200 today.out 2>/dev/null)"
+            sleep 15
+          done
+          test "$code" = 200
+          curl -fsS --retry 3 "$SITE/" | grep -q '<h1'

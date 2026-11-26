@@ -1,0 +1,7 @@
+{
+  "editor.formatOnSave": true,
+  "[markdown]": { "editor.defaultFormatter": "rvben.rumdl" },
+  "[toml]": { "editor.defaultFormatter": "tombi-toml.tombi" },
+  "[yaml]": { "editor.defaultFormatter": "bluebrown.yamlfmt" },
+  "[javascript][javascriptreact][typescript][typescriptreact][json][jsonc][css]": { "editor.defaultFormatter": "biomejs.biome" }
+}

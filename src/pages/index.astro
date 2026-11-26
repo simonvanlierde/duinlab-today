@@ -8,16 +8,7 @@ import Quiz from "../components/Quiz.svelte";
 import { bodiesAt, moonPath, PHASE_SUN, saturation } from "../components/sky";
 import Base from "../layouts/Base.astro";
 import { site } from "../lib/config";
-import {
-	clock,
-	longDate,
-	rainLine,
-	sunLines,
-	temperature,
-	temperatureUnit,
-	weekday,
-	windLine,
-} from "../lib/format";
+import { clock, longDate, rainLine, sunLines, temperature, temperatureUnit, weekday, windLine } from "../lib/format";
 import { moonNow, planetsAt, starNow } from "../lib/moon";
 import { moonTimes } from "../lib/moon-times";
 import { occasionLine } from "../lib/occasions";
@@ -40,17 +31,11 @@ const events = today.events?.items.length ? today.events : null;
 const eventPreview = previewEvents(events?.items ?? []);
 const eventMore = events?.items.filter((e) => !eventPreview.includes(e)) ?? [];
 const tideTimes = (kind: "high" | "low") =>
-	(tides?.events ?? [])
-		.filter((e) => e.kind === kind)
-		.map((e) => e.at)
-		.join(" and ");
-const rain = weather
-	? rainLine(
-			weather.rainNext2h,
-			now,
-			weather.rainCredit.name === "Open-Meteo" ? 15 : 5,
-		)
-	: "";
+  (tides?.events ?? [])
+    .filter((e) => e.kind === kind)
+    .map((e) => e.at)
+    .join(" and ");
+const rain = weather ? rainLine(weather.rainNext2h, now, weather.rainCredit.name === "Open-Meteo" ? 15 : 5) : "";
 const fact = today.didYouKnow[0];
 const heading = longDate(today.date);
 const hasQuiz = !!quiz && quiz.questions.length > 0;
@@ -61,25 +46,18 @@ const moon = moonTimes(today.date);
 const planets = planetPositions(now);
 const tonight = planetsTonight(today.date, now);
 const bodies = bodiesAt(
-	today.sun,
-	now.getTime(),
-	forced
-		? PHASE_SUN[phase].alt
-		: sunAltitude(
-				now.getTime(),
-				site.location.latitude,
-				site.location.longitude,
-			),
-	(t) => moonNow(t, site.location.latitude, site.location.longitude),
-	(t) => starNow(t, site.location.latitude, site.location.longitude),
-	(t) => planetsAt(planets, t, site.location.latitude, site.location.longitude),
+  today.sun,
+  now.getTime(),
+  forced ? PHASE_SUN[phase].alt : sunAltitude(now.getTime(), site.location.latitude, site.location.longitude),
+  (t) => moonNow(t, site.location.latitude, site.location.longitude),
+  (t) => starNow(t, site.location.latitude, site.location.longitude),
+  (t) => planetsAt(planets, t, site.location.latitude, site.location.longitude),
 );
-const orb = (b: { x: number; alt: number }) =>
-	`--x:${b.x.toFixed(4)};--alt:${b.alt.toFixed(2)}`;
+const orb = (b: { x: number; alt: number }) => `--x:${b.x.toFixed(4)};--alt:${b.alt.toFixed(2)}`;
 const occasion = occasionLine(today.date);
 const SKY_EVENTS = `https://www.timeanddate.com/astronomy/@${site.location.latitude},${site.location.longitude}`;
 const HOLIDAYS =
-	"https://calendar.google.com/calendar/embed?src=en.dutch%23holiday%40group.v.calendar.google.com&ctz=Europe%2FAmsterdam";
+  "https://calendar.google.com/calendar/embed?src=en.dutch%23holiday%40group.v.calendar.google.com&ctz=Europe%2FAmsterdam";
 const what = site.site.description;
 ---
 

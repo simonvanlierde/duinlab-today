@@ -2,11 +2,14 @@
 # `packages:` list.
 
 # Resolve only releases at least a week old (in minutes): a compromised release
-# is usually caught and yanked within that window.
+# is usually caught and yanked within that window. The dependency bot waits the
+# same week.
 minimumReleaseAge: 10080
+# `pnpm audit --fix=update` lists a fresh security fix under minimumReleaseAgeExclude;
+# pnpm drops an entry once the lockfile no longer holds that version.
 minimumReleaseAgeExcludePrune: true
-# esbuild and workerd run install scripts to set up their binaries; pnpm refuses
-# an install that skips a build no one has allowed or denied.
+# wrangler's esbuild and workerd run install scripts to set up their binaries; pnpm
+# refuses an install that skips a build no one has allowed or denied.
 allowBuilds:
   esbuild: true
   workerd: true

@@ -148,4 +148,4 @@ The JSON API keeps metric weather fields, including Celsius and km/h, even when 
 Its `date` and bare rain clocks use the configured time zone. Sun timestamps carry that zone’s UTC offset.
 See the [data contract](../README.md#data) for the remaining fields.
 
-The social image remains a static file. Edit `docs/og-card.html` for your title and location, then render `public/og.png` with the command in [Develop](../README.md#develop).
+The social image remains a static file. Edit `docs/og-card.html` for your title and location, then render `public/og.png` with `just og-card`.

@@ -1,9 +1,44 @@
-node_modules/
-dist/
-.astro/
-.wrangler/
-.dev.vars
+# One ignore file for every stack in this repo.
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Secrets
 .env
-test-results/
+.env.*
+!.env.example
+*.pem
+*.key
+# pnpm settings live in pnpm-workspace.yaml, so an .npmrc here would hold a registry token.
+.npmrc
+# wrangler's local secrets and dev state.
+.dev.vars*
+.wrangler/
+
+# The rumdl hook's cache. An older rumdl left it without an ignore file of its own,
+# and Biome then formats its JSON.
+.rumdl_cache/
+
+# Build output
+build/
+dist/
+
+# Node
+node_modules/
+.pnpm-store/
+*.tsbuildinfo
+coverage/
 playwright-report/
+/shots/
+test-results/
+blob-report/
+dev-dist/
+
+# Astro
+.astro/
+# `pnpm run types` writes it from wrangler.jsonc.
 src/lib/worker-configuration.d.ts

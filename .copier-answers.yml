@@ -1,0 +1,28 @@
+# Managed by copier. Do not edit by hand. Run: copier update
+_commit: v0.16.1
+_src_path: gh:simonvanlierde/project-templates
+author_email: code@duinlab.nl
+author_name: Simon van Lierde
+copyright_year: '2026'
+customise: true
+decision_records: true
+dependency_bot: renovate
+extras:
+- cold_install
+github_user: simonvanlierde
+level: standard
+license: MIT
+node_version: '26'
+project_description: A daily paper for The Hague with pictures, sourced facts, weather,
+    a quiz and web games, under a sky that follows the real sun.
+project_name: duinlab-today
+public: true
+site: none
+site_url: https://today.duinlab.nl
+stacks:
+- ts
+ts_dir: .
+ts_kind: web-app
+user_data: browser
+web_framework: svelte
+worker: true

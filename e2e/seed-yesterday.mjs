@@ -4,77 +4,73 @@ import { writeFileSync } from "node:fs";
 import { loadSiteConfig } from "../scripts/site-config.mjs";
 
 const { site, configKey } = loadSiteConfig();
-const localDay = () =>
-	new Intl.DateTimeFormat("en-CA", { timeZone: site.location.timezone }).format(
-		new Date(),
-	);
+const localDay = () => new Intl.DateTimeFormat("en-CA", { timeZone: site.location.timezone }).format(new Date());
 const shift = (date, n) => {
-	const at = new Date(`${date}T12:00:00Z`);
-	at.setUTCDate(at.getUTCDate() + n);
-	return at.toISOString().slice(0, 10);
+  const at = new Date(`${date}T12:00:00Z`);
+  at.setUTCDate(at.getUTCDate() + n);
+  return at.toISOString().slice(0, 10);
 };
 
 const date = shift(localDay(), -1);
 const credit = { name: "Wikipedia", url: "https://en.wikipedia.org/" };
 const day = {
-	date,
-	generatedAt: new Date().toISOString(),
-	pictures: [
-		{
-			imageUrl:
-				"https://images.metmuseum.org/CRDImages/ep/web-large/DP-42549-001.jpg",
-			pageUrl: "https://www.metmuseum.org/art/collection/search/436535",
-			title: "Wheat Field with Cypresses",
-			alt: "Wheat Field with Cypresses, by Vincent van Gogh",
-			by: "Vincent van Gogh",
-			credit: {
-				name: "The Metropolitan Museum of Art",
-				url: "https://www.metmuseum.org/",
-			},
-		},
-	],
-	didYouKnow: [
-		{
-			text: "moss grows on the north side",
-			url: "https://en.wikipedia.org/wiki/Moss",
-			credit,
-		},
-	],
-	onThisDay: null,
-	featured: null,
-	word: null,
-	quote: { text: "Yesterday's quote.", author: "Ada Lovelace", credit },
-	quiz: {
-		questions: [
-			{
-				question: "Which planet is red?",
-				answers: ["Venus", "Mars", "Jupiter"],
-				correct: 1,
-			},
-		],
-		credit: { name: "Open Trivia DB", url: "https://opentdb.com/" },
-	},
-	tides: null,
-	events: null,
+  date,
+  generatedAt: new Date().toISOString(),
+  pictures: [
+    {
+      imageUrl: "https://images.metmuseum.org/CRDImages/ep/web-large/DP-42549-001.jpg",
+      pageUrl: "https://www.metmuseum.org/art/collection/search/436535",
+      title: "Wheat Field with Cypresses",
+      alt: "Wheat Field with Cypresses, by Vincent van Gogh",
+      by: "Vincent van Gogh",
+      credit: {
+        name: "The Metropolitan Museum of Art",
+        url: "https://www.metmuseum.org/",
+      },
+    },
+  ],
+  didYouKnow: [
+    {
+      text: "moss grows on the north side",
+      url: "https://en.wikipedia.org/wiki/Moss",
+      credit,
+    },
+  ],
+  onThisDay: null,
+  featured: null,
+  word: null,
+  quote: { text: "Yesterday's quote.", author: "Ada Lovelace", credit },
+  quiz: {
+    questions: [
+      {
+        question: "Which planet is red?",
+        answers: ["Venus", "Mars", "Jupiter"],
+        correct: 1,
+      },
+    ],
+    credit: { name: "Open Trivia DB", url: "https://opentdb.com/" },
+  },
+  tides: null,
+  events: null,
 };
 const file = ".wrangler/yesterday.json";
 writeFileSync(file, JSON.stringify(day));
 execFileSync(
-	"pnpm",
-	[
-		"exec",
-		"wrangler",
-		"kv",
-		"key",
-		"put",
-		`day/v3/${configKey}/${date}`,
-		"--path",
-		file,
-		"--binding",
-		"DAYS",
-		"--local",
-		"--persist-to",
-		".wrangler/e2e",
-	],
-	{ stdio: "inherit" },
+  "pnpm",
+  [
+    "exec",
+    "wrangler",
+    "kv",
+    "key",
+    "put",
+    `day/v3/${configKey}/${date}`,
+    "--path",
+    file,
+    "--binding",
+    "DAYS",
+    "--local",
+    "--persist-to",
+    ".wrangler/e2e",
+  ],
+  { stdio: "inherit" },
 );

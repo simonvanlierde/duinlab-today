@@ -1,212 +1,163 @@
 import { describe, expect, it } from "vitest";
-import {
-	parseEvents,
-	previewEvents,
-	titleCase,
-	withAgenda,
-} from "../../src/lib/sources/events";
+import { parseEvents, previewEvents, titleCase, withAgenda } from "../../src/lib/sources/events";
 import paard from "./fixtures/paard.html?raw";
 
-const page = (...blocks: string[]) =>
-	blocks
-		.map((b) => `<script type="application/ld+json">${b}</script>`)
-		.join("");
+const page = (...blocks: string[]) => blocks.map((b) => `<script type="application/ld+json">${b}</script>`).join("");
 const ev = (name: string, startDate: string, extra = "") =>
-	`{"@type":"Event","name":"${name}","url":"https://www.paard.nl/event/x/","startDate":"${startDate}"${extra}}`;
+  `{"@type":"Event","name":"${name}","url":"https://www.paard.nl/event/x/","startDate":"${startDate}"${extra}}`;
 
 describe("parseEvents", () => {
-	it.each(["Beyoncé", "Beyonc&eacute;", "Beyonc&#233;", "Beyonc&#xE9;"])(
-		"decodes an event name before title casing: %s",
-		(name) => {
-			expect(
-				parseEvents(page(ev(name, "2026-11-11T20:00")), "2026-11-10")?.items[0]
-					?.name,
-			).toBe("Beyoncé");
-		},
-	);
+  it.each(["Beyoncé", "Beyonc&eacute;", "Beyonc&#233;", "Beyonc&#xE9;"])(
+    "decodes an event name before title casing: %s",
+    (name) => {
+      expect(parseEvents(page(ev(name, "2026-11-11T20:00")), "2026-11-10")?.items[0]?.name).toBe("Beyoncé");
+    },
+  );
 
-	it.each([
-		{ items: {} },
-		{ items: [null] },
-		{ items: [{ start: "2026-11-11" }] },
-	])("ignores malformed agenda data %j", (agenda) => {
-		const existing = parseEvents(paard, "2026-11-10");
-		expect(withAgenda(existing, agenda as never, "2026-11-10")?.items).toEqual(
-			existing?.items,
-		);
-	});
-	it("takes the next week of shows, sorted", () => {
-		const r = parseEvents(paard, "2026-11-10");
-		expect(r?.items.length).toBeGreaterThan(5);
-		const days = r?.items.map((i) => i.day) ?? [];
-		expect(days).toEqual([...days].sort());
-		expect(days.every((d) => d >= "2026-11-10" && d <= "2026-11-16")).toBe(
-			true,
-		);
-		expect(r?.items[0]).toMatchObject({
-			day: "2026-11-10",
-			time: "19:20",
-			name: "Takuya Kuroda",
-		});
-		expect(r?.url).toBe("https://www.paard.nl/event/");
-	});
+  it.each([{ items: {} }, { items: [null] }, { items: [{ start: "2026-11-11" }] }])(
+    "ignores malformed agenda data %j",
+    (agenda) => {
+      const existing = parseEvents(paard, "2026-11-10");
+      expect(withAgenda(existing, agenda as never, "2026-11-10")?.items).toEqual(existing?.items);
+    },
+  );
+  it("takes the next week of shows, sorted", () => {
+    const r = parseEvents(paard, "2026-11-10");
+    expect(r?.items.length).toBeGreaterThan(5);
+    const days = r?.items.map((i) => i.day) ?? [];
+    expect(days).toEqual([...days].sort());
+    expect(days.every((d) => d >= "2026-11-10" && d <= "2026-11-16")).toBe(true);
+    expect(r?.items[0]).toMatchObject({
+      day: "2026-11-10",
+      time: "19:20",
+      name: "Takuya Kuroda",
+    });
+    expect(r?.url).toBe("https://www.paard.nl/event/");
+  });
 
-	it("skips cancelled shows, decodes entities, drops events outside the window", () => {
-		const r = parseEvents(paard, "2026-11-10");
-		expect(r?.items.some((i) => i.name.includes("geannuleerd"))).toBe(false);
-		const wide = parseEvents(paard, "2026-11-12");
-		expect(wide?.items.every((i) => !i.name.includes("&#"))).toBe(true);
-		expect(
-			parseEvents(page(ev("Late", "2026-11-17T20:00")), "2026-11-10")?.items,
-		).toEqual([]);
-		expect(
-			parseEvents(page(ev("Past", "2026-11-09T20:00")), "2026-11-10")?.items,
-		).toEqual([]);
-	});
+  it("skips cancelled shows, decodes entities, drops events outside the window", () => {
+    const r = parseEvents(paard, "2026-11-10");
+    expect(r?.items.some((i) => i.name.includes("geannuleerd"))).toBe(false);
+    const wide = parseEvents(paard, "2026-11-12");
+    expect(wide?.items.every((i) => !i.name.includes("&#"))).toBe(true);
+    expect(parseEvents(page(ev("Late", "2026-11-17T20:00")), "2026-11-10")?.items).toEqual([]);
+    expect(parseEvents(page(ev("Past", "2026-11-09T20:00")), "2026-11-10")?.items).toEqual([]);
+  });
 
-	it("handles @graph, arrays and single objects, and https urls only", () => {
-		const html = page(
-			`{"@graph":[${ev("A", "2026-11-11T20:00")}]}`,
-			`[${ev("B", "2026-11-12T20:00")}]`,
-			ev("C", "2026-11-13T20:00").replace("https:", "http:"),
-			ev("D &#038; E", "2026-11-14T19:00"),
-		);
-		expect(parseEvents(html, "2026-11-10")?.items.map((i) => i.name)).toEqual([
-			"A",
-			"B",
-			"D & E",
-		]);
-	});
+  it("handles @graph, arrays and single objects, and https urls only", () => {
+    const html = page(
+      `{"@graph":[${ev("A", "2026-11-11T20:00")}]}`,
+      `[${ev("B", "2026-11-12T20:00")}]`,
+      ev("C", "2026-11-13T20:00").replace("https:", "http:"),
+      ev("D &#038; E", "2026-11-14T19:00"),
+    );
+    expect(parseEvents(html, "2026-11-10")?.items.map((i) => i.name)).toEqual(["A", "B", "D & E"]);
+  });
 
-	it("converts an explicit offset to Amsterdam time", () => {
-		const r = parseEvents(page(ev("Z", "2026-11-11T23:30:00Z")), "2026-11-10");
-		expect(r?.items[0]).toMatchObject({ day: "2026-11-12", time: "00:30" });
-	});
+  it("converts an explicit offset to Amsterdam time", () => {
+    const r = parseEvents(page(ev("Z", "2026-11-11T23:30:00Z")), "2026-11-10");
+    expect(r?.items[0]).toMatchObject({ day: "2026-11-12", time: "00:30" });
+  });
 
-	it("skips a malformed block without losing the rest", () => {
-		const r = parseEvents(
-			page("{not json", ev("Ok", "2026-11-11T20:00")),
-			"2026-11-10",
-		);
-		expect(r?.items.map((i) => i.name)).toEqual(["Ok"]);
-	});
+  it("skips a malformed block without losing the rest", () => {
+    const r = parseEvents(page("{not json", ev("Ok", "2026-11-11T20:00")), "2026-11-10");
+    expect(r?.items.map((i) => i.name)).toEqual(["Ok"]);
+  });
 
-	it("returns null when the page lists no shows, and no items for a week without any", () => {
-		expect(parseEvents("<html></html>", "2026-11-10")).toBeNull();
-		expect(parseEvents(page('{"@type":"WebPage"}'), "2026-11-10")).toBeNull();
-		expect(parseEvents(paard, "2027-07-01")?.items).toEqual([]);
-	});
+  it("returns null when the page lists no shows, and no items for a week without any", () => {
+    expect(parseEvents("<html></html>", "2026-11-10")).toBeNull();
+    expect(parseEvents(page('{"@type":"WebPage"}'), "2026-11-10")).toBeNull();
+    expect(parseEvents(paard, "2027-07-01")?.items).toEqual([]);
+  });
 });
 
 describe("titleCase", () => {
-	it("title-cases names in capitals and leaves mixed case alone", () => {
-		expect(titleCase("MACY GRAY")).toBe("Macy Gray");
-		expect(titleCase("QUEEN’S PLEASURE")).toBe("Queen’s Pleasure");
-		expect(titleCase("HAAGSCH COLLEGE: MINDER TELEFOON")).toBe(
-			"Haagsch College: Minder Telefoon",
-		);
-		expect(titleCase("SEA-FOAM (LIVE)")).toBe("Sea-Foam (Live)");
-		expect(titleCase("Paardcafé: Club Pony!")).toBe("Paardcafé: Club Pony!");
-	});
+  it("title-cases names in capitals and leaves mixed case alone", () => {
+    expect(titleCase("MACY GRAY")).toBe("Macy Gray");
+    expect(titleCase("QUEEN’S PLEASURE")).toBe("Queen’s Pleasure");
+    expect(titleCase("HAAGSCH COLLEGE: MINDER TELEFOON")).toBe("Haagsch College: Minder Telefoon");
+    expect(titleCase("SEA-FOAM (LIVE)")).toBe("Sea-Foam (Live)");
+    expect(titleCase("Paardcafé: Club Pony!")).toBe("Paardcafé: Club Pony!");
+  });
 });
 
 describe("withAgenda", () => {
-	const paard = {
-		items: [
-			{
-				name: "Show",
-				day: "2026-11-12",
-				time: "20:00",
-				venue: "Paard",
-				url: "https://www.paard.nl/event/show",
-			},
-		],
-		url: "https://www.paard.nl/event/",
-		credit: { name: "Paard", url: "https://www.paard.nl/event/" },
-	};
-	const item = (start: string, time: string | null, venue = "Amare") => ({
-		venue,
-		name: `${venue} ${start}`,
-		url: `https://www.amare.nl/en/agenda/${start}`,
-		start,
-		time,
-		end: null,
-	});
+  const paard = {
+    items: [
+      {
+        name: "Show",
+        day: "2026-11-12",
+        time: "20:00",
+        venue: "Paard",
+        url: "https://www.paard.nl/event/show",
+      },
+    ],
+    url: "https://www.paard.nl/event/",
+    credit: { name: "Paard", url: "https://www.paard.nl/event/" },
+  };
+  const item = (start: string, time: string | null, venue = "Amare") => ({
+    venue,
+    name: `${venue} ${start}`,
+    url: `https://www.amare.nl/en/agenda/${start}`,
+    start,
+    time,
+    end: null,
+  });
 
-	it("adds this week's agenda items in time order and credits each venue", () => {
-		const r = withAgenda(
-			paard,
-			{ items: [item("2026-11-11", "19:00"), item("2026-11-30", "19:00")] },
-			"2026-11-10",
-		);
-		expect(r?.items.map((i) => i.venue)).toEqual(["Amare", "Paard"]);
-		expect(r?.credit.name).toBe("Amare, Paard");
-	});
+  it("adds this week's agenda items in time order and credits each venue", () => {
+    const r = withAgenda(paard, { items: [item("2026-11-11", "19:00"), item("2026-11-30", "19:00")] }, "2026-11-10");
+    expect(r?.items.map((i) => i.venue)).toEqual(["Amare", "Paard"]);
+    expect(r?.credit.name).toBe("Amare, Paard");
+  });
 
-	it("keeps Paard alone when the agenda is missing, and the agenda alone when Paard failed", () => {
-		expect(withAgenda(paard, null, "2026-11-10")).toEqual(paard);
-		expect(
-			withAgenda(null, { items: [item("2026-11-10", null)] }, "2026-11-10")
-				?.items,
-		).toHaveLength(1);
-		expect(
-			withAgenda(null, { items: [item("2026-11-30", null)] }, "2026-11-10"),
-		).toBeNull();
-	});
+  it("keeps Paard alone when the agenda is missing, and the agenda alone when Paard failed", () => {
+    expect(withAgenda(paard, null, "2026-11-10")).toEqual(paard);
+    expect(withAgenda(null, { items: [item("2026-11-10", null)] }, "2026-11-10")?.items).toHaveLength(1);
+    expect(withAgenda(null, { items: [item("2026-11-30", null)] }, "2026-11-10")).toBeNull();
+  });
 
-	it("previews two per site and keeps the remaining events", () => {
-		const many = ["2026-11-10", "2026-11-11", "2026-11-12"].map((d, n) => ({
-			...item(d, "09:00", `Venue ${n}`),
-			url: `https://denhaag.com/en/agenda/${d}`,
-		}));
-		const r = withAgenda(paard, { items: many }, "2026-11-10");
-		expect(r?.items.map((i) => i.venue)).toEqual([
-			"Venue 0",
-			"Venue 1",
-			"Venue 2",
-			"Paard",
-		]);
-		expect(previewEvents(r?.items ?? []).map((i) => i.venue)).toEqual([
-			"Venue 0",
-			"Venue 1",
-			"Paard",
-		]);
-		// the credit names the sites, not the dozens of venues DenHaag.com lists
-		expect(r?.credit.name).toBe("DenHaag.com, Paard");
-	});
+  it("previews two per site and keeps the remaining events", () => {
+    const many = ["2026-11-10", "2026-11-11", "2026-11-12"].map((d, n) => ({
+      ...item(d, "09:00", `Venue ${n}`),
+      url: `https://denhaag.com/en/agenda/${d}`,
+    }));
+    const r = withAgenda(paard, { items: many }, "2026-11-10");
+    expect(r?.items.map((i) => i.venue)).toEqual(["Venue 0", "Venue 1", "Venue 2", "Paard"]);
+    expect(previewEvents(r?.items ?? []).map((i) => i.venue)).toEqual(["Venue 0", "Venue 1", "Paard"]);
+    // the credit names the sites, not the dozens of venues DenHaag.com lists
+    expect(r?.credit.name).toBe("DenHaag.com, Paard");
+  });
 });
 
 describe("agenda exclusions", () => {
-	it("removes excluded venues before choosing the preview", () => {
-		const venues = [
-			"Palace Noordeinde",
-			"Paleis Noordeinde",
-			"Namuso Gallery",
-			"Laan van Meerdervoort 7B",
-			"Pulchri Studio",
-			"Amare",
-		];
-		const items = venues.map((venue) => ({
-			venue,
-			name: "Exhibition",
-			url: "https://denhaag.com/en/agenda/exhibition",
-			start: "2026-11-10",
-			time: null,
-			end: null,
-		}));
-		expect(
-			withAgenda(null, { items }, "2026-11-10")?.items.map((i) => i.venue),
-		).toEqual(["Amare"]);
-	});
-	it("keeps more events available beyond the preview", () => {
-		const items = Array.from({ length: 9 }, (_, n) => ({
-			venue: "Amare",
-			name: `Show ${n}`,
-			url: `https://www.amare.nl/en/agenda/${n}`,
-			start: "2026-11-10",
-			time: null,
-			end: null,
-		}));
-		expect(withAgenda(null, { items }, "2026-11-10")?.items).toHaveLength(9);
-	});
+  it("removes excluded venues before choosing the preview", () => {
+    const venues = [
+      "Palace Noordeinde",
+      "Paleis Noordeinde",
+      "Namuso Gallery",
+      "Laan van Meerdervoort 7B",
+      "Pulchri Studio",
+      "Amare",
+    ];
+    const items = venues.map((venue) => ({
+      venue,
+      name: "Exhibition",
+      url: "https://denhaag.com/en/agenda/exhibition",
+      start: "2026-11-10",
+      time: null,
+      end: null,
+    }));
+    expect(withAgenda(null, { items }, "2026-11-10")?.items.map((i) => i.venue)).toEqual(["Amare"]);
+  });
+  it("keeps more events available beyond the preview", () => {
+    const items = Array.from({ length: 9 }, (_, n) => ({
+      venue: "Amare",
+      name: `Show ${n}`,
+      url: `https://www.amare.nl/en/agenda/${n}`,
+      start: "2026-11-10",
+      time: null,
+      end: null,
+    }));
+    expect(withAgenda(null, { items }, "2026-11-10")?.items).toHaveLength(9);
+  });
 });

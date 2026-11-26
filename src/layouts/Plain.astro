@@ -10,28 +10,25 @@ import { sunAltitude } from "../lib/sun";
 declare const __OG_VERSION__: string;
 
 interface Props {
-	title: string;
-	description: string;
-	/** Override the current sky for a missing page. */
-	sky?: "day" | "night";
+  title: string;
+  description: string;
+  /** Override the current sky for a missing page. */
+  sky?: "day" | "night";
 }
 const { title, description, sky } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const now = Date.now();
 const s = sky
-	? skyAt(PHASE_SUN[sky].alt, true, SKY)
-	: skyAt(
-			sunAltitude(now, site.location.latitude, site.location.longitude),
-			sunAltitude(
-				now + 600000,
-				site.location.latitude,
-				site.location.longitude,
-			) > sunAltitude(now, site.location.latitude, site.location.longitude),
-			SKY,
-		);
+  ? skyAt(PHASE_SUN[sky].alt, true, SKY)
+  : skyAt(
+      sunAltitude(now, site.location.latitude, site.location.longitude),
+      sunAltitude(now + 600000, site.location.latitude, site.location.longitude) >
+        sunAltitude(now, site.location.latitude, site.location.longitude),
+      SKY,
+    );
 const style = Object.entries(s.vars)
-	.map(([k, v]) => `${k}:${v}`)
-	.join(";");
+  .map(([k, v]) => `${k}:${v}`)
+  .join(";");
 ---
 
 <!doctype html>

@@ -6,8 +6,7 @@ import { decodeEntities, getText, httpsUrl, safe } from "../util";
 // agenda pages carry none. robots.txt only disallows /wp-admin.
 const AGENDA = "https://www.paard.nl/event/";
 const PREVIEW = 5;
-const EXCLUDED_VENUES =
-	/(?:palace|paleis) noordeinde|namuso gallery|laan van meerdervoort\s+7\s*b|pulchri studio/i;
+const EXCLUDED_VENUES = /(?:palace|paleis) noordeinde|namuso gallery|laan van meerdervoort\s+7\s*b|pulchri studio/i;
 const BLOCK = /<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/g;
 const LOCAL = /^(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2}))?/;
 
@@ -18,39 +17,30 @@ type Node = Record<string, unknown>;
  * Gray"). Names with any lower case are the venue's own styling and stay as they are.
  */
 export function titleCase(name: string): string {
-	if (name !== name.toUpperCase()) return name;
-	return name
-		.toLowerCase()
-		.replace(
-			/(^|[\s\-/(&+])(\p{L})/gu,
-			(_, sep: string, c: string) => sep + c.toUpperCase(),
-		);
+  if (name !== name.toUpperCase()) return name;
+  return name.toLowerCase().replace(/(^|[\s\-/(&+])(\p{L})/gu, (_, sep: string, c: string) => sep + c.toUpperCase());
 }
 
 /** Every Event node in one JSON-LD value: a single object, an array, or an @graph. */
 function eventNodes(v: unknown): Node[] {
-	if (Array.isArray(v)) return v.flatMap(eventNodes);
-	if (!v || typeof v !== "object") return [];
-	const n = v as Node;
-	const type = [n["@type"]].flat();
-	const own = type.some((t) => typeof t === "string" && t.endsWith("Event"))
-		? [n]
-		: [];
-	return [...own, ...eventNodes(n["@graph"])];
+  if (Array.isArray(v)) return v.flatMap(eventNodes);
+  if (!v || typeof v !== "object") return [];
+  const n = v as Node;
+  const type = [n["@type"]].flat();
+  const own = type.some((t) => typeof t === "string" && t.endsWith("Event")) ? [n] : [];
+  return [...own, ...eventNodes(n["@graph"])];
 }
 
 /** Day and time in Amsterdam: Paard writes local time with no offset; an explicit offset is converted. */
-function amsterdamStart(
-	s: string,
-): { day: string; time: string | null } | null {
-	if (/(Z|[+-]\d{2}:?\d{2})$/.test(s) && s.includes("T")) {
-		const at = new Date(s);
-		if (Number.isNaN(at.getTime())) return null;
-		const iso = isoLocal(at);
-		return { day: iso.slice(0, 10), time: iso.slice(11, 16) };
-	}
-	const m = LOCAL.exec(s);
-	return m ? { day: m[1] as string, time: m[2] ?? null } : null;
+function amsterdamStart(s: string): { day: string; time: string | null } | null {
+  if (/(Z|[+-]\d{2}:?\d{2})$/.test(s) && s.includes("T")) {
+    const at = new Date(s);
+    if (Number.isNaN(at.getTime())) return null;
+    const iso = isoLocal(at);
+    return { day: iso.slice(0, 10), time: iso.slice(11, 16) };
+  }
+  const m = LOCAL.exec(s);
+  return m ? { day: m[1] as string, time: m[2] ?? null } : null;
 }
 
 /**
@@ -58,64 +48,61 @@ function amsterdamStart(
  * week without shows, and the result is null when the page lists no shows at all.
  */
 export function parseEvents(html: string, date: string): Events | null {
-	const last = shift(date, 6);
-	const found: (Happening & { start: string })[] = [];
-	let shows = 0;
-	for (const m of html.matchAll(BLOCK)) {
-		let nodes: Node[];
-		try {
-			nodes = eventNodes(JSON.parse(m[1] as string));
-		} catch {
-			continue; // one broken block must not hide the rest
-		}
-		for (const n of nodes) {
-			if (typeof n.name !== "string" || typeof n.startDate !== "string")
-				continue;
-			shows++;
-			if (String(n.eventStatus ?? "").endsWith("EventCancelled")) continue;
-			const start = amsterdamStart(n.startDate);
-			const url = httpsUrl(typeof n.url === "string" ? n.url : undefined);
-			const name = titleCase(decodeEntities(n.name).trim());
-			if (!start || !url || !name || start.day < date || start.day > last)
-				continue;
-			found.push({
-				name,
-				day: start.day,
-				time: start.time,
-				venue: "Paard",
-				url,
-				start: `${start.day}T${start.time ?? "00:00"}`,
-			});
-		}
-	}
-	// no shows at all means the page changed; none this week (a summer break) is a real answer
-	if (shows === 0) return null;
-	found.sort((a, b) => a.start.localeCompare(b.start));
-	return {
-		items: found.map(({ start: _, ...h }) => h),
-		url: AGENDA,
-		credit: { name: "Paard", url: AGENDA },
-	};
+  const last = shift(date, 6);
+  const found: (Happening & { start: string })[] = [];
+  let shows = 0;
+  for (const m of html.matchAll(BLOCK)) {
+    let nodes: Node[];
+    try {
+      nodes = eventNodes(JSON.parse(m[1] as string));
+    } catch {
+      continue; // one broken block must not hide the rest
+    }
+    for (const n of nodes) {
+      if (typeof n.name !== "string" || typeof n.startDate !== "string") continue;
+      shows++;
+      if (String(n.eventStatus ?? "").endsWith("EventCancelled")) continue;
+      const start = amsterdamStart(n.startDate);
+      const url = httpsUrl(typeof n.url === "string" ? n.url : undefined);
+      const name = titleCase(decodeEntities(n.name).trim());
+      if (!start || !url || !name || start.day < date || start.day > last) continue;
+      found.push({
+        name,
+        day: start.day,
+        time: start.time,
+        venue: "Paard",
+        url,
+        start: `${start.day}T${start.time ?? "00:00"}`,
+      });
+    }
+  }
+  // no shows at all means the page changed; none this week (a summer break) is a real answer
+  if (shows === 0) return null;
+  found.sort((a, b) => a.start.localeCompare(b.start));
+  return {
+    items: found.map(({ start: _, ...h }) => h),
+    url: AGENDA,
+    credit: { name: "Paard", url: AGENDA },
+  };
 }
 
-export const fetchEvents = (date: string) =>
-	safe("events", async () => parseEvents(await getText(AGENDA), date));
+export const fetchEvents = (date: string) => safe("events", async () => parseEvents(await getText(AGENDA), date));
 
 const SITE_NAMES: Record<string, string> = {
-	"www.paard.nl": "Paard",
-	"www.amare.nl": "Amare",
-	"denhaag.com": "DenHaag.com",
+  "www.paard.nl": "Paard",
+  "www.amare.nl": "Amare",
+  "denhaag.com": "DenHaag.com",
 };
 
 /** One item of `agenda/v1` in KV, which a weekly homelab job writes from Amare and denhaag.com. */
 interface AgendaItem {
-	venue: string;
-	name: string;
-	url: string;
-	/** YYYY-MM-DD, Europe/Amsterdam */
-	start: string;
-	time: string | null;
-	end: string | null;
+  venue: string;
+  name: string;
+  url: string;
+  /** YYYY-MM-DD, Europe/Amsterdam */
+  start: string;
+  time: string | null;
+  end: string | null;
 }
 
 /**
@@ -123,64 +110,56 @@ interface AgendaItem {
  * The credit names
  * each site that has an item; the venue stays on the item.
  */
-export function withAgenda(
-	paard: Events | null,
-	agenda: { items: AgendaItem[] } | null,
-	date: string,
-): Events | null {
-	const last = shift(date, 6);
-	const extra: Happening[] = (Array.isArray(agenda?.items) ? agenda.items : [])
-		.filter(
-			(a) =>
-				a &&
-				typeof a.name === "string" &&
-				a.name.trim() &&
-				typeof a.venue === "string" &&
-				typeof a.start === "string" &&
-				/^\d{4}-\d{2}-\d{2}$/.test(a.start) &&
-				(a.time === null ||
-					(typeof a.time === "string" &&
-						/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(a.time))) &&
-				a.start >= date &&
-				a.start <= last &&
-				httpsUrl(a.url) &&
-				!EXCLUDED_VENUES.test(a.venue),
-		)
-		.map((a) => ({
-			name: a.name,
-			day: a.start,
-			time: a.time,
-			venue: a.venue,
-			url: a.url,
-		}));
-	if (!paard && extra.length === 0) return null;
-	const items = [...(paard?.items ?? []), ...extra].sort((a, b) =>
-		`${a.day}T${a.time ?? "00:00"}`.localeCompare(
-			`${b.day}T${b.time ?? "00:00"}`,
-		),
-	);
-	const site = (i: Happening) => new URL(i.url).hostname;
-	const sites = [...new Set(items.map((i) => SITE_NAMES[site(i)] ?? site(i)))];
-	return {
-		items,
-		url: paard?.url ?? AGENDA,
-		credit: {
-			name: sites.join(", ") || "Paard",
-			url: paard?.credit.url ?? AGENDA,
-		},
-	};
+export function withAgenda(paard: Events | null, agenda: { items: AgendaItem[] } | null, date: string): Events | null {
+  const last = shift(date, 6);
+  const extra: Happening[] = (Array.isArray(agenda?.items) ? agenda.items : [])
+    .filter(
+      (a) =>
+        a &&
+        typeof a.name === "string" &&
+        a.name.trim() &&
+        typeof a.venue === "string" &&
+        typeof a.start === "string" &&
+        /^\d{4}-\d{2}-\d{2}$/.test(a.start) &&
+        (a.time === null || (typeof a.time === "string" && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(a.time))) &&
+        a.start >= date &&
+        a.start <= last &&
+        httpsUrl(a.url) &&
+        !EXCLUDED_VENUES.test(a.venue),
+    )
+    .map((a) => ({
+      name: a.name,
+      day: a.start,
+      time: a.time,
+      venue: a.venue,
+      url: a.url,
+    }));
+  if (!paard && extra.length === 0) return null;
+  const items = [...(paard?.items ?? []), ...extra].sort((a, b) =>
+    `${a.day}T${a.time ?? "00:00"}`.localeCompare(`${b.day}T${b.time ?? "00:00"}`),
+  );
+  const site = (i: Happening) => new URL(i.url).hostname;
+  const sites = [...new Set(items.map((i) => SITE_NAMES[site(i)] ?? site(i)))];
+  return {
+    items,
+    url: paard?.url ?? AGENDA,
+    credit: {
+      name: sites.join(", ") || "Paard",
+      url: paard?.credit.url ?? AGENDA,
+    },
+  };
 }
 
 /** The first five events, at most two per source when several sources are available. */
 export function previewEvents(items: Happening[]): Happening[] {
-	const site = (i: Happening) => new URL(i.url).hostname;
-	const perSite = new Set(items.map(site)).size > 1 ? 2 : PREVIEW;
-	const taken = new Map<string, number>();
-	return items
-		.filter((i) => {
-			const n = taken.get(site(i)) ?? 0;
-			taken.set(site(i), n + 1);
-			return n < perSite;
-		})
-		.slice(0, PREVIEW);
+  const site = (i: Happening) => new URL(i.url).hostname;
+  const perSite = new Set(items.map(site)).size > 1 ? 2 : PREVIEW;
+  const taken = new Map<string, number>();
+  return items
+    .filter((i) => {
+      const n = taken.get(site(i)) ?? 0;
+      taken.set(site(i), n + 1);
+      return n < perSite;
+    })
+    .slice(0, PREVIEW);
 }

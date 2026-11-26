@@ -1,0 +1,2 @@
+# Vite serves root-relative static assets from public/. The lychee hook and links.yml read this file.
+root_dir = "public"

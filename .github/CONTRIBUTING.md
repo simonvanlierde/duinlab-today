@@ -22,12 +22,13 @@ request outside what the project sets out to do is closed with a link to this se
 
 ## Set up and check
 
-The [README](../README.md) says how to install the tools and dependencies. `just check`
-runs the checks CI runs, and `just fmt` fixes and formats.
+The [README](../README.md) says how to install the tools, the dependencies
+and the git hooks. `just check` runs the checks CI runs, and `just fmt` fixes and
+formats.
 
-pnpm locks only releases at least a week old. If `just check` fails on a security fix
-newer than that, add the package to `minimumReleaseAgeExclude` in `pnpm-workspace.yaml`,
-and remove it a week later.
+pnpm locks only releases at least a week old. If `just check` fails on
+a security fix newer than that, add the package to `minimumReleaseAgeExclude` in `pnpm-workspace.yaml`,
+and remove it a week later ([how](https://github.com/simonvanlierde/project-templates/blob/main/docs/tooling.md#dependencies)).
 
 ## Write commits and pull requests
 
@@ -35,6 +36,11 @@ and remove it a week later.
   `type(scope): summary`, in the imperative, lower case, with no period. Add a body only
   when the change needs one, with a bullet per logical chunk.
 - **The pull request title** becomes the squash commit subject, so it follows the same rule.
+- **Both are checked** against [`committed.toml`](../committed.toml): a commit-msg
+  hook (installed by `prek install`) refuses a commit message that breaks the rule, and
+  the `pull request title` check fails a pull request whose title does. Lower case isn't
+  checked. A revert is titled `revert: <original subject>`: rename the
+  `Revert "..."` title that GitHub's Revert button writes.
 - **The pull request body** has the shape of
   [the pull request template](pull_request_template.md): what it fixes and why, three or
   four bullets, a `Tested:` line with the proof (the command and its result, or a test
@@ -46,6 +52,10 @@ and remove it a week later.
   **Breaking**, and put upgrade steps first under the version.
 - **The release notes** are that version's changelog section.
 
+## Make a release
+
+The maintainer runs `just release X.Y.Z`. [Publishing](https://github.com/simonvanlierde/project-templates/blob/main/docs/setup.md#publishing) has the steps and the one-time setup.
+
 ## Tests and code style
 
 A pull request that adds or changes behaviour adds or updates the tests for it, and
@@ -54,7 +64,23 @@ fix.
 
 The code follows the style the linters enforce, and `just fmt` applies most of it:
 
-- TypeScript and Astro: [Biome](https://biomejs.dev) for lint and format, `astro check` for types.
+- TypeScript, Astro and Svelte: [Biome](https://biomejs.dev) for lint and format, `astro check` for types.
+
+## Sign off your commits
+
+Every commit in a pull request carries a `Signed-off-by:` line, which says you wrote the
+change or have the right to submit it under this project's license: the
+[Developer Certificate of Origin 1.1](https://developercertificate.org/). `git commit -s`
+adds the line, and the commit-msg hook refuses a commit without it.
+
+To add it to commits you already made, run `git fetch origin`, then
+`git rebase --signoff origin/main`. That works in a clone of this repository, where `origin`
+is the only remote. If you work from a fork, use the remote that points at this repository
+(often `upstream`) in place of `origin`. If you have not pushed the branch yet, that is all.
+If you pushed it already, update it with `git push --force-with-lease`, which refuses to
+overwrite work you have not seen. Do not use a plain `git push --force`.
+
+The `dco` workflow checks every pull request from a fork and fails on a commit without the line. Pull requests from a branch in this repository skip it: pushing that branch already needed write access.
 
 ## Who maintains this
 

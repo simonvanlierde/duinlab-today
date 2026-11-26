@@ -1,4 +1,10 @@
 {
-	"recommendations": ["astro-build.astro-vscode"],
-	"unwantedRecommendations": []
+  "recommendations": [
+    "astro-build.astro-vscode",
+    "editorconfig.editorconfig",
+    "rvben.rumdl",
+    "tombi-toml.tombi",
+    "bluebrown.yamlfmt",
+    "biomejs.biome"
+  ]
 }
