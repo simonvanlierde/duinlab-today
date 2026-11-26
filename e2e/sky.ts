@@ -29,9 +29,7 @@ export async function awayFromMidnight(page: Page) {
 /** A time near the middle of `date` in the configured city, whatever its UTC offset. */
 export function middayOf(date: string): number {
   const start = Date.parse(`${date}T00:00:00Z`) - 14 * 3600000;
-  const at = Array.from({ length: 52 }, (_, i) => start + i * 3600000).filter(
-    (at) => localDay(new Date(at)) === date,
-  );
+  const at = Array.from({ length: 52 }, (_, i) => start + i * 3600000).filter((at) => localDay(new Date(at)) === date);
   return at[Math.floor(at.length / 2)];
 }
 

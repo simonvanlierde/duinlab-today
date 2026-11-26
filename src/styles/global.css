@@ -791,7 +791,7 @@ html:has(.picture-viewer[open]) {
 }
 /* On a wide screen the caption and the browse buttons move to a side column, so the
    picture gets the full height. */
-@media (min-width: 1000px) and (min-aspect-ratio: 5/4) {
+@media (min-width: 1000px) and (min-aspect-ratio: 5 / 4) {
   .picture-viewer[open] {
     grid-template-columns: minmax(0, 1fr) 22rem;
     grid-template-rows: auto minmax(0, 1fr) auto;
