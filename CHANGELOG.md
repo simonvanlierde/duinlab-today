@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-26
+
 ### Added
 
 - One TOML file configures the city, time zone, weather units, pictures and games, with Utrecht and Evanston examples and fork deployment instructions.
@@ -67,5 +69,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Malformed agenda and weather data cannot break healthy sections or omit required weather fields.
 - Rain forecasts describe expected rain and the two-hour dry outlook without promising a dry spell.
 
-[Unreleased]: https://github.com/simonvanlierde/duinlab-today/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/simonvanlierde/duinlab-today/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/simonvanlierde/duinlab-today/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/simonvanlierde/duinlab-today/releases/tag/v0.1.0
