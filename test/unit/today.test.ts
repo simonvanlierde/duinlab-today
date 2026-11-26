@@ -105,11 +105,11 @@ describe("canonical day publication", () => {
     expect(cached.mock.calls.map((call) => call[1])).toContain(`weather/${first}`);
     expect(cached.mock.calls.map((call) => call[1])).toContain(`weather/${second}`);
   });
-  it("keeps the canonical original owner when its KV mirror is absent", async () => {
+  it("keeps the stored day when its KV mirror is absent", async () => {
     durable.set("day", day("canonical"));
     buildDay.mockResolvedValue(day("replacement"));
     expect((await refreshDay(NOW)).quiz).toEqual(day("canonical").quiz);
-    expect(namespace.getByName).toHaveBeenCalledWith("2026-11-10");
+    expect(namespace.getByName).toHaveBeenCalledWith(`${configKey}/2026-11-10`);
   });
 
   it.each([
@@ -151,7 +151,7 @@ describe("canonical day publication", () => {
     release(day("first"));
     const [a, b] = await Promise.all([first, second]);
     expect(a).toEqual(b);
-    expect(namespace.getByName).toHaveBeenCalledWith("2026-11-10");
+    expect(namespace.getByName).toHaveBeenCalledWith(`${configKey}/2026-11-10`);
     owner = coordinator();
     store.set(KEY, JSON.stringify(day("stale-mirror")));
     expect((await owner.read("2026-11-10"))?.quiz).toEqual(a.quiz);
@@ -204,7 +204,7 @@ describe("canonical day publication", () => {
   it("reads yesterday through its own canonical owner and expires after two Amsterdam days", async () => {
     store.set(`day/v3/${configKey}/2026-11-09`, JSON.stringify({ ...day("yesterday"), date: "2026-11-09" }));
     expect((await getYesterday(NOW))?.quiz).toEqual(day("yesterday").quiz);
-    expect(namespace.getByName).toHaveBeenCalledWith("2026-11-09");
+    expect(namespace.getByName).toHaveBeenCalledWith(`${configKey}/2026-11-09`);
     expect(storage.setAlarm).toHaveBeenCalledWith(Date.parse("2026-11-11T00:00:00+01:00"));
     await owner.alarm();
     expect(durable.size).toBe(0);

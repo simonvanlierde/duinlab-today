@@ -8,7 +8,6 @@ const config = vi.hoisted(() => ({
 vi.mock("../../src/lib/config", () => ({
   site: config,
   configKey: "sydney",
-  usesLegacyDay: false,
 }));
 vi.mock("../../src/lib/build", () => ({ allFailed: () => false }));
 vi.mock("cloudflare:workers", () => ({
@@ -23,7 +22,7 @@ vi.mock("cloudflare:workers", () => ({
 const { DayCoordinator } = await import("../../src/lib/day-coordinator");
 
 describe("local retention boundary", () => {
-  it("does not import a legacy Hague day into another city", async () => {
+  it("reads only its own configuration's mirror", async () => {
     const get = vi.fn(async (..._args: unknown[]) => null);
     const owner = new DayCoordinator(
       {
