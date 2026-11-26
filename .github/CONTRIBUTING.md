@@ -75,11 +75,12 @@ Add a dependency only when the platform, the standard library or a package alrea
 `package.json` can't do the job in a few lines. Before adding one, check that it:
 
 - is maintained: a release or commit in the last year, and issues that get answers;
-- has a licence compatible with MIT (`pnpm run licenses` checks the installed set);
+- has a licence compatible with MIT (`pnpm run licenses` checks the production dependencies);
 - has no open advisory (the `dependency review` check reports one on the pull request);
 - runs no install script, or is added to `allowBuilds` in `pnpm-workspace.yaml` with a reason.
 
-pnpm and Renovate take only releases at least a week old.
+pnpm and Renovate take only releases at least a week old; Renovate skips the wait for
+template releases and the author's own packages.
 
 ## Sign off your commits
 
@@ -101,5 +102,5 @@ The `dco` workflow checks every pull request from a fork and fails on a commit w
 
 I (Simon van Lierde) maintain duinlab-today. I review and merge pull requests and
 make releases. The repository belongs to [simonvanlierde](https://github.com/simonvanlierde)
-on GitHub. Only maintainers can merge to `main`. A new maintainer is added by an existing one, by name in this section.
+on GitHub. Only maintainers and the Renovate app can merge to `main`. A new maintainer is added by an existing one, by name in this section.
 [GOVERNANCE.md](../GOVERNANCE.md) says who has access and who takes over if I can't continue.

@@ -22,8 +22,8 @@ The planned work is in the [roadmap](docs/roadmap.md).
   <https://today.duinlab.nl>, and to the `duinlab.nl` domain. CI deploys `main` through the
   `production` environment after every check passes; that environment holds the Cloudflare token
   and the NASA API key.
-- **Bots:** Renovate opens dependency updates and merges minor and patch updates once every check
-  passes. It does not merge majors ([`renovate.json5`](renovate.json5)).
+- **Bots:** Renovate opens dependency updates and merges minor and patch npm updates once every
+  check passes. It does not merge majors or the actions and hooks group ([`renovate.json5`](renovate.json5)).
 
 ## If the maintainer is unavailable
 
