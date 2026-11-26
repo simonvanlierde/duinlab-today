@@ -66,18 +66,6 @@ url = "https://www.nytimes.com/games/wordle/index.html"
 blurb = "Five letters, six tries."
 
 [[games]]
-id = "raddle"
-name = "Raddle"
-url = "https://raddle.quest/"
-blurb = "Order the clues into a word ladder."
-
-[[games]]
-id = "timdle"
-name = "Timdle"
-url = "https://www.timdle.com/"
-blurb = "Put events in the order they happened."
-
-[[games]]
 id = "metazooa"
 name = "Metazooa"
 url = "https://metazooa.com/"

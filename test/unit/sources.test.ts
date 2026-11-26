@@ -687,6 +687,10 @@ describe("day assembly and cache", () => {
       await cached(cache, "r", build, life, later);
       expect(build).toHaveBeenCalledTimes(2);
       vi.advanceTimersByTime(61_000);
+      // a refresh that throws pauses retries the same way
+      build.mockRejectedValueOnce(new Error("down"));
+      await cached(cache, "r", build, life, later);
+      await Promise.all(jobs);
       await cached(cache, "r", build, life, later);
       expect(build).toHaveBeenCalledTimes(3);
     } finally {

@@ -1,4 +1,4 @@
-import { decodeHTMLStrict } from "entities";
+import { decodeHTMLAttribute } from "entities";
 import { site } from "./config";
 
 const UA = `duinlab-today/1.0 (${site.site.url})`;
@@ -53,7 +53,8 @@ export async function safe<T>(name: string, run: () => Promise<T | null>): Promi
 export const httpsUrl = (s: string | undefined) =>
   s && URL.canParse(s) && new URL(s).protocol === "https:" ? s : undefined;
 
-export const decodeEntities = decodeHTMLStrict;
+// attribute rules: `&amp` without a semicolon decodes, but `&copy=` in a URL query stays as it is
+export const decodeEntities = decodeHTMLAttribute;
 
 /** Plain text from an HTML fragment; the page escapes it again when it renders. */
 export function stripTags(html: string): string {

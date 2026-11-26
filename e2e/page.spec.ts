@@ -25,11 +25,11 @@ test.beforeEach(async ({ context }) => {
 });
 
 // Content from e2e/fixture-server.mjs, which serves test/unit/fixtures in place of the sources.
-test("renders the sky, every section from the fixtures, and the ten games", async ({ page }) => {
+test("renders the sky, every section from the fixtures, and the eight games", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("h1")).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("data-phase", /night|first-light|dawn|day|dusk/);
-  await expect(page.locator(".games .game")).toHaveCount(10);
+  await expect(page.locator(".games .game")).toHaveCount(8);
 
   // no NASA key in e2e: the strip holds the other four sources, in order
   const slides = page.locator(".pic .slide");
@@ -87,10 +87,8 @@ test("an old train preference no longer hides the paper", async ({ page }) => {
 
 // whichever of sun, moon and star is up at the pinned time
 const orbs = (page: Page) => page.locator("[data-orb]:not([hidden])");
-// the one orb in the sky (by day the moon can stand on the sun), the same 45 minutes earlier,
-// where the first visit of the day replays from
-const orb = (at: number) => [sunNow(at) > -3, moonNow(at).alt > -0.5].join();
-const oneOrb = (at: number) => orb(at) !== "true,true" && orb(at) === orb(at - 2700000);
+// the one orb in the sky: by day the moon can stand on the sun
+const oneOrb = (at: number) => !(sunNow(at) > -3 && moonNow(at).alt > -0.5);
 
 test("the almanac has an explicit close control", async ({ page }, testInfo) => {
   await pinSky(page, oneOrb);
@@ -590,28 +588,28 @@ test("long game streaks survive another game's save and a reload", async ({ page
 
 test("opening a game marks it and state survives a reload", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator(".count")).toContainText("0 of 10 played");
+  await expect(page.locator(".count")).toContainText("0 of 8 played");
   await expect(page.locator(".games .name").first()).toHaveAttribute("target", "_blank");
   await play(page, "Wordle");
-  await expect(page.locator(".count")).toContainText("1 of 10 played");
+  await expect(page.locator(".count")).toContainText("1 of 8 played");
   const row = page.locator(".game", { hasText: "Wordle" });
   await expect(row.locator(".name")).toContainText(", played");
   await expect(row.locator(".streak .figure")).toHaveText("1");
 
   await page.reload();
-  await expect(page.locator(".count")).toContainText("1 of 10 played");
+  await expect(page.locator(".count")).toContainText("1 of 8 played");
 
   await expect(page.getByRole("button", { name: /un-mark|share today/i })).toHaveCount(0);
 });
 
-test("all ten played lights the white-out, and it persists", async ({ page }) => {
+test("all eight played lights the white-out, and it persists", async ({ page }) => {
   await page.goto("/");
   const names = await page
     .locator(".games .name .label")
     .evaluateAll((els) => els.map((e) => e.textContent?.trim() ?? ""));
-  expect(names).toHaveLength(10);
+  expect(names).toHaveLength(8);
   for (const n of names) await play(page, n);
-  await expect(page.locator(".count")).toContainText("10 of 10 played");
+  await expect(page.locator(".count")).toContainText("8 of 8 played");
   await expect(page.locator("html")).toHaveAttribute("data-whiteout", "");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-whiteout", "");
@@ -640,8 +638,8 @@ test("without localStorage the games are plain links and nothing breaks", async 
     });
   });
   await page.goto("/");
-  await expect(page.locator(".games .name")).toHaveCount(10);
-  await expect(page.locator(".count")).toContainText("10 daily games");
+  await expect(page.locator(".games .name")).toHaveCount(8);
+  await expect(page.locator(".count")).toContainText("8 daily games");
   await expect(page.locator(".games .streak")).toHaveCount(0);
   expect(errors).toEqual([]);
 });
@@ -687,7 +685,7 @@ test.describe("without JavaScript", () => {
   test("the games are plain links", async ({ page }) => {
     await page.goto("/");
     const links = page.locator(".games a.name");
-    await expect(links).toHaveCount(10);
+    await expect(links).toHaveCount(8);
     await expect(links.first()).toHaveAttribute("href", /^https:/);
     await expect(page.locator(".quiz-static details")).not.toHaveCount(0);
   });

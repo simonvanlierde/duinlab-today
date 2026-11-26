@@ -79,7 +79,7 @@ moment; keep them as they are. Reduced-motion preferences stop animation.
 
 ## Do's and Don'ts
 
-Preserve source credits, all ten games, keyboard focus restoration, no-JavaScript reading and
+Preserve source credits, all the games, keyboard focus restoration, no-JavaScript reading and
 missing-source resilience. Validate day-specific feeds; never replace a missing daily item with
 yesterday's. Do not invent alt descriptions, hide facts, add accounts, or create a component
 library for a few similar selectors.

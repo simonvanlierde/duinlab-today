@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { type Page, test } from "@playwright/test";
 import { site } from "../src/lib/config";
 import { localDay } from "../src/lib/day";
 import { moonNow as moonPosition, planetsAt, starNow as starPosition } from "../src/lib/moon";
@@ -16,6 +16,26 @@ const planets = planetPositions(new Date());
 export const planetsNow = (at: number) => planetsAt(planets, at, latitude, longitude);
 
 /**
+ * Waits out the last 90 s before the real local midnight, so the server's day cannot turn over
+ * between a test reading it and loading the page; a page on the old day reloads on every paint.
+ */
+export async function awayFromMidnight(page: Page) {
+  const soon = Date.now() + 90_000;
+  if (localDay(new Date(soon)) === localDay()) return;
+  test.info().setTimeout(test.info().timeout + 100_000);
+  await page.waitForTimeout(soon - Date.now());
+}
+
+/** A time near the middle of `date` in the configured city, whatever its UTC offset. */
+export function middayOf(date: string): number {
+  const start = Date.parse(`${date}T00:00:00Z`) - 14 * 3600000;
+  const at = Array.from({ length: 52 }, (_, i) => start + i * 3600000).filter(
+    (at) => localDay(new Date(at)) === date,
+  );
+  return at[Math.floor(at.length / 2)];
+}
+
+/**
  * Pins the browser clock to the first half hour of the server's local day where `pick` holds,
  * at least an hour before local midnight so a test that runs on does not reload into the next
  * day, and returns it. The server renders with the real clock; the boot script repaints the sun,
@@ -23,10 +43,11 @@ export const planetsNow = (at: number) => planetsAt(planets, at, latitude, longi
  * from the server's positions, which would stack a planet on the moon and move click targets.
  */
 export async function pinSky(page: Page, pick: (at: number) => boolean): Promise<number> {
+  await awayFromMidnight(page);
   const { date } = await (await page.request.get("/today.json")).json();
   const start = Date.parse(`${date}T00:00:00Z`) - 14 * 3600000;
   const local = (at: number) => localDay(new Date(at)) === date;
-  const at = Array.from({ length: 76 }, (_, i) => start + i * HALF_HOUR)
+  const at = Array.from({ length: 104 }, (_, i) => start + i * HALF_HOUR)
     .filter((at) => local(at) && local(at + 2 * HALF_HOUR))
     .find(pick);
   if (at === undefined) throw new Error(`No sky time on ${date} fits this test`);

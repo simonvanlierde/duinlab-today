@@ -24,6 +24,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - On phones, games follow the picture, facts, word and quiz instead of the longer reading. On desktop, the full article spans both reading columns.
 - Rain forecasts drop intervals that have passed, so `weather.rainNext2h` in `/today.json` can be shorter than two hours or empty.
 - The web manifest, robots.txt and sitemap follow the configured site.
+- The picture viewer fills the screen. On wide screens the caption and browse buttons sit beside the picture, which gets the full height.
+- Raddle and Timdle are no longer in the games list.
 
 ### Fixed
 

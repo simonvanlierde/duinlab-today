@@ -17,6 +17,10 @@ describe("decodeEntities", () => {
     expect(decodeEntities("&Eacute; &eacute; &NotEqualTilde; &unknown;")).toBe("É é ≂̸ &unknown;");
   });
 
+  it("decodes a legacy entity without its semicolon in text", () => {
+    expect(decodeEntities("Tom &amp Jerry")).toBe("Tom & Jerry");
+  });
+
   it("leaves a bare ampersand in a URL query alone", () => {
     expect(decodeEntities("https://x/a?x=1&copy=2&notes=3")).toBe("https://x/a?x=1&copy=2&notes=3");
   });

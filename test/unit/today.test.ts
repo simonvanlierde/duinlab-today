@@ -53,7 +53,7 @@ vi.mock("../../src/lib/build", async (importOriginal) => ({
 
 const { DayCoordinator } = await import("../../src/lib/day-coordinator");
 const { env } = await import("cloudflare:workers");
-const { refreshDay, getToday, getYesterday } = await import("../../src/lib/today");
+const { refreshDay, getToday, getYesterday, todayOrUnavailable } = await import("../../src/lib/today");
 
 const NOW = new Date("2026-11-10T08:00:00Z");
 const KEY = `day/v3/${configKey}/2026-11-10`;
@@ -252,5 +252,26 @@ describe("canonical day publication", () => {
     const fallback = await getToday(NOW);
     expect(fallback.weather?.rainCredit.name).toBe("Buienradar");
     cached.mockImplementation(async (_c: unknown, key: string) => (key === "recipes" ? [] : null));
+  });
+});
+
+describe("front page fallback", () => {
+  it("answers 503 with a retry hint when the day can't be read", async () => {
+    namespace.getByName.mockImplementation(() => ({
+      read: async () => {
+        throw new Error("KV timeout");
+      },
+    }));
+    const res = await todayOrUnavailable(NOW);
+    expect(res).toBeInstanceOf(Response);
+    const r = res as Response;
+    expect(r.status).toBe(503);
+    expect(r.headers.get("retry-after")).toBe("30");
+    expect(r.headers.get("cache-control")).toBe("no-store");
+  });
+
+  it("passes the day through when it can be read", async () => {
+    buildDay.mockResolvedValue(day("q1"));
+    expect(await todayOrUnavailable(NOW)).not.toBeInstanceOf(Response);
   });
 });

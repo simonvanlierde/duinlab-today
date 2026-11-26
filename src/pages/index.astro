@@ -15,20 +15,11 @@ import { occasionLine } from "../lib/occasions";
 import { planetPositions, planetsTonight } from "../lib/planets";
 import { previewEvents } from "../lib/sources/events";
 import { PHASES, phaseAt, type SkyPhase, sunAltitude } from "../lib/sun";
-import { getToday } from "../lib/today";
+import { todayOrUnavailable } from "../lib/today";
 
 const now = new Date();
-let today: Awaited<ReturnType<typeof getToday>>;
-try {
-  today = await getToday(now);
-} catch (err) {
-  // the first read of a day can fail on KV or the coordinator; the next request retries
-  console.warn(`front page failed: ${err}`);
-  return new Response("Today's page is unavailable for a moment. Try again in half a minute.", {
-    status: 503,
-    headers: { "content-type": "text/plain; charset=utf-8", "retry-after": "30", "cache-control": "no-store" },
-  });
-}
+const today = await todayOrUnavailable(now);
+if (today instanceof Response) return today;
 const asked = Astro.url.searchParams.get("phase");
 const forced = PHASES.includes(asked as SkyPhase);
 const phase = forced ? (asked as SkyPhase) : phaseAt(today.sun, now.getTime());

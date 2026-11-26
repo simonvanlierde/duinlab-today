@@ -699,12 +699,12 @@ html:has(.picture-viewer[open]) {
   overflow: hidden;
 }
 .picture-viewer {
-  width: min(96vw, 1600px);
-  height: 94svh;
+  width: 100vw;
+  height: 100svh;
   max-width: none;
   max-height: none;
-  margin: auto;
-  padding: 16px;
+  margin: 0;
+  padding: 12px;
   border: 0;
   background: var(--ground);
   color: var(--ink);
@@ -789,11 +789,33 @@ html:has(.picture-viewer[open]) {
   justify-self: center;
   font-size: 0.9375rem;
 }
-@media (max-width: 600px) {
-  .picture-viewer {
-    width: 100%;
-    height: 100svh;
-    padding: 12px;
+/* On a wide screen the caption and the browse buttons move to a side column, so the
+   picture gets the full height. */
+@media (min-width: 1000px) and (min-aspect-ratio: 5/4) {
+  .picture-viewer[open] {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  .viewer-tools {
+    grid-column: 1 / -1;
+  }
+  .viewer-figure {
+    grid-row: 2 / 4;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    grid-template-rows: subgrid;
+  }
+  .viewer-stage {
+    grid-row: 1 / 3;
+  }
+  .viewer-figure figcaption {
+    max-height: none;
+    max-width: none;
+    justify-self: stretch;
+  }
+  .viewer-nav {
+    grid-row: 3;
+    grid-column: 2;
   }
 }
 /* Browsing controls sit with the caption, leaving the whole artwork visible. */
