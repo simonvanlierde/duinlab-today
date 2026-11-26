@@ -180,7 +180,7 @@ jobs:
     name: preview
     # Bot pull requests (Renovate, Dependabot) get no preview, and a bot's push does not start
     # one. A person's later ready or reopen deploys the head as it is.
-    if: github.event_name == 'pull_request' && !github.event.pull_request.draft && !endsWith(github.event.pull_request.user.login, '[bot]') && !endsWith(github.actor, '[bot]')
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft && !endsWith(github.event.pull_request.user.login, '[bot]') && !endsWith(github.actor, '[bot]') && github.head_ref != 'chore/copier-update'
     # Shares the retire job's group, so a retire waits for a deploy in flight.
     concurrency:
       group: preview-${{ github.event.pull_request.number }}

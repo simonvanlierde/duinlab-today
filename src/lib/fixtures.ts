@@ -88,8 +88,9 @@ export function fixtures(timezone: string, text: FixtureText, png: Uint8Array<Ar
         date: today(),
         title: "Moon & stars",
         media_type: "image",
-        url: "https://images.metmuseum.org/apod/preview.png",
-        hdurl: "https://images.metmuseum.org/apod/original.png",
+        // A real public-domain image, so a preview's browser can show it.
+        url: "https://images.metmuseum.org/CRDImages/ep/web-large/DP-19279-001.jpg",
+        hdurl: "https://images.metmuseum.org/CRDImages/ep/original/DP-19279-001.jpg",
         explanation: "The Moon & stars. A second sentence.",
         copyright: "Fixture image",
       }),

@@ -11,7 +11,15 @@ const files = import.meta.glob<string>("../../test/unit/fixtures/*", {
 });
 // ?inline gives a data: URL
 const png = Uint8Array.from(atob(picture.slice(picture.indexOf(",") + 1)), (c) => c.charCodeAt(0));
-const answer = fixtures(site.location.timezone, (name) => files[`../../test/unit/fixtures/${name}`] ?? "", png);
+const answer = fixtures(
+  site.location.timezone,
+  (name) => {
+    const file = files[`../../test/unit/fixtures/${name}`];
+    if (file === undefined) throw new Error(`no fixture file ${name}`);
+    return file;
+  },
+  png,
+);
 
 /** The fixture answer for `url`, or a 404 for a host without one, like a source that is down. */
 export function fixtureResponse(url: string): Response {
