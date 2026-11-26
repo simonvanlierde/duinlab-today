@@ -117,15 +117,13 @@ test("the viewer stays usable with long captions, reduced motion and a broken im
   });
   await viewer.getByRole("button", { name: "Next picture" }).click();
   await viewer.getByRole("button", { name: "Next picture" }).click();
-  await viewer.getByRole("button", { name: "Next picture" }).click();
   await expect(viewer.getByRole("button", { name: "Next picture" })).toBeDisabled();
   await expect(viewer.getByRole("region", { name: "Enlarged picture" })).toBeFocused();
   await page.keyboard.press("ArrowLeft");
-  await expect(viewer.locator(".viewer-count")).toHaveText("3 of 4");
-  await viewer.getByRole("button", { name: "Previous picture" }).click();
+  await expect(viewer.locator(".viewer-count")).toHaveText("2 of 3");
   await viewer.getByRole("button", { name: "Previous picture" }).click();
   await page.keyboard.press("ArrowRight");
-  await expect(viewer.locator(".viewer-count")).toHaveText("2 of 4");
+  await expect(viewer.locator(".viewer-count")).toHaveText("2 of 3");
   await viewer.locator("img").evaluate((img) => img.dispatchEvent(new Event("error")));
   await expect(viewer.getByText("This image couldn’t load. Try its source below.")).toBeVisible();
   await expect(viewer.locator("figcaption a").first()).toHaveAttribute("href", /^https:/);
@@ -202,16 +200,16 @@ test("a second finger and interrupted swipes do not strand the viewer", async ({
   await pointer("pointerdown", 1, 250);
   await pointer("pointerdown", 2, 280);
   await pointer("pointerup", 1, 100);
-  await expect(viewer.locator(".viewer-count")).toHaveText("2 of 4");
+  await expect(viewer.locator(".viewer-count")).toHaveText("2 of 3");
   await pointer("pointerup", 2, 280);
   for (const interrupt of ["pointercancel", "lostpointercapture", "blur"]) {
     await pointer("pointerdown", 1, 250);
     if (interrupt === "blur") await page.evaluate(() => window.dispatchEvent(new Event("blur")));
     else await pointer(interrupt, 1, 250);
     await pointer("pointerup", 1, 100);
-    await expect(viewer.locator(".viewer-count")).toHaveText("2 of 4");
+    await expect(viewer.locator(".viewer-count")).toHaveText("2 of 3");
   }
   await pointer("pointerdown", 1, 250);
   await pointer("pointerup", 1, 100);
-  await expect(viewer.locator(".viewer-count")).toHaveText("3 of 4");
+  await expect(viewer.locator(".viewer-count")).toHaveText("3 of 3");
 });

@@ -27,7 +27,7 @@ for (const overlay of ["almanac", "picture-viewer"]) {
         return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
       }),
     );
-    expect(slides).toHaveLength(4);
+    expect(slides).toHaveLength(3);
     for (const [i, box] of slides.entries()) {
       expect(box.left).toBeGreaterThanOrEqual(0);
       expect(box.right).toBeLessThanOrEqual(794);

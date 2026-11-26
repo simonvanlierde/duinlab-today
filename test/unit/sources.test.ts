@@ -534,23 +534,23 @@ describe("pictures", () => {
   it("asks every source and returns what answered, one per source", async () => {
     stubFetch();
     const got = await fetchPictures("2026-11-06", "k");
-    expect(got.map((p) => p.kind).sort()).toEqual(["aic", "apod", "met", "rijks"]);
+    expect(got.map((p) => p.kind).sort()).toEqual(["aic", "apod", "met"]);
   });
 
   it("picks the same artwork for the same date and skips sources already held", async () => {
     const hosts: string[] = [];
     stubFetch(true, hosts);
     const one = await fetchPictures("2026-11-06", undefined);
-    expect(one.map((p) => p.kind)).toEqual(["met", "aic", "rijks"]);
+    expect(one.map((p) => p.kind)).toEqual(["met", "aic"]);
     expect(await fetchPictures("2026-11-06", undefined)).toEqual(one);
     hosts.length = 0;
-    await fetchPictures("2026-11-06", "k", ["met", "aic", "rijks"]);
+    await fetchPictures("2026-11-06", "k", ["met", "aic"]);
     expect(hosts.filter((h) => h !== "img")).toEqual(["science.nasa.gov", "api.nasa.gov"]);
   });
 
   it("lets each source fail or hang on its own", async () => {
     stubFetch(false);
-    expect((await fetchPictures("2026-11-06", "k")).map((p) => p.kind)).toEqual(["met", "aic", "rijks"]);
+    expect((await fetchPictures("2026-11-06", "k")).map((p) => p.kind)).toEqual(["met", "aic"]);
     vi.stubGlobal("fetch", async () => new Response("", { status: 500 }));
     expect(await fetchPictures("2026-11-06", "k")).toEqual([]);
     // APOD hangs: the others come back once the deadline passes
@@ -561,7 +561,7 @@ describe("pictures", () => {
     expect(await fetchPictures("2026-11-06", "k", [], 50)).toEqual([]);
   });
 
-  it("keeps a stored picture and orders the strip by source", () => {
+  it("keeps a stored picture and orders the strip by source, dropping sources no longer configured", () => {
     const pic = (kind: string, title: string) =>
       ({ kind, title }) as unknown as Parameters<typeof mergePictures>[0][number];
     const merged = mergePictures(
@@ -574,7 +574,6 @@ describe("pictures", () => {
       "met:stored",
       "wikipedia:new",
       "aic:stored",
-      "rijks:new",
     ]);
   });
 });
@@ -600,13 +599,7 @@ describe("day assembly and cache", () => {
     } as unknown as Parameters<typeof buildDay>[3];
     const day = await buildDay("2026-11-06", new Date(), "k", prev);
     // the sources that no stored picture covers are asked too
-    expect(hosts.sort()).toEqual([
-      "api.artic.edu",
-      "api.wikimedia.org",
-      "collectionapi.metmuseum.org",
-      "data.rijksmuseum.nl",
-      "www.paard.nl",
-    ]);
+    expect(hosts.sort()).toEqual(["api.artic.edu", "api.wikimedia.org", "collectionapi.metmuseum.org", "www.paard.nl"]);
     expect(day.quiz).toBe(prev?.quiz);
     // APOD missing from the stored pictures is asked again
     hosts.length = 0;
@@ -893,7 +886,7 @@ describe("hardening", () => {
     expect(incomplete(merged, true)).toBe(true);
     const complete = {
       ...merged,
-      pictures: ["apod", "met", "wikipedia", "aic", "rijks"].map((kind) => ({
+      pictures: ["apod", "met", "wikipedia", "aic"].map((kind) => ({
         kind,
       })),
     } as typeof merged;

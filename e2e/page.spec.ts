@@ -20,7 +20,7 @@ test.beforeEach(async ({ context }) => {
   await context.route(/^https?:\/\/(?!localhost)/, (r) =>
     r.request().resourceType() === "document" ? r.fulfill({ body: "ok" }) : r.abort(),
   );
-  // the day's pictures (Met, Wikipedia, Art Institute, Rijksmuseum fixtures) are the fixture PNG
+  // the day's pictures (Met, Wikipedia, Art Institute fixtures) are the fixture PNG
   await context.route(PICTURE_HOSTS, (r) => r.fulfill({ path: "e2e/fixtures/picture.png", contentType: "image/png" }));
 });
 
@@ -31,9 +31,9 @@ test("renders the sky, every section from the fixtures, and the eight games", as
   await expect(page.locator("html")).toHaveAttribute("data-phase", /night|first-light|dawn|day|dusk/);
   await expect(page.locator(".games .game")).toHaveCount(8);
 
-  // no NASA key in e2e: the strip holds the other four sources, in order
+  // no NASA key in e2e: the strip holds the other three sources, in order
   const slides = page.locator(".pic .slide");
-  await expect(slides).toHaveCount(4);
+  await expect(slides).toHaveCount(3);
   const img = slides.first().locator("img");
   await expect(img).toHaveAttribute("src", "https://images.metmuseum.org/CRDImages/ep/web-large/DP-42549-001.jpg");
   await expect(img).toHaveAttribute("alt", "Wheat Field with Cypresses, by Vincent van Gogh");
@@ -46,7 +46,6 @@ test("renders the sky, every section from the fixtures, and the eight games", as
     /^https:\/\/commons\.wikimedia\.org\/wiki\/File:/,
   );
   await expect(slides.nth(2).locator("figcaption")).toContainText("Art Institute of Chicago");
-  await expect(slides.nth(3).locator("figcaption")).toContainText("Rijksmuseum");
   const section = (id: string) => page.locator(`section[aria-labelledby="${id}"]`);
   await expect(section("h-dyk")).toContainText("that Cinema '76 adopted three cats");
   await expect(section("h-word").locator(".word")).toHaveText("sax");
@@ -282,26 +281,26 @@ test("the picture strip moves with arrows, dots and the keyboard", async ({ page
   const controls = await page.locator(".picture-controls").boundingBox();
   expect(picture && controls).toBeTruthy();
   if (picture && controls) expect(controls.y).toBeGreaterThanOrEqual(picture.y + picture.height);
-  await expect(dots).toHaveCount(4);
+  await expect(dots).toHaveCount(3);
   await expect(dots.first()).toHaveAttribute("aria-current", "true");
   await page.getByRole("button", { name: "Next picture" }).click();
   await expect(dots.nth(1)).toHaveAttribute("aria-current", "true");
   await expect(dots.first()).not.toHaveAttribute("aria-current");
-  await dots.nth(3).click();
-  await expect(dots.nth(3)).toHaveAttribute("aria-current", "true");
+  await dots.nth(2).click();
+  await expect(dots.nth(2)).toHaveAttribute("aria-current", "true");
   await expect(page.getByRole("button", { name: "Next picture" })).toBeDisabled();
   await strip.focus();
   await page.keyboard.press("ArrowLeft");
-  await expect(dots.nth(2)).toHaveAttribute("aria-current", "true");
-  await page.getByRole("button", { name: "Previous picture" }).click();
   await expect(dots.nth(1)).toHaveAttribute("aria-current", "true");
+  await page.getByRole("button", { name: "Previous picture" }).click();
+  await expect(dots.nth(0)).toHaveAttribute("aria-current", "true");
 });
 
 test.describe("the pictures without JavaScript", () => {
   test.use({ javaScriptEnabled: false });
   test("are a plain scrollable strip with every caption", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator(".pic .slide")).toHaveCount(4);
+    await expect(page.locator(".pic .slide")).toHaveCount(3);
     await expect(page.locator(".pic button")).toHaveCount(0);
     const strip = page.locator(".pic .slides");
     expect(await strip.evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(true);

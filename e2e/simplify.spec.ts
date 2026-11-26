@@ -53,7 +53,7 @@ test("the extra sections sit side by side on desktop", async ({ page }, testInfo
 
 test("picture selectors have room for a finger", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator(".dot")).toHaveCount(4);
+  await expect(page.locator(".dot")).toHaveCount(3);
   for (const box of await page.locator(".dot").evaluateAll((dots) =>
     dots.map((dot) => ({
       width: dot.getBoundingClientRect().width,

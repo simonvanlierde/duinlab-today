@@ -9,6 +9,19 @@ const pictureNames = {
   aic: "Art Institute of Chicago",
   rijks: "Rijksmuseum",
 };
+const pictureHosts = {
+  apod: "NASA",
+  met: "The Met",
+  wikipedia: "Wikimedia",
+  aic: "the Art Institute",
+  rijks: "the Rijksmuseum",
+};
+// NASA's video days embed YouTube
+const hosts = [
+  ...site.content.pictures.map((kind) => pictureHosts[kind]),
+  ...(site.content.pictures.includes("apod") ? ["YouTube"] : []),
+];
+const hostList = hosts.length > 1 ? `${hosts.slice(0, -1).join(", ")} or ${hosts.at(-1)}` : (hosts[0] ?? "");
 ---
 
 <Plain
@@ -73,7 +86,7 @@ const pictureNames = {
 	</p>
 	<p>
 		A Cloudflare Worker serves the page. Cloudflare keeps request logs for a few days: the address asked for,
-		the time, and connection details such as your IP address. I only read them to trace a fault. The day's pictures load straight from NASA, The Met, Wikimedia, the Art Institute, the Rijksmuseum or YouTube, so
+		the time, and connection details such as your IP address. I only read them to trace a fault. The day's pictures load straight from {hostList}, so
 		they see your IP address too.
 	</p>
 	<p>
