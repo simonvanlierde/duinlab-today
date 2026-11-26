@@ -35,7 +35,7 @@ Met, the Art Institute of Chicago, the Rijksmuseum), never generated text. The s
 - Games open on their own sites in a new tab; the page cannot see whether a game was finished,
   so opening one counts as playing it.
 - Games: factmap.world, TimeGuessr, Shikaku of the day, Krillion, Catfishing, Connections,
-  Wordle, Raddle, Timdle, Metazooa.
+  Wordle, Metazooa.
 - Weather: Open-Meteo forecast for The Hague (52.08 N, 4.31 E), no key, credited; the weather
   line links to meteoblue's week forecast. The rain line uses KNMI's radar nowcast from KV,
   then Buienradar (both in 5-minute steps), then Open-Meteo in 15-minute steps. A line on air quality or pollen

@@ -23,7 +23,7 @@ typography:
 
 ## Overview
 
-A finite morning paper for a household in The Hague, open to anyone. Preserve its living
+A finite morning paper for a household in The Hague, open to anyone. Keep its living
 sky, dune horizon, sourced images and quiet editorial rules. The paper is Read; the image
 itself is Experience, with the controls supporting it. [PRODUCT.md](PRODUCT.md) holds product constraints.
 The tokens above are the `--ink`, `--mute`, `--lit` and `--lit-text` variables in `src/styles/global.css`, which stay the source.
@@ -39,8 +39,8 @@ mixed at 16%; secondary ground is ink mixed at 5%. Keep source credits legible i
 
 Self-host Literata regular/italic for reading, Barlow Semi Condensed 500/600 for labels,
 controls, credits and numerals. Use tabular numerals for weather, times and counts. Body text
-stays 1rem when compacting the desktop. Source credits wrap with long names. Explicit spaces
-at Astro inline boundaries are content, rather than a margin-only substitute.
+stays 1rem when compacting the desktop. Source credits wrap with long names. Keep explicit spaces
+at Astro inline boundaries: they are content, and margins don't replace them.
 
 ## Layout
 
@@ -64,11 +64,10 @@ inside 44px buttons. Keep the artwork rectangular, uncropped and contained.
 
 ## Components
 
-Pictures retain a stable image frame. The chosen exhibition-plate arrangement places browsing
-controls below the caption; reserve 44px inside the existing image-plus-controls height budget.
+Pictures retain a stable image frame. Browsing controls sit below the caption, in 44px of the existing image-plus-controls height.
 Touch browsing uses swipe or dots; fine-pointer arrows appear where their labels fit. The image
 link hints on hover/focus and opens originals in a viewer, with preview fallback and source links.
-NASA leads when available; its official feed recovers the API's current logo-placeholder failure.
+NASA leads when available. If its API returns a logo placeholder, the official APOD feed supplies the image.
 
 The almanac places the selected object's real, live node first, followed by Sun and moon,
 Planets tonight and At Scheveningen groups. Restore original group order on the next selection.
@@ -76,11 +75,11 @@ Planet names and observing windows align without turning facts into cards.
 
 Games mark on opening, with browser-local streaks and no undo. About explains this directly.
 The quiz's existing dawn glow, score, review and end-of-paper line are the quiet completion
-moment; retain them without additional choreography. Reduced-motion preferences stop animation.
+moment; keep them as they are. Reduced-motion preferences stop animation.
 
 ## Do's and Don'ts
 
-Preserve source credits, all ten games, keyboard focus restoration, no-JavaScript reading and
+Preserve source credits, all the games, keyboard focus restoration, no-JavaScript reading and
 missing-source resilience. Validate day-specific feeds; never replace a missing daily item with
 yesterday's. Do not invent alt descriptions, hide facts, add accounts, or create a component
-library for a few similar selectors. No equivalent pattern needed extraction in this pass.
+library for a few similar selectors.

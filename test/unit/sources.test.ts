@@ -666,6 +666,38 @@ describe("day assembly and cache", () => {
     expect(store.size).toBe(1);
   });
 
+  it("waits a minute before refreshing a stale entry again after a refresh failed", async () => {
+    const store = new Map<string, Response>();
+    const cache = {
+      match: async (r: Request) => store.get(r.url)?.clone(),
+      put: async (r: Request, res: Response) => void store.set(r.url, res),
+    } as unknown as Cache;
+    const life = (v: { ok: boolean }) => (v.ok ? { ttl: 60, stale: 3600 } : { ttl: 60, stale: 0 });
+    let ok = true;
+    const build = vi.fn(async () => ({ ok }));
+    const jobs: Promise<unknown>[] = [];
+    const later = (p: Promise<unknown>) => void jobs.push(p);
+    vi.useFakeTimers();
+    try {
+      await cached(cache, "r", build, life, later);
+      ok = false;
+      vi.advanceTimersByTime(90_000);
+      await cached(cache, "r", build, life, later);
+      await Promise.all(jobs);
+      await cached(cache, "r", build, life, later);
+      expect(build).toHaveBeenCalledTimes(2);
+      vi.advanceTimersByTime(61_000);
+      // a refresh that throws pauses retries the same way
+      build.mockRejectedValueOnce(new Error("down"));
+      await cached(cache, "r", build, life, later);
+      await Promise.all(jobs);
+      await cached(cache, "r", build, life, later);
+      expect(build).toHaveBeenCalledTimes(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("decides fresh, stale and expired from the age", () => {
     const life = { ttl: 60, stale: 120 };
     expect(freshness(59_000, life)).toBe("fresh");

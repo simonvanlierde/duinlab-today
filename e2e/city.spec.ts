@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 import { site } from "../src/lib/config";
 import { localDay } from "../src/lib/day";
 import { clock, temperature } from "../src/lib/format";
+import { awayFromMidnight, middayOf } from "./sky";
 
 test("configured paper uses its city, clock, units, sources and identity", async ({ page }, testInfo) => {
   const errors: string[] = [];
@@ -15,12 +16,22 @@ test("configured paper uses its city, clock, units, sources and identity", async
         })
       : route.abort(),
   );
+  await awayFromMidnight(page);
+  // the server's day is on the real clock: it is one of the days either side of the request
+  const before = localDay();
+  const day = await (await page.request.get("/today.json")).json();
+  expect([before, localDay()]).toContain(day.date);
+  // the browser clock stands still mid-day in the city, so the painted clock cannot roll over
+  const at = new Date(middayOf(day.date));
+  await page.clock.setFixedTime(at);
   await page.goto("/");
   await page.locator("astro-island:not([ssr]) .games").waitFor();
   await expect(page).toHaveTitle(new RegExp(site.site.title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
-  await expect(page.locator("[data-clock]")).toHaveText(clock(new Date()));
-  const day = await (await page.request.get("/today.json")).json();
-  expect(day.date).toBe(localDay());
+  await expect(page.locator("[data-clock]")).toHaveText(clock(at));
+  await expect(page.locator("a.wx")).toHaveAttribute(
+    "href",
+    `https://www.meteoblue.com/en/weather/week/${site.location.latitude}N${site.location.longitude}E`,
+  );
   await expect(page.locator(".games .game")).toHaveCount(site.games.length);
   await expect(page.locator(".pic .slide")).toHaveCount(day.pictures.length);
   expect(day.sun.sunrise.slice(0, 10)).toBe(day.date);
@@ -37,9 +48,12 @@ test("configured paper uses its city, clock, units, sources and identity", async
     await expect(page.locator("body")).not.toContainText(/Scheveningen|This week in The Hague/);
   }
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `${site.site.url}/`);
-  const manifest = await (await page.request.get("/manifest.webmanifest")).json();
-  expect(manifest.name).toBe(site.site.title);
-  expect(await (await page.request.get("/robots.txt")).text()).toContain(`${site.site.url}/sitemap.xml`);
+  const manifestRes = await page.request.get("/manifest.webmanifest");
+  expect(manifestRes.headers()["content-type"]).toMatch(/^application\/manifest\+json/);
+  expect((await manifestRes.json()).name).toBe(site.site.title);
+  const robots = await page.request.get("/robots.txt");
+  expect(robots.headers()["content-type"]).toMatch(/^text\/plain/);
+  expect(await robots.text()).toContain(`${site.site.url}/sitemap.xml`);
   expect(await (await page.request.get("/sitemap.xml")).text()).toContain(`<loc>${site.site.url}/</loc>`);
   await page.screenshot({
     path: `test-results/city-${site.location.country}-${testInfo.project.name}.png`,

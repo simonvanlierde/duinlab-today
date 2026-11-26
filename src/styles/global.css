@@ -302,6 +302,8 @@ h1 {
 .orb:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 2px;
+  /* a dark ring on both sides of the white one keeps focus visible on a pale daytime sky */
+  box-shadow: 0 0 0 6px #1d1a26;
 }
 .moon {
   --top: 16px;
@@ -579,7 +581,9 @@ h1 {
   .feat p {
     max-width: 75ch;
   }
-  /* a failed source leaves no empty column: without a picture, its column takes the article */
+  /* a failed source leaves no empty column: without a picture, its column takes the article.
+     The article then sits left of the reading it follows in the DOM; that tab order is
+     accepted for this fallback, which only shows while a picture source is down. */
   .front:not(:has(.pic)) {
     grid-template-areas: "feat read games" "otd quote games";
     grid-template-rows: auto 1fr;
@@ -686,16 +690,21 @@ html.js .slides {
 .picture-open:is(:hover, :focus-visible) .picture-hint {
   opacity: 1;
 }
+@media (hover: none) {
+  .picture-hint {
+    opacity: 1;
+  }
+}
 html:has(.picture-viewer[open]) {
   overflow: hidden;
 }
 .picture-viewer {
-  width: min(96vw, 1600px);
-  height: 94svh;
+  width: 100vw;
+  height: 100svh;
   max-width: none;
   max-height: none;
-  margin: auto;
-  padding: 16px;
+  margin: 0;
+  padding: 12px;
   border: 0;
   background: var(--ground);
   color: var(--ink);
@@ -731,7 +740,7 @@ html:has(.picture-viewer[open]) {
   cursor: pointer;
 }
 .picture-viewer button:hover:not(:disabled),
-.picture-viewer button[aria-pressed="true"] {
+.picture-viewer button[data-zoomed] {
   background: var(--ground-2);
 }
 .picture-viewer button:active:not(:disabled) {
@@ -780,11 +789,33 @@ html:has(.picture-viewer[open]) {
   justify-self: center;
   font-size: 0.9375rem;
 }
-@media (max-width: 600px) {
-  .picture-viewer {
-    width: 100%;
-    height: 100svh;
-    padding: 12px;
+/* On a wide screen the caption and the browse buttons move to a side column, so the
+   picture gets the full height. */
+@media (min-width: 1000px) and (min-aspect-ratio: 5 / 4) {
+  .picture-viewer[open] {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  .viewer-tools {
+    grid-column: 1 / -1;
+  }
+  .viewer-figure {
+    grid-row: 2 / 4;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    grid-template-rows: subgrid;
+  }
+  .viewer-stage {
+    grid-row: 1 / 3;
+  }
+  .viewer-figure figcaption {
+    max-height: none;
+    max-width: none;
+    justify-self: stretch;
+  }
+  .viewer-nav {
+    grid-row: 3;
+    grid-column: 2;
   }
 }
 /* Browsing controls sit with the caption, leaving the whole artwork visible. */

@@ -72,6 +72,22 @@ async function readKnmiRain() {
   }
 }
 
+/**
+ * Today, or a 503 the page can return as is. The first read of a day can fail on KV or the
+ * coordinator; the next request retries.
+ */
+export async function todayOrUnavailable(now: Date): Promise<Today | Response> {
+  try {
+    return await getToday(now);
+  } catch (err) {
+    console.warn(`front page failed: ${err}`);
+    return new Response("Today's page is unavailable for a moment. Try again in half a minute.", {
+      status: 503,
+      headers: { "content-type": "text/plain; charset=utf-8", "retry-after": "30", "cache-control": "no-store" },
+    });
+  }
+}
+
 export async function getToday(now: Date = new Date()): Promise<Today> {
   const cache = (caches as unknown as { default: Cache }).default;
   const [day, agenda, knmiRain, weather, sea, recipes] = await Promise.all([
