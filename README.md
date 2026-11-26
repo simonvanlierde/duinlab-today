@@ -63,7 +63,7 @@ One Worker serves everything ([`src/worker.ts`](src/worker.ts)).
 - **`/today.json`** returns the same data for scripts (see [Data](#data)). Browsers and
   proxies may cache it for 5 minutes.
 
-## Develop
+## Development
 
 Install Node 22.23.4 or later (CI uses 26), [pnpm](https://pnpm.io/installation) and
 [just](https://just.systems/man/en/packages.html). Use the pnpm version pinned by
@@ -71,26 +71,28 @@ Install Node 22.23.4 or later (CI uses 26), [pnpm](https://pnpm.io/installation)
 
 ```sh
 pnpm install
-pnpm exec playwright install chromium
-just dev
+pnpm exec prek install
+just check
 ```
+
+`just check` runs CI's lint, types, unit tests, build, licence check and production dependency audit.
+Checks and builds generate Cloudflare runtime and binding types from `wrangler.jsonc`.
+`pnpm exec prek install` sets up the git hooks, including the commit-message and sign-off checks;
+`just hooks` runs them over the whole repo.
 
 `just dev` starts the dev server in the background. Use `pnpm exec astro dev status` to check it,
 `pnpm exec astro dev logs` to read its output and `pnpm exec astro dev stop` to end it.
-Checks and builds generate Cloudflare runtime and binding types from `wrangler.jsonc`.
-`just check` runs CI's lint, types, unit tests, build, licence check and production dependency audit. `just e2e` runs the browser tests
-against a production build, including axe scans of today, yesterday, about and 404 pages and a print-layout check.
-It runs the default suite and a separate APOD suite with a fixture key; no real NASA key is required. The Worker
-reads every source from a local fixture server ([`e2e/fixture-server.mjs`](e2e/fixture-server.mjs))
-through the `FIXTURE_ORIGIN` variable, so the tests run offline with repeatable content.
+
+`just e2e` runs the browser tests against a production build, after a one-time
+`pnpm exec playwright install chromium`. They include axe scans of today, yesterday, about and 404 pages and
+a print-layout check. It runs the default suite and a separate APOD suite with a fixture key; no real NASA key
+is required. The Worker reads every source from a local fixture server
+([`e2e/fixture-server.mjs`](e2e/fixture-server.mjs)) through the `FIXTURE_ORIGIN` variable, so the tests run
+offline with repeatable content.
 See [release preparation](docs/releasing.md) before a deployment or release tag.
 
 The social card `public/og.png` is rendered from `docs/og-card.html`. Keep its text inside the centred 630 px
-column, because some link previews crop to it. After editing, run:
-
-```sh
-pnpm exec playwright screenshot --viewport-size=1200,630 "file://$PWD/docs/og-card.html" public/og.png
-```
+column, because some link previews crop to it. After editing, run `just og-card`.
 
 For the NASA slide, put a line `NASA_API_KEY=<your key>` in `.dev.vars` for local runs. In
 production it is a Worker secret (`pnpm wrangler secret put NASA_API_KEY`). Without a key the
@@ -138,6 +140,10 @@ ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), Paard, Amare and DenHaa
 Astronomy Engine (planets, full moons, eclipses; an npm package, not a feed), and the
 recipe feeds of the Guardian, BBC Good Food and
 Love and Lemons. Each item on the page links to its source.
+
+## Privacy and accessibility
+
+The [privacy statement](docs/privacy.md) says what the site keeps and which sites your browser contacts. The [accessibility statement](docs/accessibility.md) says what is checked and what is known to fail.
 
 ## Licence
 

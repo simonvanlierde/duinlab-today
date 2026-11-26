@@ -3,11 +3,11 @@ import Plain from "../layouts/Plain.astro";
 import { site } from "../lib/config";
 
 const pictureNames = {
-	apod: "NASA Astronomy Picture of the Day",
-	met: "The Metropolitan Museum of Art",
-	wikipedia: "Wikipedia’s picture of the day",
-	aic: "Art Institute of Chicago",
-	rijks: "Rijksmuseum",
+  apod: "NASA Astronomy Picture of the Day",
+  met: "The Metropolitan Museum of Art",
+  wikipedia: "Wikipedia’s picture of the day",
+  aic: "Art Institute of Chicago",
+  rijks: "Rijksmuseum",
 };
 ---
 
@@ -75,6 +75,10 @@ const pictureNames = {
 		A Cloudflare Worker serves the page. Cloudflare keeps request logs for a few days: the address asked for,
 		the time, and connection details such as your IP address. I only read them to trace a fault. The day's pictures load straight from NASA, The Met, Wikimedia, the Art Institute, the Rijksmuseum or YouTube, so
 		they see your IP address too.
+	</p>
+	<p>
+		The <a href="https://github.com/simonvanlierde/duinlab-today/blob/main/docs/privacy.md">full privacy statement</a>
+		says what you can ask and how to reach me.
 	</p>
 
 	<h2>Code</h2>

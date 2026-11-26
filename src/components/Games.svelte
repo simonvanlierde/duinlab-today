@@ -1,25 +1,16 @@
 <script lang="ts">
 import { onMount, tick } from "svelte";
 import type { Game } from "../lib/types";
-import {
-	allPlayed,
-	init,
-	isPlayed,
-	mark,
-	playedCount,
-	store,
-	streak,
-	ticks,
-} from "./games.svelte";
+import { allPlayed, init, isPlayed, mark, playedCount, store, streak, ticks } from "./games.svelte";
 
 let { games }: { games: Game[] } = $props();
 
 onMount(() => {
-	init(games.map((g) => g.id));
-	const foldedWidth = matchMedia("(max-width: 1099px)");
-	const resize = () => focusFoldedBoard(document.activeElement);
-	foldedWidth.addEventListener("change", resize);
-	return () => foldedWidth.removeEventListener("change", resize);
+  init(games.map((g) => g.id));
+  const foldedWidth = matchMedia("(max-width: 1099px)");
+  const resize = () => focusFoldedBoard(document.activeElement);
+  foldedWidth.addEventListener("change", resize);
+  return () => foldedWidth.removeEventListener("change", resize);
 });
 
 const live = $derived(store.ready && !store.off);
@@ -33,29 +24,25 @@ let announce = $state(false);
 
 /** A fold only moves focus when it would hide the current control. */
 function focusFoldedBoard(focused: Element | null) {
-	if (
-		board?.contains(focused) &&
-		document.activeElement === focused &&
-		getComputedStyle(board).display === "none"
-	)
-		unfoldBtn?.focus();
+  if (board?.contains(focused) && document.activeElement === focused && getComputedStyle(board).display === "none")
+    unfoldBtn?.focus();
 }
 
 $effect.pre(() => {
-	if (!done || unfolded) return;
-	const focused = document.activeElement;
-	if (board?.contains(focused)) tick().then(() => focusFoldedBoard(focused));
+  if (!done || unfolded) return;
+  const focused = document.activeElement;
+  if (board?.contains(focused)) tick().then(() => focusFoldedBoard(focused));
 });
 
 async function open(id: string) {
-	announce = true;
-	await mark(id);
+  announce = true;
+  await mark(id);
 }
 
 async function unfold() {
-	unfolded = true;
-	await tick();
-	board?.querySelector("a")?.focus();
+  unfolded = true;
+  await tick();
+  board?.querySelector("a")?.focus();
 }
 </script>
 

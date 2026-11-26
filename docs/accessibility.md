@@ -1,6 +1,6 @@
 # Accessibility statement
 
-This statement covers duinlab-today at [today.duinlab.nl](https://today.duinlab.nl) (and its live summary in [About](/about)).
+This statement covers duinlab-today at [today.duinlab.nl](https://today.duinlab.nl) (and its live summary in [About](https://today.duinlab.nl/about)).
 Simon van Lierde builds duinlab-today and is responsible for this page.
 
 ## Using duinlab-today
@@ -45,4 +45,4 @@ Last reviewed: 2026-11-13
 
 Next review: within 12 months of the last review, or at the next major release if that comes first.
 
-Method: self-assessment, using the checks under How we check.
+Method: self-assessment, using the checks under How we check. The criterion-by-criterion record is the [WCAG 2.2 self-assessment](accessibility-assessment.md).

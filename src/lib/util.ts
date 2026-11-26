@@ -6,106 +6,92 @@ const TIMEOUT_MS = 4000;
 
 // e2e only: wrangler dev sets FIXTURE_ORIGIN; outside the Worker (unit tests) the module is absent
 const fixtureOrigin = import("cloudflare:workers").then(
-	(m) => m.env.FIXTURE_ORIGIN,
-	() => undefined,
+  (m) => m.env.FIXTURE_ORIGIN,
+  () => undefined,
 );
 
 /** `https://host/path?q` as `${FIXTURE_ORIGIN}/host/path?q` when that var is set, else `url`. */
 export async function upstream(url: string): Promise<string> {
-	const origin = await fixtureOrigin;
-	return origin ? `${origin}/${url.replace(/^https:\/\//, "")}` : url;
+  const origin = await fixtureOrigin;
+  return origin ? `${origin}/${url.replace(/^https:\/\//, "")}` : url;
 }
 
 /** `post` sends that body as JSON with a POST. */
-export async function getText(
-	url: string,
-	accept = "*/*",
-	post?: unknown,
-): Promise<string> {
-	const res = await fetch(await upstream(url), {
-		headers: {
-			"user-agent": UA,
-			accept,
-			...(post === undefined ? {} : { "content-type": "application/json" }),
-		},
-		...(post === undefined
-			? {}
-			: { method: "POST", body: JSON.stringify(post) }),
-		signal: AbortSignal.timeout(TIMEOUT_MS),
-	});
-	// host and path only: a query string can carry an API key into the logs
-	if (!res.ok) {
-		const u = new URL(url);
-		throw new Error(`${u.host}${u.pathname}: HTTP ${res.status}`);
-	}
-	return res.text();
+export async function getText(url: string, accept = "*/*", post?: unknown): Promise<string> {
+  const res = await fetch(await upstream(url), {
+    headers: {
+      "user-agent": UA,
+      accept,
+      ...(post === undefined ? {} : { "content-type": "application/json" }),
+    },
+    ...(post === undefined ? {} : { method: "POST", body: JSON.stringify(post) }),
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  // host and path only: a query string can carry an API key into the logs
+  if (!res.ok) {
+    const u = new URL(url);
+    throw new Error(`${u.host}${u.pathname}: HTTP ${res.status}`);
+  }
+  return res.text();
 }
 
-export async function getJson<T>(
-	url: string,
-	accept = "application/json",
-): Promise<T> {
-	return JSON.parse(await getText(url, accept)) as T;
+export async function getJson<T>(url: string, accept = "application/json"): Promise<T> {
+  return JSON.parse(await getText(url, accept)) as T;
 }
 
 /** Runs a source; any failure (network, timeout, unexpected shape) becomes null. */
-export async function safe<T>(
-	name: string,
-	run: () => Promise<T | null>,
-): Promise<T | null> {
-	try {
-		return await run();
-	} catch (err) {
-		console.warn(
-			`source ${name} failed: ${err instanceof Error ? err.message : err}`,
-		);
-		return null;
-	}
+export async function safe<T>(name: string, run: () => Promise<T | null>): Promise<T | null> {
+  try {
+    return await run();
+  } catch (err) {
+    console.warn(`source ${name} failed: ${err instanceof Error ? err.message : err}`);
+    return null;
+  }
 }
 
 /** `s` when it is an https URL, else undefined: upstream links go into href and src. */
 export const httpsUrl = (s: string | undefined) =>
-	s && URL.canParse(s) && new URL(s).protocol === "https:" ? s : undefined;
+  s && URL.canParse(s) && new URL(s).protocol === "https:" ? s : undefined;
 
 export const decodeEntities = decodeHTML;
 
 /** Plain text from an HTML fragment; the page escapes it again when it renders. */
 export function stripTags(html: string): string {
-	let text = html;
-	// repeat until stable: one pass leaves "<script" behind in "<scr<b>ipt"
-	for (let prev = ""; prev !== text; ) {
-		prev = text;
-		text = text.replace(/<[^>]*>/g, "");
-	}
-	return decodeEntities(text).replace(/\s+/g, " ").trim();
+  let text = html;
+  // repeat until stable: one pass leaves "<script" behind in "<scr<b>ipt"
+  for (let prev = ""; prev !== text; ) {
+    prev = text;
+    text = text.replace(/<[^>]*>/g, "");
+  }
+  return decodeEntities(text).replace(/\s+/g, " ").trim();
 }
 
 /** 32-bit FNV-1a, enough to seed a per-day choice. */
 function hashString(s: string): number {
-	let h = 0x811c9dc5;
-	for (let i = 0; i < s.length; i++) {
-		h ^= s.charCodeAt(i);
-		h = Math.imul(h, 0x01000193);
-	}
-	return h >>> 0;
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
 }
 
 /** Small seeded PRNG (mulberry32): the same seed gives the same sequence on every visit. */
 export function seededRandom(seed: string): () => number {
-	let a = hashString(seed);
-	return () => {
-		a = (a + 0x6d2b79f5) | 0;
-		let t = Math.imul(a ^ (a >>> 15), 1 | a);
-		t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-	};
+  let a = hashString(seed);
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
 export function shuffled<T>(items: readonly T[], rand: () => number): T[] {
-	const a = [...items];
-	for (let i = a.length - 1; i > 0; i--) {
-		const j = Math.floor(rand() * (i + 1));
-		[a[i], a[j]] = [a[j] as T, a[i] as T];
-	}
-	return a;
+  const a = [...items];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [a[i], a[j]] = [a[j] as T, a[i] as T];
+  }
+  return a;
 }

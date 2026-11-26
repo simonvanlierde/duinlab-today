@@ -18,60 +18,54 @@ export type Day = Omit<Today, "weather" | "sea" | "recipes" | "games">;
  * the stored copy anyway.
  */
 export async function buildDay(
-	date: string,
-	now: Date,
-	apiKey: string | undefined,
-	prev: Day | null = null,
+  date: string,
+  now: Date,
+  apiKey: string | undefined,
+  prev: Day | null = null,
 ): Promise<Day> {
-	const keep = <T>(have: T | null | undefined, fetch: () => Promise<T>) =>
-		have ? Promise.resolve(have) : fetch();
-	const wikiDone =
-		prev &&
-		prev.didYouKnow.length > 0 &&
-		prev.onThisDay &&
-		prev.featured &&
-		(!PICTURE_ORDER.includes("wikipedia") ||
-			prev.pictures.some((p) => p.kind === "wikipedia"));
-	const have = prev?.pictures ?? [];
-	const [wiki, pictures, word, quote, quiz, tides, events] = await Promise.all([
-		wikiDone
-			? Promise.resolve({
-					didYouKnow: prev.didYouKnow,
-					onThisDay: prev.onThisDay,
-					featured: prev.featured,
-					image: null,
-				})
-			: fetchWikipedia(date),
-		fetchPictures(
-			date,
-			apiKey,
-			have.map((p) => p.kind),
-		),
-		keep(prev?.word, () => fetchWord(date)),
-		keep(prev?.quote, () => fetchQuote()),
-		keep(prev?.quiz, () => fetchQuiz(date)),
-		site.content.tides
-			? keep(prev?.tides, () => fetchTides(date))
-			: Promise.resolve(null),
-		site.content.events
-			? keep(prev?.events, () => fetchEvents(date))
-			: Promise.resolve(null),
-	]);
-	return {
-		date,
-		generatedAt: now.toISOString(),
-		sun: sunTimes(date),
-		moon: moonAt(new Date(`${date}T12:00:00Z`)),
-		pictures: mergePictures(have, pictures, wiki.image ? [wiki.image] : []),
-		didYouKnow: wiki.didYouKnow,
-		onThisDay: wiki.onThisDay,
-		featured: wiki.featured,
-		word,
-		quote,
-		quiz,
-		tides,
-		events,
-	};
+  const keep = <T>(have: T | null | undefined, fetch: () => Promise<T>) => (have ? Promise.resolve(have) : fetch());
+  const wikiDone =
+    prev &&
+    prev.didYouKnow.length > 0 &&
+    prev.onThisDay &&
+    prev.featured &&
+    (!PICTURE_ORDER.includes("wikipedia") || prev.pictures.some((p) => p.kind === "wikipedia"));
+  const have = prev?.pictures ?? [];
+  const [wiki, pictures, word, quote, quiz, tides, events] = await Promise.all([
+    wikiDone
+      ? Promise.resolve({
+          didYouKnow: prev.didYouKnow,
+          onThisDay: prev.onThisDay,
+          featured: prev.featured,
+          image: null,
+        })
+      : fetchWikipedia(date),
+    fetchPictures(
+      date,
+      apiKey,
+      have.map((p) => p.kind),
+    ),
+    keep(prev?.word, () => fetchWord(date)),
+    keep(prev?.quote, () => fetchQuote()),
+    keep(prev?.quiz, () => fetchQuiz(date)),
+    site.content.tides ? keep(prev?.tides, () => fetchTides(date)) : Promise.resolve(null),
+    site.content.events ? keep(prev?.events, () => fetchEvents(date)) : Promise.resolve(null),
+  ]);
+  return {
+    date,
+    generatedAt: now.toISOString(),
+    sun: sunTimes(date),
+    moon: moonAt(new Date(`${date}T12:00:00Z`)),
+    pictures: mergePictures(have, pictures, wiki.image ? [wiki.image] : []),
+    didYouKnow: wiki.didYouKnow,
+    onThisDay: wiki.onThisDay,
+    featured: wiki.featured,
+    word,
+    quote,
+    quiz,
+    tides,
+    events,
+  };
 }
 
 /**
@@ -79,31 +73,26 @@ export async function buildDay(
  * day stored before it existed is undefined: missing, so the next run fills it in.
  */
 const sections = (d: Day) => [
-	d.onThisDay,
-	d.featured,
-	d.word,
-	d.quote,
-	d.quiz,
-	...(site.content.tides ? [d.tides] : []),
-	...(site.content.events ? [d.events] : []),
-	d.didYouKnow.length > 0 ? d.didYouKnow : null,
+  d.onThisDay,
+  d.featured,
+  d.word,
+  d.quote,
+  d.quiz,
+  ...(site.content.tides ? [d.tides] : []),
+  ...(site.content.events ? [d.events] : []),
+  d.didYouKnow.length > 0 ? d.didYouKnow : null,
 ];
 
 const missingSections = (d: Day) => sections(d).filter((s) => !s).length;
 
-export const allFailed = (d: Day) =>
-	d.pictures.length === 0 && sections(d).every((s) => !s);
+export const allFailed = (d: Day) => d.pictures.length === 0 && sections(d).every((s) => !s);
 
 /** Not final yet: a section or an enabled picture source is missing. */
 export function incomplete(d: Day, hasApodKey: boolean): boolean {
-	return (
-		missingSections(d) > 0 ||
-		PICTURE_ORDER.some(
-			(kind) =>
-				(kind !== "apod" || hasApodKey) &&
-				!d.pictures.some((p) => p.kind === kind),
-		)
-	);
+  return (
+    missingSections(d) > 0 ||
+    PICTURE_ORDER.some((kind) => (kind !== "apod" || hasApodKey) && !d.pictures.some((p) => p.kind === kind))
+  );
 }
 
 /**
@@ -111,17 +100,17 @@ export function incomplete(d: Day, hasApodKey: boolean): boolean {
  * someone halfway through it. Pictures merge per source: a stored one is never replaced.
  */
 export function mergeDay(prev: Day | null, fresh: Day): Day {
-	if (!prev || prev.date !== fresh.date) return fresh;
-	return {
-		...fresh,
-		pictures: mergePictures(prev.pictures ?? [], fresh.pictures),
-		didYouKnow: prev.didYouKnow.length > 0 ? prev.didYouKnow : fresh.didYouKnow,
-		onThisDay: prev.onThisDay ?? fresh.onThisDay,
-		featured: prev.featured ?? fresh.featured,
-		word: prev.word ?? fresh.word,
-		quote: prev.quote ?? fresh.quote,
-		quiz: prev.quiz ?? fresh.quiz,
-		tides: site.content.tides ? (prev.tides ?? fresh.tides) : null,
-		events: site.content.events ? (prev.events ?? fresh.events) : null,
-	};
+  if (!prev || prev.date !== fresh.date) return fresh;
+  return {
+    ...fresh,
+    pictures: mergePictures(prev.pictures ?? [], fresh.pictures),
+    didYouKnow: prev.didYouKnow.length > 0 ? prev.didYouKnow : fresh.didYouKnow,
+    onThisDay: prev.onThisDay ?? fresh.onThisDay,
+    featured: prev.featured ?? fresh.featured,
+    word: prev.word ?? fresh.word,
+    quote: prev.quote ?? fresh.quote,
+    quiz: prev.quiz ?? fresh.quiz,
+    tides: site.content.tides ? (prev.tides ?? fresh.tides) : null,
+    events: site.content.events ? (prev.events ?? fresh.events) : null,
+  };
 }

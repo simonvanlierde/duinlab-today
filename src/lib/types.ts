@@ -5,200 +5,200 @@
 
 /** Where an item came from, shown as its credit line. */
 export interface Credit {
-	name: string;
-	url: string;
+  name: string;
+  url: string;
 }
 
 export interface Picture {
-	kind: "apod" | "met" | "wikipedia" | "aic" | "rijks";
-	title: string;
-	/** Artist or photographer, when the source names one. */
-	by: string | null;
-	/** The work's own date as the source gives it ("1889"), not today's date. */
-	date: string | null;
-	imageUrl: string;
-	/** Source original for closer viewing; older stored days have only the preview. */
-	fullImageUrl?: string;
-	/** Plain-text source context, when supplied; absent on older stored days. */
-	explanation?: string;
-	/** Pixel size when the source gives it, so the page can reserve the right aspect ratio. */
-	width: number | null;
-	height: number | null;
-	alt: string;
-	/** The source's own page for the item. */
-	pageUrl: string;
-	credit: Credit;
+  kind: "apod" | "met" | "wikipedia" | "aic" | "rijks";
+  title: string;
+  /** Artist or photographer, when the source names one. */
+  by: string | null;
+  /** The work's own date as the source gives it ("1889"), not today's date. */
+  date: string | null;
+  imageUrl: string;
+  /** Source original for closer viewing; older stored days have only the preview. */
+  fullImageUrl?: string;
+  /** Plain-text source context, when supplied; absent on older stored days. */
+  explanation?: string;
+  /** Pixel size when the source gives it, so the page can reserve the right aspect ratio. */
+  width: number | null;
+  height: number | null;
+  alt: string;
+  /** The source's own page for the item. */
+  pageUrl: string;
+  credit: Credit;
 }
 
 /** One "Did you know" item. `text` starts after Wikipedia's "... that". */
 export interface Fact {
-	text: string;
-	url: string;
-	credit: Credit;
+  text: string;
+  url: string;
+  credit: Credit;
 }
 
 export interface OnThisDay {
-	year: number;
-	text: string;
-	url: string;
-	credit: Credit;
+  year: number;
+  text: string;
+  url: string;
+  credit: Credit;
 }
 
 /** Wikipedia's featured article of the day. */
 export interface Featured {
-	title: string;
-	/** The lead, cut to at most two sentences and about 280 characters. */
-	extract: string;
-	url: string;
-	credit: Credit;
+  title: string;
+  /** The lead, cut to at most two sentences and about 280 characters. */
+  extract: string;
+  url: string;
+  credit: Credit;
 }
 
 export interface Word {
-	word: string;
-	/** First sense only, plain text. */
-	gloss: string;
-	partOfSpeech: string | null;
-	url: string;
-	credit: Credit;
+  word: string;
+  /** First sense only, plain text. */
+  gloss: string;
+  partOfSpeech: string | null;
+  url: string;
+  credit: Credit;
 }
 
 export interface Quote {
-	text: string;
-	author: string;
-	credit: Credit;
+  text: string;
+  author: string;
+  credit: Credit;
 }
 
 export interface QuizQuestion {
-	question: string;
-	/** Shuffled once per day, the same for every visitor. */
-	answers: string[];
-	/** Index into `answers`. */
-	correct: number;
-	category: string;
-	difficulty: "easy" | "medium" | "hard";
+  question: string;
+  /** Shuffled once per day, the same for every visitor. */
+  answers: string[];
+  /** Index into `answers`. */
+  correct: number;
+  category: string;
+  difficulty: "easy" | "medium" | "hard";
 }
 
 export interface Quiz {
-	questions: QuizQuestion[];
-	credit: Credit;
+  questions: QuizQuestion[];
+  credit: Credit;
 }
 
 export interface Weather {
-	now: {
-		temperatureC: number;
-		/** WMO weather code, as Open-Meteo gives it. */
-		code: number;
-		/** Plain words for `code` ("light rain"). */
-		description: string;
-		/** Percent, 0-100. Tints the sky: overcast is a greyer dawn. */
-		cloudCover: number;
-		windKmh: number;
-		windBeaufort: number;
-		/** Compass point the wind comes from ("SW"). */
-		windFrom: string;
-	};
-	today: { maxC: number; minC: number; rainChanceMax: number };
-	/**
-	 * Remaining forecast intervals: KNMI/Buienradar in 5-minute steps, or Open-Meteo
-	 * in 15-minute steps. Cached forecasts may cover less than two hours or be empty.
-	 * `time` is the interval start as local "HH:MM", `mm` is mm/h.
-	 */
-	rainNext2h: { time: string; mm: number }[];
-	/** The source of `rainNext2h`. */
-	rainCredit: Credit;
-	/** "Air quality poor (AQI 64)" or "Grass pollen high today"; null when both are fine or the air feed failed. */
-	air: string | null;
-	/** ISO instant the forecast was fetched; weather is cached for 15 minutes. */
-	fetchedAt: string;
-	credit: Credit;
+  now: {
+    temperatureC: number;
+    /** WMO weather code, as Open-Meteo gives it. */
+    code: number;
+    /** Plain words for `code` ("light rain"). */
+    description: string;
+    /** Percent, 0-100. Tints the sky: overcast is a greyer dawn. */
+    cloudCover: number;
+    windKmh: number;
+    windBeaufort: number;
+    /** Compass point the wind comes from ("SW"). */
+    windFrom: string;
+  };
+  today: { maxC: number; minC: number; rainChanceMax: number };
+  /**
+   * Remaining forecast intervals: KNMI/Buienradar in 5-minute steps, or Open-Meteo
+   * in 15-minute steps. Cached forecasts may cover less than two hours or be empty.
+   * `time` is the interval start as local "HH:MM", `mm` is mm/h.
+   */
+  rainNext2h: { time: string; mm: number }[];
+  /** The source of `rainNext2h`. */
+  rainCredit: Credit;
+  /** "Air quality poor (AQI 64)" or "Grass pollen high today"; null when both are fine or the air feed failed. */
+  air: string | null;
+  /** ISO instant the forecast was fetched; weather is cached for 15 minutes. */
+  fetchedAt: string;
+  credit: Credit;
 }
 
 /** Instants as ISO strings with offset, for the configured location. */
 export interface Sun {
-	/** Civil dawn: the sun 6 degrees below the horizon. */
-	dawn: string;
-	sunrise: string;
-	sunset: string;
-	/** Civil dusk. */
-	dusk: string;
+  /** Civil dawn: the sun 6 degrees below the horizon. */
+  dawn: string;
+  sunrise: string;
+  sunset: string;
+  /** Civil dusk. */
+  dusk: string;
 }
 
 export interface Moon {
-	/** 0 new, 0.5 full, back to 1. */
-	phase: number;
-	/** "waxing crescent", "full moon", ... */
-	name: string;
+  /** 0 new, 0.5 full, back to 1. */
+  phase: number;
+  /** "waxing crescent", "full moon", ... */
+  name: string;
 }
 
 export interface Game {
-	/** Stable key for localStorage. */
-	id: string;
-	name: string;
-	url: string;
-	/** One short line on what you do in it. */
-	blurb: string;
+  /** Stable key for localStorage. */
+  id: string;
+  name: string;
+  url: string;
+  /** One short line on what you do in it. */
+  blurb: string;
 }
 
 /** A cooking site's newest recipe, linked to the source. */
 export interface Recipe {
-	title: string;
-	url: string;
-	/** The source's short name ("The Guardian", "Good Food"). */
-	source: string;
+  title: string;
+  url: string;
+  /** The source's short name ("The Guardian", "Good Food"). */
+  source: string;
 }
 
 /** High and low water at Scheveningen for one Amsterdam day. `at` is HH:MM on the Amsterdam clock. */
 export interface Tides {
-	events: { kind: "high" | "low"; at: string; heightCm: number | null }[];
-	credit: Credit;
-	/** Human page for the Scheveningen tides. */
-	url: string;
+  events: { kind: "high" | "low"; at: string; heightCm: number | null }[];
+  credit: Credit;
+  /** Human page for the Scheveningen tides. */
+  url: string;
 }
 
 /** Sea temperature and wave height off Scheveningen (Open-Meteo marine model, about 10 km cells). */
 export interface Sea {
-	temperatureC: number | null;
-	waveHeightM: number | null;
-	credit: Credit;
+  temperatureC: number | null;
+  waveHeightM: number | null;
+  credit: Credit;
 }
 
 export interface Happening {
-	name: string;
-	/** YYYY-MM-DD, the configured timezone */
-	day: string;
-	/** HH:MM, the configured timezone; null when the event has no clock time */
-	time: string | null;
-	venue: string;
-	url: string;
+  name: string;
+  /** YYYY-MM-DD, the configured timezone */
+  day: string;
+  /** HH:MM, the configured timezone; null when the event has no clock time */
+  time: string | null;
+  venue: string;
+  url: string;
 }
 
 export interface Events {
-	items: Happening[];
-	url: string;
-	credit: Credit;
+  items: Happening[];
+  url: string;
+  credit: Credit;
 }
 
 export interface Today {
-	/** The day in the configured timezone, YYYY-MM-DD. */
-	date: string;
-	/** ISO instant the day's data was built. */
-	generatedAt: string;
-	sun: Sun;
-	moon: Moon;
-	/** Up to five, in the order of PICTURE_ORDER; [] when every source failed. */
-	pictures: Picture[];
-	didYouKnow: Fact[];
-	onThisDay: OnThisDay | null;
-	featured: Featured | null;
-	word: Word | null;
-	quote: Quote | null;
-	quiz: Quiz | null;
-	tides: Tides | null;
-	events: Events | null;
-	weather: Weather | null;
-	/** Cached for an hour; null when the marine feed failed. */
-	sea: Sea | null;
-	/** Up to nine, three per site (a recipe, not a paper's story); [] when every feed failed. Cached for 3 hours. */
-	recipes: Recipe[];
-	games: Game[];
+  /** The day in the configured timezone, YYYY-MM-DD. */
+  date: string;
+  /** ISO instant the day's data was built. */
+  generatedAt: string;
+  sun: Sun;
+  moon: Moon;
+  /** Up to five, in the order of PICTURE_ORDER; [] when every source failed. */
+  pictures: Picture[];
+  didYouKnow: Fact[];
+  onThisDay: OnThisDay | null;
+  featured: Featured | null;
+  word: Word | null;
+  quote: Quote | null;
+  quiz: Quiz | null;
+  tides: Tides | null;
+  events: Events | null;
+  weather: Weather | null;
+  /** Cached for an hour; null when the marine feed failed. */
+  sea: Sea | null;
+  /** Up to nine, three per site (a recipe, not a paper's story); [] when every feed failed. Cached for 3 hours. */
+  recipes: Recipe[];
+  games: Game[];
 }

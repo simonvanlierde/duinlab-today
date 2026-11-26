@@ -6,12 +6,12 @@ import { KEY, loadQuiz, quizStreak, saveQuiz } from "./quiz";
 let { quiz }: { quiz: Quiz } = $props();
 
 const LINES = [
-	"Still dark, then.",
-	"A glimmer.",
-	"First light.",
-	"Getting brighter.",
-	"The sun is up, mostly.",
-	"Broad daylight.",
+  "Still dark, then.",
+  "A glimmer.",
+  "First light.",
+  "Getting brighter.",
+  "The sun is up, mostly.",
+  "Broad daylight.",
 ];
 
 const total = $derived(quiz.questions.length);
@@ -25,52 +25,48 @@ let nextBtn = $state<HTMLButtonElement>();
 let top = $state<HTMLElement>();
 
 onMount(() => {
-	({ picks, done } = loadQuiz(quiz));
-	const open = picks.indexOf(null);
-	at = open === -1 ? total : open;
-	function sync() {
-		const saved = loadQuiz(quiz);
-		const merged = saved.picks.map((pick, i) => pick ?? picks[i] ?? null);
-		const finished = [...new Set([...done, ...saved.done])];
-		if (
-			merged.every((pick, i) => pick === picks[i]) &&
-			finished.length === done.length
-		)
-			return;
-		const waiting = picks[at] === null;
-		picks = merged;
-		done = finished;
-		if (waiting && !saving && !root?.contains(document.activeElement)) {
-			const open = picks.indexOf(null);
-			at = open === -1 ? total : open;
-		}
-	}
-	const storage = (event: StorageEvent) => event.key === KEY && sync();
-	const visible = () => !document.hidden && sync();
-	addEventListener("storage", storage);
-	document.addEventListener("visibilitychange", visible);
-	return () => {
-		removeEventListener("storage", storage);
-		document.removeEventListener("visibilitychange", visible);
-	};
+  ({ picks, done } = loadQuiz(quiz));
+  const open = picks.indexOf(null);
+  at = open === -1 ? total : open;
+  function sync() {
+    const saved = loadQuiz(quiz);
+    const merged = saved.picks.map((pick, i) => pick ?? picks[i] ?? null);
+    const finished = [...new Set([...done, ...saved.done])];
+    if (merged.every((pick, i) => pick === picks[i]) && finished.length === done.length) return;
+    const waiting = picks[at] === null;
+    picks = merged;
+    done = finished;
+    if (waiting && !saving && !root?.contains(document.activeElement)) {
+      const open = picks.indexOf(null);
+      at = open === -1 ? total : open;
+    }
+  }
+  const storage = (event: StorageEvent) => event.key === KEY && sync();
+  const visible = () => !document.hidden && sync();
+  addEventListener("storage", storage);
+  document.addEventListener("visibilitychange", visible);
+  return () => {
+    removeEventListener("storage", storage);
+    document.removeEventListener("visibilitychange", visible);
+  };
 });
 
 async function pick(i: number) {
-	if (picks[at] !== null && picks[at] !== undefined) return;
-	saving = true;
-	picks[at] = i;
-	({ picks, done } = await saveQuiz(quiz, picks, done));
-	saving = false;
-	await tick();
-	if (root?.contains(document.activeElement)) nextBtn?.focus();
+  if (picks[at] !== null && picks[at] !== undefined) return;
+  saving = true;
+  picks[at] = i;
+  ({ picks, done } = await saveQuiz(quiz, picks, done));
+  saving = false;
+  await tick();
+  if (root?.contains(document.activeElement)) nextBtn?.focus();
 }
 
 /** Keyboard focus follows the quiz: to the next question, or to the score. */
 async function next() {
-	if (saving) return;
-	at++;
-	await tick();
-	top?.focus();
+  if (saving) return;
+  at++;
+  await tick();
+  top?.focus();
 }
 
 const streak = $derived(quizStreak(done));
@@ -78,17 +74,12 @@ const answered = $derived(picks.filter((p) => p !== null).length);
 
 // the page's end line needs to know the quiz is finished
 $effect(() => {
-	document.documentElement.toggleAttribute(
-		"data-quiz-done",
-		total > 0 && answered === total,
-	);
+  document.documentElement.toggleAttribute("data-quiz-done", total > 0 && answered === total);
 });
 
 const q = $derived(quiz.questions[at]);
 const chosen = $derived(picks[at] ?? null);
-const score = $derived(
-	picks.filter((p, i) => p !== null && p === quiz.questions[i].correct).length,
-);
+const score = $derived(picks.filter((p, i) => p !== null && p === quiz.questions[i].correct).length);
 </script>
 
 <div class="quiz-live" bind:this={root} style={`--lift:${total ? answered / total : 0}`}>

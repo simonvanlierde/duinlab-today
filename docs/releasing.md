@@ -38,7 +38,11 @@ Check a changed profile’s local date, clock, weather and omitted sections on `
    Run builds and browser tests sequentially: both write `dist/`.
 2. Merge the reviewed release PR and wait for main's checks and production deployment. Verify
    pictures, almanac Close, quiz review, yesterday's paper and `/today.json` on production.
-3. Prepare the release notes in `docs/releases/`, following `docs/releases/0.1.0.md`.
-   Publish manually from the verified merged commit. Keep the tag, package version and changelog version aligned.
+3. Prepare the long-form release notes in `docs/releases/`, following `docs/releases/0.1.0.md`. The GitHub
+   release itself carries that version's `CHANGELOG.md` section, not this file.
+4. Run `just release X.Y.Z`: it cuts `[Unreleased]` in `CHANGELOG.md` into `[X.Y.Z]` and sets
+   `package.json`'s version in one commit. Merge that, then run `just release X.Y.Z` again on up-to-date
+   `main` to sign and push the tag `vX.Y.Z`. The release workflow publishes the GitHub release with that
+   version's changelog section. Signing needs a key listed in `.github/allowed_signers`.
 
 The release ships a website. There are no package or binary build assets to attach.

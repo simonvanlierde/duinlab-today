@@ -1,0 +1,20 @@
+[default.extend-identifiers]
+# Preserve the format plural before typos splits its acronym.
+PNGs = "PNGs"
+
+# Words typos must leave alone. Add your own below.
+[default.extend-words]
+# The Art Institute of Chicago's domain (artic.edu).
+artic = "artic"
+# Astronomy: positions corrected for precession.
+precessed = "precessed"
+# Dutch field names in the Rijkswaterstaat tide API.
+Proces = "Proces"
+Periode = "Periode"
+Methode = "Methode"
+# HTML entities: Caf&eacute;
+Caf = "Caf"
+
+[files]
+# Upstream answers captured as they came, typos and all.
+extend-exclude = ["test/unit/fixtures/", "e2e/fixtures/"]
