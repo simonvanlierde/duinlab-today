@@ -6,7 +6,9 @@ To report a problem, see [SECURITY.md](../.github/SECURITY.md).
 ## Threat model
 
 The project is a Cloudflare Worker that serves <https://today.duinlab.nl> and
-[`/today.json`](../README.md#data). It builds one page a day from public sources, keeps that day in
+[`/today.json`](../README.md#data). It also answers on its `workers.dev` hostname, which the deploy
+check uses; that hostname skips the zone's bot challenge but serves the same Worker. It builds one
+page a day from public sources, keeps that day in
 a Durable Object with a KV copy, and caches weather, sea and recipe data. There are no accounts,
 and no data about visitors is stored on the server beyond Cloudflare's request logs
 ([privacy statement](privacy.md)).
@@ -17,7 +19,8 @@ What could be harmed:
   would run for all of them.
 - **The day's content.** Everyone sees the same day, so a poisoned source or KV entry reaches
   every visitor until the day turns over.
-- **Secrets.** The NASA API key in the Worker, and the Cloudflare token in CI.
+- **Secrets.** The NASA API key in the Worker, the Cloudflare token in CI, and the KV-write token
+  the outside jobs hold.
 - **The deployed Worker and releases**, which CI builds from `main` and signed tags.
 
 Threats come from hostile or broken upstream feeds, the outside jobs that write KV, crafted
@@ -32,9 +35,10 @@ maintainer's accounts are out of [scope](../.github/SECURITY.md#scope).
 | Requests | Path and the `?phase=` parameter | Untrusted; `?phase=` is checked against a fixed list ([`index.astro`](../src/pages/index.astro)) |
 | Upstream feeds (NASA, museums, Wikipedia, Wiktionary, Open-Meteo, Buienradar, Rijkswaterstaat, event sites) | Text, links, image URLs, numbers | Untrusted: parsed, links filtered to https, text stripped of tags ([`src/lib/sources/`](../src/lib/sources/)) |
 | KV feeds `rain/v1`, `agenda/v1` | JSON written by outside jobs | Untrusted: shape, age and links checked; a bad `rain/v1` is dropped whole, a bad `agenda/v1` item on its own ([configuration](configuration.md#kv-feeds)) |
+| KV day mirror `day/v3/` | A whole day, read when the Durable Object has none stored | Trusted: adopted without checks ([`day-coordinator.ts`](../src/lib/day-coordinator.ts)) |
 | Site configuration | `site.toml` or `SITE_CONFIG` at build time | Trusted, but validated so a typo fails the build ([`site-config.mjs`](../scripts/site-config.mjs)) |
 | Cloudflare | Runs the Worker, KV, the Durable Object, the cache | Trusted platform |
-| GitHub Actions, pnpm, Renovate | Code, dependencies, deploys, releases | Trusted with pins and narrow rights (T6 to T8) |
+| GitHub Actions, pnpm, Renovate | Code, dependencies, deploys, releases | Trusted with pinned versions and read-only workflow defaults (T6 to T8). Renovate may merge without an approval, never without the required checks |
 
 ## Secure design principles
 
@@ -52,7 +56,7 @@ maintainer's accounts are out of [scope](../.github/SECURITY.md#scope).
 - **Complete mediation.** Every upstream link goes through `httpsUrl`. Upstream text that can
   carry HTML (Wikipedia, Wiktionary, picture and recipe feeds) goes through `stripTags`; the rest is
   plain JSON that the templates escape ([`util.ts`](../src/lib/util.ts)).
-- **Open design.** Code, CSP and headers are public. The only secrets are the two keys above.
+- **Open design.** Code, CSP and headers are public. The only secrets are those three keys.
 
 ## Weaknesses countered
 
@@ -70,14 +74,16 @@ maintainer's accounts are out of [scope](../.github/SECURITY.md#scope).
 ## Residual risk
 
 - **The deploy token is in reach of dependencies.** Renovate merges minor and patch npm updates and
-  `main` deploys, so a hijacked `wrangler` or build dependency could read the Cloudflare token.
-  The week's wait is the guard.
+  the weekly lockfile relock, and `main` deploys, so a hijacked `wrangler` or build dependency could
+  read the Cloudflare token. pnpm's week-long `minimumReleaseAge` is the guard, for relocks too: a
+  hijacked release is usually caught and pulled within that week.
 - **Images load from any https host.** `img-src` allows `https:` because sources link pictures on
   many hosts. A hostile feed could point at a tracking image; it sees the visitor's IP address and
   the origin `today.duinlab.nl`.
 - **Upstream content is shown as given.** A source can publish wrong or offensive text; the page
   credits and links each item but does not moderate it.
 - **The KV writers are trusted with write access.** A compromised outside job could replace the
-  agenda or rain feed with well-formed but false data.
+  agenda or rain feed with well-formed but false data, or plant a day under `day/v3/`, which the
+  Durable Object adopts unchecked when it has no day stored yet.
 - **One maintainer** holds every key, so nobody else reviews changes
   ([GOVERNANCE.md](../GOVERNANCE.md)).

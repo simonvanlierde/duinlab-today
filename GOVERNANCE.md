@@ -1,10 +1,10 @@
 # Governance
 
-duinlab-today has one maintainer, Simon van Lierde. This file says who decides and who has access.
+I'm the only maintainer of duinlab-today. This file says who decides and who has access.
 
 ## Who decides
 
-The maintainer decides what goes into the page and when to release.
+I decide what goes into the page and when to release.
 Anyone can propose a change in an issue or a pull request. I weigh each proposal against
 [PRODUCT.md](PRODUCT.md) and [DESIGN.md](DESIGN.md), and I record larger decisions in
 [docs/decisions/](docs/decisions/), with the reasons. If I turn a proposal down, I say why in the
@@ -22,13 +22,14 @@ The planned work is in the [roadmap](docs/roadmap.md).
   <https://today.duinlab.nl>, and to the `duinlab.nl` domain. CI deploys `main` through the
   `production` environment after every check passes; that environment holds the Cloudflare token
   and the NASA API key.
-- **Bots:** Renovate opens dependency updates and merges minor and patch npm updates once every
-  check passes. It does not merge majors or the actions and hooks group ([`renovate.json5`](renovate.json5)).
+- **Bots:** Renovate opens dependency updates and merges minor and patch npm updates and the weekly
+  lockfile relock once every check passes. It does not merge majors or the actions and hooks group ([`renovate.json5`](renovate.json5)).
 
 ## If the maintainer is unavailable
 
-A named person can take over the GitHub repository, and the recovery details for Cloudflare, the
-`duinlab.nl` domain and the NASA API key are in an emergency-access vault.
+If I can't continue, the person I named through GitHub's account successor setting can take over
+the repository. The recovery details for Cloudflare, the `duinlab.nl` domain and the NASA API key
+are in an emergency-access vault.
 
 The code, the release history and the docs are public under the MIT license, so anyone can fork the
 project and deploy their own copy ([docs/configuration.md](docs/configuration.md)). The live page

@@ -136,7 +136,7 @@ Worker itself fails, it answers 503 with `{"error": ...}`.
 ## Sources
 
 Wikipedia (On this day, Did you know, the featured article), Wiktionary (word of the day),
-NASA APOD, The Metropolitan Museum of Art, the Art Institute of Chicago and the Rijksmuseum (public-domain works), the Wikipedia picture of the day (credited with its licence), Open Trivia DB (CC BY-SA 4.0),
+NASA APOD, The Metropolitan Museum of Art, the Art Institute of Chicago (blocked from Cloudflare's network for now; see the [roadmap](docs/roadmap.md)) and the Rijksmuseum (public-domain works), the Wikipedia picture of the day (credited with its licence), Open Trivia DB (CC BY-SA 4.0),
 ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), Paard, Amare and DenHaag.com (this week's shows and events; the last two through a weekly homelab job that writes `agenda/v1` to KV), Open-Meteo (weather, air quality, pollen and the sea off Scheveningen), KNMI (`radar_forecast/2.0` via a scheduled homelab job that writes `rain/v1` to KV) and Buienradar (fallback rain radar),
 Astronomy Engine (planets, full moons, eclipses; an npm package, not a feed), and the
 recipe feeds of the Guardian, BBC Good Food and
