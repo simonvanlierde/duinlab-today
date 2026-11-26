@@ -55,3 +55,15 @@ To check one, point Git at that file and verify the tag:
 ```sh
 git -c gpg.ssh.allowedSignersFile=.github/allowed_signers verify-tag v0.2.0
 ```
+
+## Rebuild a release
+
+Two builds of one commit give the same `dist/` byte for byte when they run at the same path with
+the same `ASTRO_KEY`. Astro writes the project's absolute path into the server bundle, and without
+`ASTRO_KEY` it draws a new random key for server islands, which this site doesn't use.
+
+```sh
+export ASTRO_KEY="$(pnpm exec astro create-key | sed -n 's/^ASTRO_KEY=//p')"
+pnpm install --frozen-lockfile && pnpm run build && cp -r dist /tmp/build-1
+rm -rf dist && pnpm run build && diff -r /tmp/build-1 dist && echo identical
+```
