@@ -35,7 +35,7 @@ maintainer's accounts are out of [scope](../.github/SECURITY.md#scope).
 | Requests | Path and the `?phase=` parameter | Untrusted; `?phase=` is checked against a fixed list ([`index.astro`](../src/pages/index.astro)) |
 | Upstream feeds (NASA, museums, Wikipedia, Wiktionary, Open-Meteo, Buienradar, Rijkswaterstaat, event sites) | Text, links, image URLs, numbers | Untrusted: parsed, links filtered to https, text stripped of tags ([`src/lib/sources/`](../src/lib/sources/)) |
 | KV feeds `rain/v1`, `agenda/v1` | JSON written by outside jobs | Untrusted: shape, age and links checked; a bad `rain/v1` is dropped whole, a bad `agenda/v1` item on its own ([configuration](configuration.md#kv-feeds)) |
-| KV day mirror `day/v3/` | A whole day, read when the Durable Object has none stored | Trusted: adopted without checks ([`day-coordinator.ts`](../src/lib/day-coordinator.ts)) |
+| KV day mirror `day/v3/` | A whole day, read when the Durable Object has none stored | Checked: a day for another date, without its sections, or with a link that isn't https is rejected and rebuilt ([`day-coordinator.ts`](../src/lib/day-coordinator.ts)) |
 | Site configuration | `site.toml` or `SITE_CONFIG` at build time | Trusted, but validated so a typo fails the build ([`site-config.mjs`](../scripts/site-config.mjs)) |
 | Cloudflare | Runs the Worker, KV, the Durable Object, the cache | Trusted platform |
 | GitHub Actions, pnpm, Renovate | Code, dependencies, deploys, releases | Trusted with pinned versions and read-only workflow defaults (T6 to T8). Renovate may merge without an approval, never without the required checks |
@@ -65,7 +65,7 @@ maintainer's accounts are out of [scope](../.github/SECURITY.md#scope).
 | T1 | XSS through upstream text | Astro and Svelte escape text. Upstream HTML is stripped to text first, in a loop until stable, and the rest is plain JSON. The only raw HTML is the inline boot script, built from config and computed values | [`util.ts`](../src/lib/util.ts), [`Base.astro`](../src/layouts/Base.astro), [`boot.ts`](../src/components/boot.ts) |
 | T2 | Injected script or framing | Astro's CSP allows the boot script by its SHA-256 hash, not `'unsafe-inline'`. The middleware adds HSTS, `X-Frame-Options: DENY`, nosniff and a strict referrer policy | [`astro.config.mjs`](../astro.config.mjs), [`middleware.ts`](../src/middleware.ts), [e2e CSP test](../e2e/page.spec.ts) |
 | T3 | `javascript:` or other hostile links | Upstream links and image URLs must be https or are dropped | [`util.ts`](../src/lib/util.ts) `httpsUrl`, [unit tests](../test/unit/sources.test.ts) |
-| T4 | Poisoned KV feed | `rain/v1` must be fresh, with every step valid; `agenda/v1` items need a valid date, time and https link, each checked on its own | [`weather.ts`](../src/lib/sources/weather.ts), [`events.ts`](../src/lib/sources/events.ts) |
+| T4 | Poisoned KV feed | `rain/v1` must be fresh, with every step valid; `agenda/v1` items need a valid date, time and https link, each checked on its own. A `day/v3` mirror day must be for its own date, with every link https | [`weather.ts`](../src/lib/sources/weather.ts), [`events.ts`](../src/lib/sources/events.ts), [`day-coordinator.ts`](../src/lib/day-coordinator.ts), [unit tests](../test/unit/today.test.ts) |
 | T5 | Leaked API key | The NASA key is URL-encoded into the request only. Failed fetches log the host and path, never the query. The key never enters the stored day or `/today.json` | [`picture.ts`](../src/lib/sources/picture.ts), [`util.ts`](../src/lib/util.ts) |
 | T6 | Hijacked dependency | Frozen `pnpm-lock.yaml`. pnpm and Renovate take only releases at least a week old (Renovate skips the wait for template releases and the author's own packages). Only esbuild and workerd may run install scripts | [`pnpm-workspace.yaml`](../pnpm-workspace.yaml), [`renovate.json5`](../renovate.json5) |
 | T7 | Hijacked action or stolen CI token | Actions pinned by digest; the Playwright test image by version tag. Default `contents: read`. Deploy secrets only in the `production` environment, on `main`. Pull request previews are off, so no branch build sees a token | [`.github/workflows/`](../.github/workflows/), [ADR 0001](decisions/0001-start-from-project-templates.md) |
@@ -83,7 +83,7 @@ maintainer's accounts are out of [scope](../.github/SECURITY.md#scope).
 - **Upstream content is shown as given.** A source can publish wrong or offensive text; the page
   credits and links each item but does not moderate it.
 - **The KV writers are trusted with write access.** A compromised outside job could replace the
-  agenda or rain feed with well-formed but false data, or plant a day under `day/v3/`, which the
-  Durable Object adopts unchecked when it has no day stored yet.
+  agenda or rain feed with well-formed but false data. It could also plant a well-formed day with
+  false text under `day/v3/`, which the Durable Object adopts when it has no day stored yet.
 - **One maintainer** holds every key, so nobody else reviews changes
   ([GOVERNANCE.md](../GOVERNANCE.md)).

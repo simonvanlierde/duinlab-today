@@ -3,23 +3,11 @@
 This repository deploys from `main`. Forks can use the manual deployment steps in [configuration and deployment](configuration.md).
 A release tag records a reviewed version. It doesn't deploy it.
 
-## First canonical-day deployment
+## Day storage
 
-This section applies only when you upgrade a deployment from before version 0.1.0.
-`wrangler.jsonc` holds the SQLite-backed `DayCoordinator` binding and its migration.
-Existing public days import from KV, and later reads use the Durable Object.
-Browser progress and public JSON fields keep their format.
-
-KV can't pick a winner while an older Worker version is still publishing the same day.
-So finish the first deployment before midnight in the configured time zone, and keep visits
-to a minimum while it rolls out. Confirm the old deployment has drained before the new day
-starts. Before you publish the release, check the next day's quiz from two fresh browser contexts.
-Treat the rest of the imported day as legacy data. If an older version already served
-different quizzes, that can't be fixed afterwards.
-
-Deploy to all traffic at once for this migration, with no gradual split between old and new publishers.
-Canonical storage and its KV mirror both expire after two days in the configured time zone. SQLite Durable Objects
-are [supported on the Workers Free plan](https://developers.cloudflare.com/durable-objects/platform/pricing/);
+Each day lives in a SQLite Durable Object with a KV mirror, and both expire after two days in the
+configured time zone. SQLite Durable Objects are
+[supported on the Workers Free plan](https://developers.cloudflare.com/durable-objects/platform/pricing/);
 no paid plan is needed.
 
 ## Configuration changes

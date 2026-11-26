@@ -1,9 +1,26 @@
 import { DurableObject, type env } from "cloudflare:workers";
 import { allFailed, buildDay, type Day, incomplete, mergeDay } from "./build";
-import { configKey, usesLegacyDay } from "./config";
+import { configKey } from "./config";
 import { isoLocal, localDay, shift } from "./day";
+import { httpsUrl } from "./util";
 
 const keyFor = (date: string) => `day/v3/${configKey}/${date}`;
+
+/** Whether every string under a `url` or `*Url` key is an https URL, so a planted mirror day can't add a `javascript:` link. */
+const linksSafe = (value: unknown): boolean =>
+  Array.isArray(value)
+    ? value.every(linksSafe)
+    : typeof value !== "object" || value === null
+      ? true
+      : Object.entries(value).every(([key, v]) =>
+          /^url$|Url$/.test(key) && typeof v === "string" ? !!httpsUrl(v) : linksSafe(v),
+        );
+
+/** The mirror's copy of `date`, or null when it is for another date, lacks its sections or carries an unsafe link. */
+const mirrorDay = (value: unknown, date: string): Day | null => {
+  const d = value as Day | null;
+  return d?.date === date && Array.isArray(d.pictures) && Array.isArray(d.didYouKnow) && linksSafe(d) ? d : null;
+};
 
 /** One durable owner publishes each day; requests never read the eventually consistent mirror. */
 export class DayCoordinator extends DurableObject<typeof env> {
@@ -13,12 +30,12 @@ export class DayCoordinator extends DurableObject<typeof env> {
     return this.ctx.blockConcurrencyWhile(async () => {
       const stored = await this.ctx.storage.get<Day>("day");
       if (stored) return stored;
-      // A failed legacy read must stop publication: it may conceal an existing quiz.
-      const legacy =
-        (await this.env.DAYS.get<Day>(keyFor(date), "json")) ??
-        (usesLegacyDay ? await this.env.DAYS.get<Day>(`day/v2/${date}`, "json") : null);
-      if (legacy) await this.save(legacy);
-      return legacy;
+      // A failed mirror read must stop publication: it may conceal an existing quiz.
+      const mirrored = await this.env.DAYS.get(keyFor(date), "json");
+      const day = mirrorDay(mirrored, date);
+      if (mirrored && !day) console.warn(`kv mirror ${date} rejected`);
+      if (day) await this.save(day);
+      return day;
     });
   }
 

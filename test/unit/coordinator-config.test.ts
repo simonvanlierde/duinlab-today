@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 const config = vi.hoisted(() => ({
+  site: { url: "https://example.org" },
   location: { timezone: "Australia/Sydney" },
   content: { pictures: [] },
 }));
@@ -11,6 +12,7 @@ vi.mock("../../src/lib/config", () => ({
 }));
 vi.mock("../../src/lib/build", () => ({ allFailed: () => false }));
 vi.mock("cloudflare:workers", () => ({
+  env: {},
   DurableObject: class {
     constructor(
       public ctx: unknown,
@@ -54,7 +56,7 @@ describe("local retention boundary", () => {
         storage,
         blockConcurrencyWhile: (fn: () => Promise<unknown>) => fn(),
       } as unknown as DurableObjectState,
-      { DAYS: { get: async () => ({ date }), put: vi.fn() } } as never,
+      { DAYS: { get: async () => ({ date, pictures: [], didYouKnow: [] }), put: vi.fn() } } as never,
     );
     await owner.read(date);
     expect(setAlarm).toHaveBeenCalledWith(Date.parse(boundary));

@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Removed
+
+- A deployment older than 0.1.0 no longer keeps its published day on upgrade. Upgrade through 0.2.0 to keep it.
+
+### Security
+
+- A day read back from the KV mirror is rebuilt instead of shown when it is for another date or carries a link that isn't https ([assurance case](docs/assurance-case.md#trust-boundaries)).
+
 ## [0.2.0] - 2026-11-26
 
 ### Added

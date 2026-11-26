@@ -112,11 +112,19 @@ describe("canonical day publication", () => {
     expect(namespace.getByName).toHaveBeenCalledWith("2026-11-10");
   });
 
-  it("preserves the original Hague deployment's published quiz on migration", async () => {
-    store.set("day/v2/2026-11-10", JSON.stringify(day("published")));
+  it.each([
+    [
+      "a javascript: link",
+      { ...day("planted"), pictures: [{ imageUrl: "https://example.org/a.jpg", pageUrl: "javascript:alert(1)" }] },
+    ],
+    ["another date", { ...day("planted"), date: "2026-11-09" }],
+    ["no sections", { date: "2026-11-10", quiz: { id: "planted" } }],
+  ])("rebuilds instead of adopting a KV mirror day with %s", async (_, planted) => {
+    store.set(KEY, JSON.stringify(planted));
     buildDay.mockResolvedValue(day("replacement"));
-    expect((await refreshDay(NOW)).quiz).toEqual(day("published").quiz);
-    expect(store.has(KEY)).toBe(true);
+    expect((await refreshDay(NOW)).quiz).toEqual(day("replacement").quiz);
+    expect(durable.get("day")).toMatchObject({ date: "2026-11-10", quiz: day("replacement").quiz });
+    expect(storage.put).not.toHaveBeenCalledWith("day", planted);
   });
 
   it("imports the published KV quiz before filling missing sections", async () => {

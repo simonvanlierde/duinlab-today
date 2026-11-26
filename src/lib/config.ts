@@ -25,7 +25,7 @@ declare const __SITE_CONFIG_KEY__: string;
 export const site: SiteConfig = __SITE_CONFIG__;
 export const configKey: string = __SITE_CONFIG_KEY__;
 
-// Keep the already-published quiz only when upgrading the original deployment's sources.
+// The original deployment names its day coordinators by date alone; a new name would start an empty one.
 export const usesLegacyDay =
   site.location.latitude === 52.08 &&
   site.location.longitude === 4.31 &&
