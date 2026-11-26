@@ -259,6 +259,13 @@ test("desktop reading keeps the complete article directly under the pictures", a
   // no gap waits for the quiz: the article shares the pictures' column
   expect(boxes.articleTop - boxes.picture).toBeLessThanOrEqual(9);
   expect(boxes.articleRight).toBeLessThanOrEqual(boxes.reading);
+  // a long quiz day: the reading outgrows pictures and article together, and the article stays put
+  const gap = await page.locator("#paper").evaluate((paper) => {
+    paper.querySelector<HTMLElement>(".reading")?.style.setProperty("min-height", "1700px");
+    const box = (selector: string) => paper.querySelector(selector)?.getBoundingClientRect();
+    return (box(".feat")?.top ?? 0) - (box(".pic")?.bottom ?? 0);
+  });
+  expect(gap).toBeLessThanOrEqual(9);
 });
 
 test("primary reading fills the first column when picture and article sources are missing", async ({ page }) => {

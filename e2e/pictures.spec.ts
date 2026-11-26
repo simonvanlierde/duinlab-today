@@ -159,6 +159,80 @@ test("touch swipes change pictures while fitted and preserve zoomed panning", as
   await expect(viewer.locator("figcaption")).toContainText("Wikimedia");
 });
 
+const openFirst = async (page: import("@playwright/test").Page) => {
+  await page.getByRole("link", { name: "Look closer: Wheat Field with Cypresses" }).click();
+  return page.getByRole("dialog", { name: "Picture viewer" });
+};
+
+test("a click zooms in at that point and a second click fits the picture again", async ({ page }) => {
+  await page.goto("/");
+  const viewer = await openFirst(page);
+  const image = viewer.locator(".viewer-stage img");
+  await image.click();
+  await expect(viewer.getByRole("button", { name: "Fit picture" })).toBeVisible();
+  // a mouse press on the zoomed picture captures the pointer for panning; the click must still fit
+  await image.click();
+  await expect(viewer.getByRole("button", { name: "Zoom in" })).toBeVisible();
+});
+
+test("a touch swipe down closes the viewer", async ({ page }) => {
+  await page.goto("/");
+  const viewer = await openFirst(page);
+  const stage = viewer.locator(".viewer-stage");
+  await stage.dispatchEvent("pointerdown", { pointerId: 1, pointerType: "touch", clientX: 200, clientY: 100 });
+  await stage.dispatchEvent("pointerup", { pointerId: 1, pointerType: "touch", clientX: 210, clientY: 300 });
+  await expect(viewer).toBeHidden();
+  await expect(page.getByRole("link", { name: "Look closer: Wheat Field with Cypresses" })).toBeFocused();
+});
+
+test("an arrow press past the last picture leaves it as it is", async ({ page }) => {
+  await page.goto("/");
+  const viewer = await openFirst(page);
+  for (let i = 0; i < 3; i++) await page.keyboard.press("ArrowRight");
+  await expect(viewer.locator(".viewer-count")).toHaveText("4 of 4");
+  const image = viewer.locator(".viewer-stage img");
+  const original = await page.locator(".picture-open").nth(3).getAttribute("href");
+  await expect(image).toHaveAttribute("src", original ?? "");
+  // read in the same task as the key press: a reload of the preview would show here at once
+  const after = await viewer.evaluate((dialog) => {
+    dialog.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+    return dialog.querySelector(".viewer-stage img")?.getAttribute("src");
+  });
+  expect(after).toBe(original);
+});
+
+test("a small object on a plain backdrop opens framed, and Whole picture shows all of it", async ({ page }) => {
+  await page.route(hosts, (route) =>
+    route.fulfill({
+      path: "e2e/fixtures/object.png",
+      contentType: "image/png",
+      headers: { "access-control-allow-origin": "*" },
+    }),
+  );
+  await page.goto("/");
+  const viewer = await openFirst(page);
+  await expect(viewer.getByRole("button", { name: "Whole picture" })).toBeVisible();
+  await expect(viewer.locator(".viewer-count")).toHaveText("1 of 4, backdrop cropped");
+  await viewer.getByRole("button", { name: "Whole picture" }).click();
+  await expect(viewer.getByRole("button", { name: "Zoom in" })).toBeVisible();
+  await expect(viewer.locator(".viewer-count")).toHaveText("1 of 4");
+});
+
+test("an original that loads after a failed preview replaces the error", async ({ page }) => {
+  await page.route("**/web-large/DP-42549-001.jpg", (route) => route.abort());
+  // the original arrives after the preview has failed and the error shows
+  await page.route("**/original/DP-42549-001.jpg", async (route) => {
+    await new Promise((done) => setTimeout(done, 500));
+    await route.fallback();
+  });
+  await page.goto("/");
+  const viewer = await openFirst(page);
+  await expect(viewer.locator(".viewer-error")).toBeVisible();
+  await expect(viewer.locator(".viewer-stage img")).toHaveAttribute("src", /\/original\/DP-42549-001.jpg$/);
+  await expect(viewer.locator(".viewer-stage img")).toBeVisible();
+  await expect(viewer.locator(".viewer-error")).toBeHidden();
+});
+
 test("yesterday's single picture opens without active navigation", async ({ page }) => {
   await page.goto("/yesterday");
   await page.getByRole("link", { name: "Look closer: Wheat Field with Cypresses" }).click();
