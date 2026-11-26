@@ -309,6 +309,9 @@ h1 {
 }
 .moon {
 	--top: 16px;
+	/* a fixed box: without one, the moon shrinks to fit when it sits at the right edge */
+	width: 44px;
+	height: 44px;
 	padding: 9px;
 	filter: drop-shadow(0 0 6px rgb(246 241 220 / 0.45));
 }
