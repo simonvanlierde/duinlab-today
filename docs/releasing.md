@@ -46,3 +46,12 @@ Before a release, check a changed profile's local date, clock, weather and omitt
    version's changelog section. Signing needs a key listed in `.github/allowed_signers`.
 
 The release ships a website, so there are no build assets to attach.
+
+## Check a release tag
+
+Each tag from v0.2.0 on is signed with an SSH key listed in `.github/allowed_signers`; v0.1.0 is not.
+To check one, point Git at that file and verify the tag:
+
+```sh
+git -c gpg.ssh.allowedSignersFile=.github/allowed_signers verify-tag v0.2.0
+```
