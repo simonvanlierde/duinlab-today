@@ -60,13 +60,17 @@ uses the page's own ground and a sky-toned backdrop. No cards, frosted glass or 
 ## Shapes
 
 Round sky bodies and game marks reflect their subjects. Picture selectors are 8px circles
-inside 44px buttons. Keep the artwork rectangular, uncropped and contained.
+inside 44px buttons. Keep the artwork rectangular, uncropped and contained; the viewer may crop
+only plain studio backdrop, and one control brings back the whole picture.
 
 ## Components
 
 Pictures retain a stable image frame. Browsing controls sit below the caption, in 44px of the existing image-plus-controls height.
 Touch browsing uses swipe or dots; fine-pointer arrows appear where their labels fit. The image
 link hints on hover/focus and opens originals in a viewer, with preview fallback and source links.
+The viewer grows out of the opened picture, shows the preview at once and swaps in the original
+when it arrives. A small subject on a plain backdrop opens framed. A click or tap zooms at that
+point, a mouse drag pans, and a swipe down closes.
 NASA leads when available. If its API returns a logo placeholder, the official APOD feed supplies the image.
 
 The almanac places the selected object's real, live node first, followed by Sun and moon,

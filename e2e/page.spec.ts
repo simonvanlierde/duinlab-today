@@ -241,7 +241,7 @@ test("the paper leads on phones and games stay visible on desktop", async ({ pag
   expect(box && view && box.y + box.height <= view.height).toBe(true);
 });
 
-test("desktop reading keeps the complete article and closes the gap below the quiz", async ({ page }) => {
+test("desktop reading keeps the complete article directly under the pictures", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/");
   const article = page.locator(".feat p");
@@ -251,12 +251,14 @@ test("desktop reading keeps the complete article and closes the gap below the qu
     const box = (selector: string) => paper.querySelector(selector)?.getBoundingClientRect();
     return {
       picture: box(".pic")?.bottom ?? 0,
-      reading: box(".reading")?.bottom ?? 0,
-      article: box(".feat")?.top ?? 0,
+      articleTop: box(".feat")?.top ?? 0,
+      articleRight: box(".feat")?.right ?? 0,
+      reading: box(".reading")?.left ?? 0,
     };
   });
-  expect(boxes.article - Math.max(boxes.picture, boxes.reading)).toBeLessThanOrEqual(9);
-  expect(boxes.article - boxes.reading).toBeLessThan(100);
+  // no gap waits for the quiz: the article shares the pictures' column
+  expect(boxes.articleTop - boxes.picture).toBeLessThanOrEqual(9);
+  expect(boxes.articleRight).toBeLessThanOrEqual(boxes.reading);
 });
 
 test("primary reading fills the first column when picture and article sources are missing", async ({ page }) => {

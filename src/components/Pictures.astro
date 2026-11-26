@@ -72,6 +72,8 @@ const { pictures } = Astro.props;
 </dialog>
 
 <script>
+	import { type Box, backdropBox } from "../lib/backdrop";
+
 	// Arrows and dots are built here, so a page without JavaScript has no dead buttons.
 	const strip = document.querySelector<HTMLElement>("[data-slides]");
 	const slides = strip ? [...strip.querySelectorAll<HTMLElement>(".slide")] : [];
@@ -139,37 +141,120 @@ const { pictures } = Astro.props;
 	const prev = viewer?.querySelector<HTMLButtonElement>("[data-viewer-prev]");
 	const next = viewer?.querySelector<HTMLButtonElement>("[data-viewer-next]");
 	if (viewer && image && caption && stage && count && error && zoom && close && prev && next) {
+		const reduce = matchMedia("(prefers-reduced-motion: reduce)");
 		let at = 0;
 		let opener: HTMLAnchorElement;
 		let previewUrl = "";
-		const fit = () => {
-			stage.classList.remove("zoomed");
-			stage.scrollTo(0, 0);
-			zoom.textContent = "Zoom in";
-			zoom.removeAttribute("data-zoomed");
+		// The picture's box is k times the stage, so k = 1 shows the whole picture.
+		// "framed" crops plain backdrop around a small subject; "zoomed" is the reader's own zoom.
+		let k = 1;
+		let mode: "" | "framed" | "zoomed" = "";
+		let framing: { box: Box; ratio: number } | null = null;
+		const labels = { "": "Zoom in", framed: "Whole picture", zoomed: "Fit picture" };
+		const set = (next: typeof mode, scale: number, left = 0, top = 0) => {
+			mode = next;
+			k = scale;
+			stage.classList.toggle("framed", mode === "framed");
+			stage.classList.toggle("zoomed", mode === "zoomed");
+			stage.style.setProperty("--k", String(k));
+			stage.scrollTo(left, top);
+			zoom.textContent = labels[mode];
+			zoom.toggleAttribute("data-zoomed", mode !== "");
 		};
+		const fit = () => set("", 1);
+		// zoom to `scale`, keeping the stage point (x, y) under the pointer
+		const zoomAt = (scale: number, x = stage.clientWidth / 2, y = stage.clientHeight / 2) =>
+			set("zoomed", scale, (stage.scrollLeft + x) * (scale / k) - x, (stage.scrollTop + y) * (scale / k) - y);
+		// fill about 88% of the stage with the subject, centred; no more than 3 times the fit
+		const frame = () => {
+			if (!framing || mode === "zoomed") return;
+			const { box, ratio } = framing;
+			const [W, H] = [stage.clientWidth, stage.clientHeight];
+			const fw = Math.min(W, H * ratio);
+			const fh = fw / ratio;
+			const scale = Math.min((0.88 * W) / (box.w * fw), (0.88 * H) / (box.h * fh), 3);
+			if (scale < 1.15) return mode === "framed" ? fit() : undefined;
+			const [dw, dh] = [scale * fw, scale * fh];
+			set(
+				"framed",
+				scale,
+				(scale * W - dw) / 2 + (box.x + box.w / 2) * dw - W / 2,
+				(scale * H - dh) / 2 + (box.y + box.h / 2) * dh - H / 2,
+			);
+		};
+		// a 64px copy is enough to find the backdrop; a host without CORS fails the load, so no crop
+		const findSubject = (src: string, index: number) => {
+			const probe = new Image();
+			probe.crossOrigin = "anonymous";
+			probe.addEventListener("load", () => {
+				if (index !== at || !viewer.open) return;
+				const scale = 64 / Math.max(probe.naturalWidth, probe.naturalHeight);
+				const canvas = document.createElement("canvas");
+				canvas.width = Math.max(1, Math.round(probe.naturalWidth * scale));
+				canvas.height = Math.max(1, Math.round(probe.naturalHeight * scale));
+				const context = canvas.getContext("2d", { willReadFrequently: true });
+				try {
+					context?.drawImage(probe, 0, 0, canvas.width, canvas.height);
+					const pixels = context?.getImageData(0, 0, canvas.width, canvas.height);
+					const box = pixels && backdropBox(pixels.data, canvas.width, canvas.height);
+					if (!box) return;
+					framing = { box, ratio: probe.naturalWidth / probe.naturalHeight };
+					if (mode === "") frame();
+				} catch {
+					// tainted canvas: the whole picture stays in view
+				}
+			});
+			// the strip loaded this preview without CORS, and that cached copy fails a CORS request
+			const url = new URL(src);
+			url.searchParams.set("viewer", "1");
+			probe.src = url.href;
+		};
+		new ResizeObserver(() => {
+			if (mode === "framed") frame();
+		}).observe(stage);
 		const show = (index: number) => {
+			const moved = index !== at;
 			at = Math.max(0, Math.min(slides.length - 1, index));
 			const source = slides[at].querySelector("img");
 			const link = slides[at].querySelector<HTMLAnchorElement>(".picture-open");
 			const credit = slides[at].querySelector("figcaption");
 			if (!source || !credit) return;
+			framing = null;
 			fit();
 			error.hidden = true;
 			image.hidden = false;
 			zoom.disabled = false;
 			image.alt = source.alt;
-			previewUrl = source.src;
-			image.src = link?.href ?? previewUrl;
+			// the preview is already on screen, so it shows at once; the original replaces it once loaded
+			previewUrl = source.currentSrc || source.src;
+			image.src = previewUrl;
+			const original = link?.href ?? previewUrl;
+			if (original !== previewUrl) {
+				const full = new Image();
+				const index = at;
+				full.addEventListener("load", () => {
+					if (index === at) image.src = original;
+				});
+				full.src = original;
+			}
+			findSubject(previewUrl, at);
+			// the neighbours' previews are lazy in the strip; ask for them now
+			for (const i of [at - 1, at + 1]) {
+				const neighbour = slides[i]?.querySelector("img");
+				if (neighbour) neighbour.loading = "eager";
+			}
+			if (moved && !reduce.matches) {
+				image.animate({ opacity: [0, 1] }, { duration: 240, easing: "cubic-bezier(0.16, 1, 0.3, 1)" });
+			}
 			const captionHadFocus = caption.contains(document.activeElement);
 			caption.replaceChildren(...[...credit.childNodes].map((node) => node.cloneNode(true)));
 			caption.querySelector("details")?.removeAttribute("open");
-			const original = document.createElement("a");
-			original.href = link?.href ?? previewUrl;
-			original.textContent = "Open original";
+			const originalLink = document.createElement("a");
+			originalLink.href = original;
+			originalLink.textContent = "Open original";
 			const line = caption.querySelector(".picture-credit");
 			line?.appendChild(document.createTextNode(" · "));
-			line?.appendChild(original);
+			line?.appendChild(originalLink);
 			count.textContent = `${at + 1} of ${slides.length}`;
 			if (captionHadFocus || (document.activeElement === prev && at === 0) ||
 				(document.activeElement === next && at === slides.length - 1)) {
@@ -184,6 +269,11 @@ const { pictures } = Astro.props;
 				if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 				event.preventDefault();
 				opener = link;
+				// the viewer grows out of the picture that was opened
+				const from = link.getBoundingClientRect();
+				viewer.style.setProperty("--from-x", `${from.left + from.width / 2}px`);
+				viewer.style.setProperty("--from-y", `${from.top + from.height / 2}px`);
+				at = i;
 				show(i);
 				viewer.showModal();
 				close.focus();
@@ -194,22 +284,48 @@ const { pictures } = Astro.props;
 		prev.addEventListener("click", () => show(at - 1));
 		next.addEventListener("click", () => show(at + 1));
 		zoom.addEventListener("click", () => {
-			if (stage.classList.contains("zoomed")) return fit();
-			stage.classList.add("zoomed");
-			stage.scrollTo((stage.scrollWidth - stage.clientWidth) / 2, (stage.scrollHeight - stage.clientHeight) / 2);
-			zoom.textContent = "Fit picture";
-			zoom.setAttribute("data-zoomed", "");
+			if (mode !== "") return fit();
+			zoomAt(2);
 			stage.focus({ preventScroll: true });
 		});
+		// a click on the picture zooms in at that point, and out again; a drag pans instead
+		let drag: { x: number; y: number; moved: boolean } | null = null;
+		let dragged = false;
+		stage.addEventListener("pointerdown", (event) => {
+			if (event.pointerType === "mouse" && mode === "zoomed") {
+				drag = { x: event.clientX, y: event.clientY, moved: false };
+				stage.setPointerCapture(event.pointerId);
+			}
+		});
+		stage.addEventListener("pointermove", (event) => {
+			if (!drag) return;
+			const [dx, dy] = [event.clientX - drag.x, event.clientY - drag.y];
+			if (Math.abs(dx) + Math.abs(dy) > 4) drag.moved = true;
+			stage.scrollBy(-dx, -dy);
+			drag.x = event.clientX;
+			drag.y = event.clientY;
+		});
+		const endDrag = () => {
+			dragged = drag?.moved ?? false;
+			drag = null;
+		};
+		stage.addEventListener("pointerup", endDrag);
+		stage.addEventListener("pointercancel", endDrag);
+		image.addEventListener("click", (event) => {
+			if (dragged) return;
+			if (mode === "zoomed") return fit();
+			const box = stage.getBoundingClientRect();
+			zoomAt(Math.min(k * 2.5, 8), event.clientX - box.left, event.clientY - box.top);
+		});
 		viewer.addEventListener("keydown", (event) => {
-			if (stage.classList.contains("zoomed")) return;
+			if (mode === "zoomed") return;
 			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
 			event.preventDefault();
 			show(at + (event.key === "ArrowRight" ? 1 : -1));
 		});
 		let touch: { x: number; y: number; id: number } | null = null;
 		stage.addEventListener("pointerdown", (event) => {
-			if (event.pointerType === "touch" && !touch && !stage.classList.contains("zoomed")) {
+			if (event.pointerType === "touch" && !touch && mode !== "zoomed") {
 				touch = { x: event.clientX, y: event.clientY, id: event.pointerId };
 			}
 		});
@@ -224,12 +340,15 @@ const { pictures } = Astro.props;
 			const dy = event.clientY - touch.y;
 			touch = null;
 			if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) show(at + (dx < 0 ? 1 : -1));
+			// a swipe down puts the picture away, as in a phone's own photo viewer
+			else if (dy > 80 && dy > Math.abs(dx) * 1.5) viewer.close();
 		});
 		image.addEventListener("error", () => {
 			if (image.src !== previewUrl) {
 				image.src = previewUrl;
 				return;
 			}
+			fit();
 			image.hidden = true;
 			error.hidden = false;
 			if (document.activeElement === zoom) stage.focus({ preventScroll: true });

@@ -236,7 +236,7 @@ summary,
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 12px 48px;
-  padding-top: 12px;
+  padding-top: 20px;
   padding-bottom: var(--hz);
 }
 h1 {
@@ -526,7 +526,7 @@ h1 {
   .mast {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
-    padding-top: 4px;
+    padding-top: 16px;
   }
   .sky {
     --hz: 64px;
@@ -571,7 +571,8 @@ h1 {
 @media (min-width: 1100px) {
   .front {
     grid-template-columns: minmax(0, 5fr) minmax(0, 4fr) minmax(0, 2.6fr);
-    grid-template-areas: "pic read games" "feat feat games" "otd quote games";
+    /* the article follows the pictures in their column, so no gap waits for the reading */
+    grid-template-areas: "pic read games" "feat read games" "otd quote games";
     grid-template-rows: auto auto 1fr;
     align-items: start;
   }
@@ -600,7 +601,7 @@ h1 {
     grid-template-rows: auto;
   }
   .front {
-    grid-template-areas: "pic read games" "feat feat games" "otd quote quote";
+    grid-template-areas: "pic read games" "feat read games" "otd quote quote";
   }
   .front:not(:has(.pic)):has(.feat) {
     grid-template-areas: "feat read games" "otd quote quote";
@@ -686,9 +687,14 @@ html.js .slides {
   font-family: "Barlow Semi Condensed", sans-serif;
   font-size: 0.875rem;
   opacity: 0;
+  translate: 0 -4px;
+  transition:
+    opacity 0.2s var(--ease-out),
+    translate 0.2s var(--ease-out);
 }
 .picture-open:is(:hover, :focus-visible) .picture-hint {
   opacity: 1;
+  translate: 0;
 }
 @media (hover: none) {
   .picture-hint {
@@ -708,9 +714,38 @@ html:has(.picture-viewer[open]) {
   border: 0;
   background: var(--ground);
   color: var(--ink);
+  /* --from-x and --from-y: the centre of the picture that opened it (set by Pictures.astro) */
+  transform-origin: var(--from-x, 50%) var(--from-y, 50%);
 }
 .picture-viewer::backdrop {
   background: color-mix(in oklab, var(--bar) 92%, transparent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .picture-viewer,
+  .picture-viewer::backdrop {
+    transition:
+      opacity 0.32s var(--ease-out),
+      scale 0.32s var(--ease-out),
+      overlay 0.32s allow-discrete,
+      display 0.32s allow-discrete;
+  }
+  .picture-viewer:not([open]) {
+    opacity: 0;
+    scale: 0.6;
+    transition-duration: 0.18s;
+  }
+  .picture-viewer:not([open])::backdrop {
+    opacity: 0;
+  }
+  @starting-style {
+    .picture-viewer[open],
+    .picture-viewer[open]::backdrop {
+      opacity: 0;
+    }
+    .picture-viewer[open] {
+      scale: 0.6;
+    }
+  }
 }
 .picture-viewer[open] {
   display: grid;
@@ -768,13 +803,25 @@ html:has(.picture-viewer[open]) {
   height: 100%;
   max-width: none;
   object-fit: contain;
+  cursor: zoom-in;
+}
+/* --k: the picture's box as a multiple of the stage (set by Pictures.astro) */
+.viewer-stage:is(.zoomed, .framed) img {
+  width: calc(var(--k, 2) * 100%);
+  height: calc(var(--k, 2) * 100%);
+}
+/* framed: plain backdrop cropped away; swipes and arrow keys still change pictures */
+.viewer-stage.framed {
+  overflow: hidden;
 }
 .viewer-stage.zoomed {
   touch-action: auto;
 }
 .viewer-stage.zoomed img {
-  width: 200%;
-  height: 200%;
+  cursor: grab;
+}
+.viewer-stage.zoomed img:active {
+  cursor: grabbing;
 }
 .viewer-stage img[hidden] {
   display: none;
@@ -863,6 +910,12 @@ html:has(.picture-viewer[open]) {
   height: 8px;
   border: 1.5px solid var(--ink);
   border-radius: 50%;
+  transition:
+    background-color 0.25s var(--ease-out),
+    scale 0.25s var(--ease-out);
+}
+.dot:hover:not([aria-current])::before {
+  scale: 1.25;
 }
 .dot[aria-current] {
   cursor: default;
@@ -1020,7 +1073,7 @@ summary {
   }
   .mast {
     grid-template-columns: max-content minmax(0, 1fr);
-    padding-top: 0;
+    padding-top: 10px;
   }
   .strip {
     justify-self: end;
