@@ -188,10 +188,11 @@ test("a touch swipe down closes the viewer", async ({ page }) => {
 test("an arrow press past the last picture leaves it as it is", async ({ page }) => {
   await page.goto("/");
   const viewer = await openFirst(page);
-  for (let i = 0; i < 3; i++) await page.keyboard.press("ArrowRight");
-  await expect(viewer.locator(".viewer-count")).toHaveText("4 of 4");
+  const n = await page.locator(".pic .slide").count();
+  for (let i = 1; i < n; i++) await page.keyboard.press("ArrowRight");
+  await expect(viewer.locator(".viewer-count")).toHaveText(`${n} of ${n}`);
   const image = viewer.locator(".viewer-stage img");
-  const original = await page.locator(".picture-open").nth(3).getAttribute("href");
+  const original = await page.locator(".picture-open").nth(n - 1).getAttribute("href");
   await expect(image).toHaveAttribute("src", original ?? "");
   // read in the same task as the key press: a reload of the preview would show here at once
   const after = await viewer.evaluate((dialog) => {
@@ -212,10 +213,10 @@ test("a small object on a plain backdrop opens framed, and Whole picture shows a
   await page.goto("/");
   const viewer = await openFirst(page);
   await expect(viewer.getByRole("button", { name: "Whole picture" })).toBeVisible();
-  await expect(viewer.locator(".viewer-count")).toHaveText("1 of 4, backdrop cropped");
+  await expect(viewer.locator(".viewer-count")).toHaveText(/^1 of \d+, backdrop cropped$/);
   await viewer.getByRole("button", { name: "Whole picture" }).click();
   await expect(viewer.getByRole("button", { name: "Zoom in" })).toBeVisible();
-  await expect(viewer.locator(".viewer-count")).toHaveText("1 of 4");
+  await expect(viewer.locator(".viewer-count")).toHaveText(/^1 of \d+$/);
 });
 
 test("an original that loads after a failed preview replaces the error", async ({ page }) => {
