@@ -19,6 +19,10 @@ export interface SiteConfig {
     events: boolean;
     radar: "knmi" | "buienradar" | "none";
     holidays: "nl" | "none";
+    /** Wikipedia's sections: the featured article, Did you know and On this day. */
+    featured: boolean;
+    didYouKnow: boolean;
+    onThisDay: boolean;
   };
   games: { id: string; name: string; url: string; blurb: string }[];
 }

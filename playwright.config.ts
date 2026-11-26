@@ -1,5 +1,7 @@
 import { loadSiteConfig } from "./scripts/site-config.mjs";
 
+// the build, the fixture server and the tests all read it; the city profiles set their own
+process.env.SITE_CONFIG ??= "e2e/site.toml";
 const configured = loadSiteConfig();
 Object.assign(globalThis, {
   __SITE_CONFIG__: configured.site,

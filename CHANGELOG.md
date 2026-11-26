@@ -9,10 +9,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Three new picture sources: `cleveland` (Cleveland Museum of Art), `smk` (SMK, the National Gallery of Denmark) and `wellcome` (Wellcome Collection). Wellcome pictures come only from the subjects in `[content.wellcome]`, botany, plants, birds and animals by default.
 - [Adding a source](docs/adding-a-source.md) explains how to add a picture source or a game.
+- `content.featured`, `content.didYouKnow` and `content.onThisDay` choose which of Wikipedia's sections the page shows. **Breaking:** add all three to an existing `site.toml`.
+- A `[[games]]` table with only an `id` takes the game from the shared list in `src/data/games.toml`.
+- The footer and the About page link to how to make your own page and add a source.
 - The picture viewer frames a small object on a plain museum backdrop so it fills the screen; "Whole picture" shows all of it. A click or tap zooms in where you point, a mouse drag pans, and a swipe down closes the viewer.
 
 ### Changed
 
+- The Hague's page leaves out the featured article and On this day. Without the article, the quote follows the pictures on wide screens.
+- The About, yesterday and missing pages share the front page's sky, greyed by cloud like it, and name the site above their title instead of in a separate bar. Their text starts under the title.
+- Previous and Next under the pictures show from 480 px wide, so with seven sources the dots keep their full 44 px on one line.
 - A picture source skips works wider or taller than 3:1, such as handscrolls, and the strip shows an image only once when two sources return it.
 - On wide screens the featured article follows the pictures in their column, so no empty band waits below the caption.
 - The masthead leaves room above the date.

@@ -22,7 +22,8 @@ browser; the first saved answer is kept.
 
 Edit [`site.toml`](site.toml), or start from the [Utrecht](examples/utrecht.toml) or
 [Evanston, Illinois](examples/evanston.toml) example. The configuration covers the location,
-time zone, units, picture sources and daily games. Unsupported local sections are omitted.
+time zone, units, picture sources, Wikipedia sections and daily games. Unsupported local sections are omitted.
+New picture sources and games are welcome: [adding a source](docs/adding-a-source.md) says how.
 See [configuration and fork deployment](docs/configuration.md) before deploying to your own Cloudflare account.
 
 ## How it works
@@ -127,9 +128,9 @@ are:
 | `generatedAt` | ISO instant (UTC) the day was built | always present |
 | `sun`, `moon` | worked out locally | always present |
 | `games` | the daily games | always present |
-| `onThisDay`, `featured`, `word`, `quote`, `quiz`, `tides`, `events`, `weather`, `sea` | objects | `null` |
-| `didYouKnow` | a list of facts | `[]` |
-| `pictures` | up to five enabled sources, in configured order; one per source | `[]` |
+| `onThisDay`, `featured`, `word`, `quote`, `quiz`, `tides`, `events`, `weather`, `sea` | objects | `null`, also when the configuration leaves the section out |
+| `didYouKnow` | a list of facts | `[]`, also when the configuration leaves it out |
+| `pictures` | one per enabled source, in configured order | `[]` |
 | `recipes` | up to nine recipes (`title`, `url`, `source`), three per site | `[]` |
 
 Pictures may include an optional `explanation` from the source. Older stored days can omit it.
