@@ -1,5 +1,7 @@
 # duinlab-today
 
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/17132/badge)](https://www.bestpractices.dev/projects/17132)
+
 [Today's paper](https://today.duinlab.nl) brings together pictures, sourced facts, weather in
 The Hague, a three-question quiz and daily web games. The sky follows the real sun, minute by minute.
 Opening a game marks it as played. Marks and streaks stay in your browser.
@@ -134,15 +136,18 @@ Worker itself fails, it answers 503 with `{"error": ...}`.
 ## Sources
 
 Wikipedia (On this day, Did you know, the featured article), Wiktionary (word of the day),
-NASA APOD, The Metropolitan Museum of Art, the Art Institute of Chicago and the Rijksmuseum (public-domain works), the Wikipedia picture of the day (credited with its licence), Open Trivia DB (CC BY-SA 4.0),
+NASA APOD, The Metropolitan Museum of Art, the Art Institute of Chicago (blocked from Cloudflare's network for now; see the [roadmap](docs/roadmap.md)) and the Rijksmuseum (public-domain works), the Wikipedia picture of the day (credited with its licence), Open Trivia DB (CC BY-SA 4.0),
 ZenQuotes, Rijkswaterstaat (tide times at Scheveningen), Paard, Amare and DenHaag.com (this week's shows and events; the last two through a weekly homelab job that writes `agenda/v1` to KV), Open-Meteo (weather, air quality, pollen and the sea off Scheveningen), KNMI (`radar_forecast/2.0` via a scheduled homelab job that writes `rain/v1` to KV) and Buienradar (fallback rain radar),
 Astronomy Engine (planets, full moons, eclipses; an npm package, not a feed), and the
 recipe feeds of the Guardian, BBC Good Food and
 Love and Lemons. Each item on the page links to its source.
 
-## Privacy and accessibility
+## Privacy, accessibility and security
 
 The [privacy statement](docs/privacy.md) lists what the site keeps and which sites your browser contacts. The [accessibility statement](docs/accessibility.md) lists what is checked and what is known to fail.
+The [assurance case](docs/assurance-case.md) says why the site is safe to run and visit; report a problem as [SECURITY.md](.github/SECURITY.md) describes.
+
+[GOVERNANCE.md](GOVERNANCE.md) says who decides and who has access. The [roadmap](docs/roadmap.md) lists what comes next.
 
 ## Licence
 
