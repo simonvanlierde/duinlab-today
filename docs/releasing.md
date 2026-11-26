@@ -17,7 +17,6 @@ For a fork, follow [configuration and deployment](configuration.md) before runni
 Each deployment needs its own Worker, KV namespace and domain settings.
 
 Changing location or content settings gives a separate daily cache. Branding, display units and games don't regenerate the quiz.
-The original Hague configuration keeps its existing canonical day on upgrade.
 Before a release, check a changed profile's local date, clock, weather and omitted sections on `/` and `/today.json`.
 
 ## Prepare and publish

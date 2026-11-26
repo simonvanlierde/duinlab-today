@@ -21,7 +21,6 @@ const profile = vi.hoisted(() => ({
 vi.mock("../../src/lib/config", () => ({
   site: profile,
   configKey: "test-city",
-  usesLegacyDay: false,
 }));
 
 const { fetchWeather } = await import("../../src/lib/sources/weather");

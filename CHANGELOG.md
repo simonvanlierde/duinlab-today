@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- The default Hague configuration names its daily store like every other configuration. The day in progress carries over through the KV mirror on upgrade, so don't deploy across midnight in the configured time zone.
+
 ### Removed
 
 - A deployment older than 0.1.0 no longer keeps its published day on upgrade. Upgrade through 0.2.0 to keep it.

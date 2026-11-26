@@ -1,7 +1,7 @@
 import { env, waitUntil } from "cloudflare:workers";
 import { type Day, incomplete } from "./build";
 import { cached } from "./cache";
-import { configKey, site, usesLegacyDay } from "./config";
+import { configKey, site } from "./config";
 import { localDay, shift } from "./day";
 import { games } from "./games";
 import { withAgenda } from "./sources/events";
@@ -21,7 +21,7 @@ const FAILED = { ttl: 60, stale: 0 };
 /** A request rebuilds an incomplete day at most this often; the hourly refresh does the rest. */
 const RETRY_MS = 10 * 60 * 1000;
 const hasApodKey = () => !!env.NASA_API_KEY;
-const coordinatorName = (date: string) => (usesLegacyDay ? date : `${configKey}/${date}`);
+const coordinatorName = (date: string) => `${configKey}/${date}`;
 
 /** Each configuration has one durable coordinator per local day. */
 export function refreshDay(now: Date): Promise<Day> {

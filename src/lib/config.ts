@@ -25,18 +25,5 @@ declare const __SITE_CONFIG_KEY__: string;
 export const site: SiteConfig = __SITE_CONFIG__;
 export const configKey: string = __SITE_CONFIG_KEY__;
 
-// The original deployment names its day coordinators by date alone; a new name would start an empty one.
-export const usesLegacyDay =
-  site.location.latitude === 52.08 &&
-  site.location.longitude === 4.31 &&
-  site.location.timezone === "Europe/Amsterdam" &&
-  site.location.country === "NL" &&
-  site.content.tides &&
-  site.content.sea &&
-  site.content.events &&
-  site.content.radar === "knmi" &&
-  site.content.holidays === "nl" &&
-  site.content.pictures.join(",") === "apod,met,wikipedia,aic,rijks";
-
 /** meteoblue's week forecast; it takes signed degrees (`42.05N-87.69E`) and sends hemisphere letters to The Hague. */
 export const forecastUrl = `https://www.meteoblue.com/en/weather/week/${site.location.latitude}N${site.location.longitude}E`;
