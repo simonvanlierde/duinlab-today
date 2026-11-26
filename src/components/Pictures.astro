@@ -55,7 +55,7 @@ const { pictures } = Astro.props;
 <dialog class="picture-viewer" aria-label="Picture viewer">
 	<div class="viewer-tools">
 		<span class="viewer-count" aria-live="polite"></span>
-		<button type="button" data-viewer-zoom aria-pressed="false">Zoom in</button>
+		<button type="button" data-viewer-zoom>Zoom in</button>
 		<button type="button" data-viewer-close aria-label="Close viewer">Close</button>
 	</div>
 	<figure class="viewer-figure">
@@ -63,7 +63,7 @@ const { pictures } = Astro.props;
 			{pictures[0] && <img src={pictures[0].imageUrl} alt={pictures[0].alt} loading="lazy" decoding="async" />}
 			<p class="viewer-error" hidden>This image couldn’t load. Try its source below.</p>
 		</div>
-		<figcaption aria-live="polite"></figcaption>
+		<figcaption></figcaption>
 	</figure>
 	<div class="viewer-nav">
 		<button type="button" data-viewer-prev>Previous picture</button>
@@ -146,7 +146,7 @@ const { pictures } = Astro.props;
 			stage.classList.remove("zoomed");
 			stage.scrollTo(0, 0);
 			zoom.textContent = "Zoom in";
-			zoom.setAttribute("aria-pressed", "false");
+			zoom.removeAttribute("data-zoomed");
 		};
 		const show = (index: number) => {
 			at = Math.max(0, Math.min(slides.length - 1, index));
@@ -198,7 +198,7 @@ const { pictures } = Astro.props;
 			stage.classList.add("zoomed");
 			stage.scrollTo((stage.scrollWidth - stage.clientWidth) / 2, (stage.scrollHeight - stage.clientHeight) / 2);
 			zoom.textContent = "Fit picture";
-			zoom.setAttribute("aria-pressed", "true");
+			zoom.setAttribute("data-zoomed", "");
 			stage.focus({ preventScroll: true });
 		});
 		viewer.addEventListener("keydown", (event) => {

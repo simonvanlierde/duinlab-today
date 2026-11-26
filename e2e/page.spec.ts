@@ -1,7 +1,9 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import { localDay, shift } from "../src/lib/day";
+import { planetsTonight } from "../src/lib/planets";
 import type { Quiz } from "../src/lib/types";
+import { moonAtEdge, moonNow, pinSky, planetApart, planetsNow, sunNow } from "./sky";
 
 const KEY = "today.games.v1";
 const PICTURE_HOSTS =
@@ -58,7 +60,7 @@ test("renders the sky, every section from the fixtures, and the ten games", asyn
   await expect(section("h-otd")).toContainText("Tammy Baldwin");
   await expect(page.locator(".quote")).toContainText("Your mind is infinite, it's your doubts that are limiting.");
   await expect(page.locator(".quote figcaption")).toContainText("Robert Kiyosaki");
-  await expect(page.locator(".wx")).toContainText(/5°\s*overcast, 9° \/ 2°/);
+  await expect(page.locator(".wx")).toContainText(/5°C\s*overcast, 9° \/ 2°/);
   await expect(page.locator(".strip")).toContainText(/rain expected around \d{2}:\d{2}/);
   await expect(page.locator(".strip")).toContainText("Grass pollen high today · Air quality poor (AQI 64)");
   await expect(section("h-events").locator(":scope > ul > li")).toHaveCount(5);
@@ -83,11 +85,17 @@ test("an old train preference no longer hides the paper", async ({ page }) => {
   await expect(page.getByRole("button", { name: /^(Coffee|Train)$/ })).toHaveCount(0);
 });
 
-// whichever of sun, moon and star is up right now
+// whichever of sun, moon and star is up at the pinned time
 const orbs = (page: Page) => page.locator("[data-orb]:not([hidden])");
+// the one orb in the sky (by day the moon can stand on the sun), the same 45 minutes earlier,
+// where the first visit of the day replays from
+const orb = (at: number) => [sunNow(at) > -3, moonNow(at).alt > -0.5].join();
+const oneOrb = (at: number) => orb(at) !== "true,true" && orb(at) === orb(at - 2700000);
 
 test("the almanac has an explicit close control", async ({ page }, testInfo) => {
+  await pinSky(page, oneOrb);
   await page.goto("/");
+  await expect(orbs(page)).toHaveCount(1);
   const opener = orbs(page).first();
   await opener.click();
   await page.locator("#almanac").screenshot({
@@ -99,8 +107,10 @@ test("the almanac has an explicit close control", async ({ page }, testInfo) => 
 });
 
 test("sky controls provide 44px targets", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
+  // the moon at the edge of the sky, where its hit area once shrank
+  await pinSky(page, moonAtEdge);
   await page.goto("/?phase=night");
+  await expect(page.locator("[data-orb=moon]")).toBeVisible();
   const boxes = [];
   for (const control of await page.locator(".orb:not([hidden])").all()) {
     const box = await control.boundingBox();
@@ -117,7 +127,13 @@ test("sky controls provide 44px targets", async ({ page }) => {
 });
 
 test("the sky's bright body opens the sun and moon times, and Escape closes them", async ({ page }) => {
+  await pinSky(page, oneOrb);
+  // the server renders tonight's planets on the real clock: one of these two is on the page
+  const { date } = await (await page.request.get("/today.json")).json();
+  const names = () => planetsTonight(date, new Date()).map((p) => p.name);
+  const before = names();
   await page.goto("/");
+  const after = names();
   const almanac = page.locator("#almanac");
   await expect(almanac).toBeHidden();
   await orbs(page).first().click();
@@ -130,8 +146,8 @@ test("the sky's bright body opens the sun and moon times, and Escape closes them
   // the Open-Meteo marine fixture
   await expect(almanac).toContainText("Water 11.6 °C, waves 0.1 m");
   await expect(almanac.getByRole("link", { name: "Open-Meteo" })).toBeVisible();
-  // which planets show depends on the date: the line is there only when one is up tonight
   const tonight = almanac.locator(".planet-window:visible");
+  expect([before, after]).toContainEqual(await tonight.locator(".planet-name").allTextContents());
   for (const line of await tonight.allTextContents())
     for (const part of line.replace(/\s+/g, " ").trim().split(", "))
       expect(part).toMatch(/^\w+ in the [a-z-]+(?: (?:from|until) \d\d:\d\d){0,2}(?: all night)?$/);
@@ -140,16 +156,18 @@ test("the sky's bright body opens the sun and moon times, and Escape closes them
 });
 
 test("the planets are named buttons that open the almanac, and show only in the dark", async ({ page }) => {
+  const at = await pinSky(page, planetApart);
   await page.goto("/?phase=night");
   const planets = page.locator("[data-planet]");
   await expect(planets).toHaveCount(5);
   for (const name of ["Mercury", "Venus", "Mars", "Jupiter", "Saturn"])
     await expect(page.locator(`[data-planet=${name}]`)).toHaveAttribute("aria-label", new RegExp(`^${name}:`));
   const up = page.locator("[data-planet]:not([hidden])");
-  if (await up.count()) {
-    await up.first().click();
-    await expect(page.locator("#almanac")).toBeVisible();
-  }
+  await expect(up).not.toHaveCount(0);
+  const name = await up.first().getAttribute("data-planet");
+  expect(planetsNow(at).find((p) => p.name === name)?.alt).toBeGreaterThan(3);
+  await up.first().click();
+  await expect(page.locator("#almanac").getByRole("heading", { name: name ?? "", exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await page.goto("/?phase=day");
   await expect(page.locator("[data-planet]:not([hidden])")).toHaveCount(0);
@@ -172,10 +190,11 @@ test("by day the sun is a named, focusable button that opens the times", async (
 });
 
 test("at night the sun is gone and the moon or a bright star stays on screen", async ({ page }) => {
+  await pinSky(page, moonAtEdge);
   await page.goto("/?phase=night");
   await expect(page.locator("[data-orb=sun]")).toBeHidden();
   const visible = orbs(page);
-  await expect(visible).not.toHaveCount(0);
+  await expect(visible).toHaveAttribute("data-orb", "moon");
   const box = await visible.first().boundingBox();
   const view = page.viewportSize();
   expect(box && view).toBeTruthy();
@@ -330,13 +349,13 @@ test("on a short desktop primary reading and games fit while the complete articl
 
 test("on desktop altitude reaches the full height of the sky", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto("/");
+  // a moonless night shows the star, and no transition or replay moves it after the jump to 60
+  await pinSky(page, (at) => moonNow(at).alt < -2);
+  await page.goto("/?phase=night");
   const star = page.locator("[data-orb=star]");
+  await expect(star).toBeVisible();
   const sky = await page.locator("header.sky").boundingBox();
-  await star.evaluate((el) => {
-    el.removeAttribute("hidden");
-    el.style.setProperty("--alt", "60");
-  });
+  await star.evaluate((el) => el.style.setProperty("--alt", "60"));
   const box = await star.boundingBox();
   expect(sky && box).toBeTruthy();
   if (sky && box)
@@ -741,7 +760,7 @@ test("security headers and a CSP that the page keeps to", async ({ page, request
     "strict-transport-security": "max-age=31536000; includeSubDomains",
     "x-content-type-options": "nosniff",
     "referrer-policy": "strict-origin-when-cross-origin",
-    "permissions-policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+    "permissions-policy": "camera=(), microphone=(), geolocation=()",
     "x-frame-options": "DENY",
     "cross-origin-opener-policy": "same-origin",
   });

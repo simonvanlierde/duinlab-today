@@ -1,6 +1,9 @@
 import type { APIRoute } from "astro";
 import { site } from "../lib/config";
 
+// the config is fixed at build time, so these ship as static assets with the edge cache
+export const prerender = true;
+
 export const GET: APIRoute = () =>
   new Response(
     JSON.stringify({

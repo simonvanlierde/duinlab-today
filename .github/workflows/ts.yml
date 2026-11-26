@@ -152,6 +152,8 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
+        # one entry per examples/*.toml, which `just city-profiles` globs; each name is also a
+        # required check in .github/rulesets/main-checks.json
         city: [utrecht, evanston]
     container:
       # jactionlint ignore=unpinned-images

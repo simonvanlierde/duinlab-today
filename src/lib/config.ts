@@ -37,3 +37,6 @@ export const usesLegacyDay =
   site.content.radar === "knmi" &&
   site.content.holidays === "nl" &&
   site.content.pictures.join(",") === "apod,met,wikipedia,aic,rijks";
+
+/** meteoblue's week forecast; it takes signed degrees (`42.05N-87.69E`) and sends hemisphere letters to The Hague. */
+export const forecastUrl = `https://www.meteoblue.com/en/weather/week/${site.location.latitude}N${site.location.longitude}E`;

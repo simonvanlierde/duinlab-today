@@ -302,6 +302,8 @@ h1 {
 .orb:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 2px;
+  /* a dark ring on both sides of the white one keeps focus visible on a pale daytime sky */
+  box-shadow: 0 0 0 6px #1d1a26;
 }
 .moon {
   --top: 16px;
@@ -579,7 +581,9 @@ h1 {
   .feat p {
     max-width: 75ch;
   }
-  /* a failed source leaves no empty column: without a picture, its column takes the article */
+  /* a failed source leaves no empty column: without a picture, its column takes the article.
+     The article then sits left of the reading it follows in the DOM; that tab order is
+     accepted for this fallback, which only shows while a picture source is down. */
   .front:not(:has(.pic)) {
     grid-template-areas: "feat read games" "otd quote games";
     grid-template-rows: auto 1fr;
@@ -686,6 +690,11 @@ html.js .slides {
 .picture-open:is(:hover, :focus-visible) .picture-hint {
   opacity: 1;
 }
+@media (hover: none) {
+  .picture-hint {
+    opacity: 1;
+  }
+}
 html:has(.picture-viewer[open]) {
   overflow: hidden;
 }
@@ -731,7 +740,7 @@ html:has(.picture-viewer[open]) {
   cursor: pointer;
 }
 .picture-viewer button:hover:not(:disabled),
-.picture-viewer button[aria-pressed="true"] {
+.picture-viewer button[data-zoomed] {
   background: var(--ground-2);
 }
 .picture-viewer button:active:not(:disabled) {

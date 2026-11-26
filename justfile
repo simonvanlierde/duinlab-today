@@ -24,7 +24,7 @@ fmt:
 hooks:
     pnpm exec prek run -a
 
-# Needs Chromium: `pnpm exec playwright install chromium`. Check the result at 300 px wide and cropped to the centre square (docs/hosting.md#social-card).
+# Needs Chromium: `pnpm exec playwright install chromium`. Check the result at 300 px wide and cropped to the centre square.
 
 # Render docs/og-card.html to the 1200x630 social card image. astro.config.mjs versions its URL by the file's hash.
 og-card:

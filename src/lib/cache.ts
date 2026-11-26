@@ -27,6 +27,9 @@ export function freshness(ageMs: number, { ttl, stale }: Life): Freshness {
 
 /** Names being refreshed in this isolate, so a burst of views starts one refresh each. */
 const refreshing = new Set<string>();
+/** Epoch ms before which a stale name is not refreshed again after a refresh failed. */
+const retryAt = new Map<string, number>();
+const RETRY_MS = 60_000;
 
 async function store<T>(cache: Cache, name: string, value: T, life: Life) {
   try {
@@ -63,16 +66,24 @@ export async function cached<T>(
     if (hit) {
       const entry = (await hit.json()) as Stored<T>;
       const state = freshness(Date.now() - entry.at, entry);
-      if (state === "stale" && !refreshing.has(name)) {
+      if (state === "stale" && !refreshing.has(name) && (retryAt.get(name) ?? 0) <= Date.now()) {
         refreshing.add(name);
+        // a failed refresh leaves the older value to age out, and pauses retries so a down
+        // upstream is not fetched on every view
+        const failed = () => retryAt.set(name, Date.now() + RETRY_MS);
         waitUntil(
           build()
             .then(async (value) => {
               const next = life(value);
-              // a failed refresh leaves the older value to age out
-              if (next && next.stale > 0) await store(cache, name, value, next);
+              if (next && next.stale > 0) {
+                await store(cache, name, value, next);
+                retryAt.delete(name);
+              } else failed();
             })
-            .catch((err) => console.warn(`refresh ${name} failed: ${err}`))
+            .catch((err) => {
+              failed();
+              console.warn(`refresh ${name} failed: ${err}`);
+            })
             .finally(() => refreshing.delete(name)),
         );
       }

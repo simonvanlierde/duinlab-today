@@ -1,4 +1,4 @@
-import { decodeHTML } from "entities";
+import { decodeHTMLStrict } from "entities";
 import { site } from "./config";
 
 const UA = `duinlab-today/1.0 (${site.site.url})`;
@@ -53,7 +53,7 @@ export async function safe<T>(name: string, run: () => Promise<T | null>): Promi
 export const httpsUrl = (s: string | undefined) =>
   s && URL.canParse(s) && new URL(s).protocol === "https:" ? s : undefined;
 
-export const decodeEntities = decodeHTML;
+export const decodeEntities = decodeHTMLStrict;
 
 /** Plain text from an HTML fragment; the page escapes it again when it renders. */
 export function stripTags(html: string): string {

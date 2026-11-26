@@ -1,6 +1,6 @@
 ---
 import Plain from "../layouts/Plain.astro";
-import { site } from "../lib/config";
+import { forecastUrl, site } from "../lib/config";
 
 const pictureNames = {
   apod: "NASA Astronomy Picture of the Day",
@@ -45,7 +45,7 @@ const pictureNames = {
 			The weather: <a href="https://open-meteo.com/">Open-Meteo</a>. The rain line comes from{" "}
 			{site.content.radar === "knmi" ? "KNMI’s radar when fresh, falling back to Buienradar or Open-Meteo." : site.content.radar === "buienradar" ? "Buienradar when available, falling back to Open-Meteo." : "Open-Meteo’s forecast."}{" "}
 			The weather line opens the week ahead on{" "}
-			<a href={`https://www.meteoblue.com/en/weather/week/${site.location.latitude}N${site.location.longitude}E`}>meteoblue</a>.
+			<a href={forecastUrl}>meteoblue</a>.
 		</li>
 		<li>
 			Air quality and pollen: Open-Meteo, shown only when the European AQI is 60 or more or a pollen count

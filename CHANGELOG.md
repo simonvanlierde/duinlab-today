@@ -20,6 +20,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Picture selectors sit below captions, and the almanac groups sun, moon, planets and sea details.
 - Short desktop layouts use tighter spacing while keeping body text and game controls readable.
 - On phones, games follow the picture, facts, word and quiz instead of the longer reading. On desktop, the full article spans both reading columns.
+- Rain forecasts drop intervals that have passed, so `weather.rainNext2h` in `/today.json` can be shorter than two hours or empty.
+- The web manifest, robots.txt and sitemap follow the configured site.
 
 ### Fixed
 
@@ -34,9 +36,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Selecting the bright star opens its current name and altitude first in the almanac.
 - Quiz tabs preserve saved answers and completed days while keeping answer feedback in place.
 - Games and quiz saves preserve progress when tabs write at the same time, and remote updates keep keyboard focus visible.
-- Rain forecasts discard elapsed intervals and show the remaining horizon; daily weather summaries refresh after Amsterdam midnight.
+- Daily weather summaries refresh after local midnight.
 - Imported titles decode accented HTML entities, and about and yesterday pages include sharing cards.
 - The moon keeps a full 44px tap target when it sits at the right edge of the sky.
+- Keyboard focus on the sun, moon and planets stays visible against a pale daytime sky.
+- Touch screens show the "Look closer" hint on pictures, which before appeared only on hover.
+- If today's page can't load for a moment, the front page asks you to try again instead of showing a server error.
 
 ## [0.1.0] - 2026-11-10
 

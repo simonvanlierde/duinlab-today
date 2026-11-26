@@ -73,6 +73,30 @@ All profiles use Open-Meteo for the weather at their configured coordinates.
 `holidays` accepts `nl` for Dutch holidays when `country = "NL"`, or `none` to omit holidays.
 These settings use the built-in sources. Custom feed URLs are not supported.
 
+### KV feeds
+
+Two outside jobs write JSON to the `DAYS` KV namespace. The Worker checks each one and drops what doesn't fit.
+
+`rain/v1` is the KNMI nowcast, read when `radar = "knmi"`:
+
+```json
+{ "issuedAt": "2026-11-26T09:40:00Z", "steps": [{ "time": "09:45", "mm": 0.2 }] }
+```
+
+- `issuedAt` is an ISO 8601 time. A feed more than 45 minutes old, or more than 5 minutes in the future, is ignored.
+- Each `time` is `HH:MM` on the configured city's clock and marks the start of a 5-minute step.
+- Each `mm` is a number of 0 or more. A single missing or malformed step drops the whole feed, so missing radar never shows as dry.
+
+A dropped feed falls back to Buienradar, then Open-Meteo, without a log line.
+
+`agenda/v1` holds events, read when `events = true`:
+
+```json
+{ "items": [{ "venue": "Amare", "name": "A concert", "url": "https://example.org/a", "start": "2026-11-28", "time": "20:15", "end": null }] }
+```
+
+`start` is `YYYY-MM-DD` and `time` is `HH:MM` or `null`, both local. `url` must be https. Items outside the coming week, or with a missing field, are skipped one by one.
+
 ### Games
 
 Keep a game's `id` when changing its display name, description or URL. Browser progress uses that identifier.

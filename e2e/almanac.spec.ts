@@ -1,7 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { site } from "../src/lib/config";
-import { moonNow as moonPosition, starNow as starPosition } from "../src/lib/moon";
+import { moonNow, pinSky, starNow } from "./sky";
 
 test.beforeEach(async ({ page }) => {
   await page.route(
@@ -15,12 +14,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("the moon leads on keyboard opening and the rest of the almanac stays available", async ({ page }, testInfo) => {
-  const { date } = await (await page.request.get("/today.json")).json();
-  const at = Array.from({ length: 22 }, (_, h) => Date.parse(`${date}T${String(h).padStart(2, "0")}:00:00Z`)).find(
-    (at) => moonNow(at).alt > 5,
-  );
-  if (at === undefined) throw new Error("No moon-above-horizon test time found");
-  await page.clock.install({ time: new Date(at) });
+  const at = await pinSky(page, (at) => moonNow(at).alt > 5);
   await page.goto("/?phase=night");
   const moon = page.locator("button[data-orb=moon]");
   await expect(moon).toBeVisible();
@@ -93,14 +87,11 @@ test("reopening on a short screen shows the newly selected object at the top", a
 });
 
 test("the selected star leads with its current position and stays current", async ({ page }, testInfo) => {
-  const { date } = await (await page.request.get("/today.json")).json();
-  const start = Date.parse(`${date}T00:00:00Z`);
-  const at = Array.from({ length: 47 }, (_, i) => start + i * 1800000).find(
+  const at = await pinSky(
+    page,
     (at) =>
       starNow(at).name !== starNow(at + 1800000).name && moonNow(at).alt < -0.5 && moonNow(at + 1800000).alt < -0.5,
   );
-  if (at === undefined) throw new Error("No moonless star change found");
-  await page.clock.install({ time: new Date(at) });
   await page.goto("/?phase=night");
   await page.locator("button[data-orb=star]").click();
   const almanac = page.locator("#almanac");
@@ -140,10 +131,3 @@ test.describe("the almanac without JavaScript", () => {
       await expect(almanac.locator("[data-star-line]")).toHaveText(/.+, \d+° above the horizon/);
   });
 });
-
-function moonNow(at: number) {
-  return moonPosition(at, site.location.latitude, site.location.longitude);
-}
-function starNow(at: number) {
-  return starPosition(at, site.location.latitude, site.location.longitude);
-}

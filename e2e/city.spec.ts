@@ -15,12 +15,21 @@ test("configured paper uses its city, clock, units, sources and identity", async
         })
       : route.abort(),
   );
+  // the server's day is on the real clock: it is one of the days either side of the request
+  const before = localDay();
+  const day = await (await page.request.get("/today.json")).json();
+  expect([before, localDay()]).toContain(day.date);
+  // the browser clock stands still at noon UTC that day, so the painted clock cannot roll over
+  const at = new Date(`${day.date}T12:00:00Z`);
+  await page.clock.setFixedTime(at);
   await page.goto("/");
   await page.locator("astro-island:not([ssr]) .games").waitFor();
   await expect(page).toHaveTitle(new RegExp(site.site.title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
-  await expect(page.locator("[data-clock]")).toHaveText(clock(new Date()));
-  const day = await (await page.request.get("/today.json")).json();
-  expect(day.date).toBe(localDay());
+  await expect(page.locator("[data-clock]")).toHaveText(clock(at));
+  await expect(page.locator("a.wx")).toHaveAttribute(
+    "href",
+    `https://www.meteoblue.com/en/weather/week/${site.location.latitude}N${site.location.longitude}E`,
+  );
   await expect(page.locator(".games .game")).toHaveCount(site.games.length);
   await expect(page.locator(".pic .slide")).toHaveCount(day.pictures.length);
   expect(day.sun.sunrise.slice(0, 10)).toBe(day.date);

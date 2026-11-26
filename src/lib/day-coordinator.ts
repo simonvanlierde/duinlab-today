@@ -55,7 +55,8 @@ export class DayCoordinator extends DurableObject<typeof env> {
     });
     try {
       await this.env.DAYS.put(keyFor(day.date), JSON.stringify(day), {
-        expiration: Math.floor(expiration / 1000),
+        // KV refuses an expiration less than 60 s ahead, which an all-failed day's retry is
+        expiration: Math.floor(Math.max(expiration, Date.now() + 65_000) / 1000),
       });
     } catch (err) {
       console.warn(`kv mirror ${day.date} failed: ${err}`);

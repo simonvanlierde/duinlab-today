@@ -7,7 +7,7 @@ import Pictures from "../components/Pictures.astro";
 import Quiz from "../components/Quiz.svelte";
 import { bodiesAt, moonPath, PHASE_SUN, saturation } from "../components/sky";
 import Base from "../layouts/Base.astro";
-import { site } from "../lib/config";
+import { forecastUrl, site } from "../lib/config";
 import { clock, longDate, rainLine, sunLines, temperature, temperatureUnit, weekday, windLine } from "../lib/format";
 import { moonNow, planetsAt, starNow } from "../lib/moon";
 import { moonTimes } from "../lib/moon-times";
@@ -18,7 +18,17 @@ import { PHASES, phaseAt, type SkyPhase, sunAltitude } from "../lib/sun";
 import { getToday } from "../lib/today";
 
 const now = new Date();
-const today = await getToday(now);
+let today: Awaited<ReturnType<typeof getToday>>;
+try {
+  today = await getToday(now);
+} catch (err) {
+  // the first read of a day can fail on KV or the coordinator; the next request retries
+  console.warn(`front page failed: ${err}`);
+  return new Response("Today's page is unavailable for a moment. Try again in half a minute.", {
+    status: 503,
+    headers: { "content-type": "text/plain; charset=utf-8", "retry-after": "30", "cache-control": "no-store" },
+  });
+}
 const asked = Astro.url.searchParams.get("phase");
 const forced = PHASES.includes(asked as SkyPhase);
 const phase = forced ? (asked as SkyPhase) : phaseAt(today.sun, now.getTime());
@@ -39,7 +49,6 @@ const rain = weather ? rainLine(weather.rainNext2h, now, weather.rainCredit.name
 const fact = today.didYouKnow[0];
 const heading = longDate(today.date);
 const hasQuiz = !!quiz && quiz.questions.length > 0;
-const FORECAST = `https://www.meteoblue.com/en/weather/week/${site.location.latitude}N${site.location.longitude}E`;
 const almanac = sunLines(today);
 const moon = moonTimes(today.date);
 // the moon, sun and star where they are right now; the sky script keeps them current
@@ -87,8 +96,8 @@ const what = site.site.description;
 				weather && (
 					<ul class="plain strip">
 						<li>
-							<a class="wx" href={FORECAST} title={`${windLine(weather.now)}. The week ahead on meteoblue`}>
-								<span class="temp" aria-label={`${temperature(weather.now.temperatureC)} ${temperatureUnit}`}>{temperature(weather.now.temperatureC)}{site.units.temperature === "fahrenheit" ? "°F" : "°"}</span>
+							<a class="wx" href={forecastUrl} title={`${windLine(weather.now)}. The week ahead on meteoblue`}>
+								<span class="temp">{temperature(weather.now.temperatureC)}{site.units.temperature === "fahrenheit" ? "°F" : <>°<span class="sr">C</span></>}</span>
 								{` ${weather.now.description}, ${temperature(weather.today.maxC)}° / ${temperature(weather.today.minC)}° · wind ${weather.now.windFrom} ${weather.now.windBeaufort}`}
 								<span class="sr">. {windLine(weather.now)}. The week ahead on meteoblue</span>
 							</a>
