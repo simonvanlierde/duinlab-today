@@ -635,6 +635,20 @@ test("no horizontal scroll and 44px game rows", async ({ page }) => {
     expect(h).toBeGreaterThanOrEqual(44);
 });
 
+// WCAG 1.4.10 reflow: 320 CSS px wide with no sideways scrolling.
+test.describe("at 320px wide", () => {
+  test.use({ viewport: { width: 320, height: 640 } });
+  for (const path of ["/", "/about", "/yesterday", "/no-such-page"]) {
+    test(`${path} reflows without horizontal scroll`, async ({ page }) => {
+      await page.goto(path);
+      const wide = await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      );
+      expect(wide).toBe(false);
+    });
+  }
+});
+
 test("the sky follows the browser clock from night to day", async ({ page }) => {
   // the server builds the page for today, so the browser clock starts on today's date
   const today = new Intl.DateTimeFormat("en-CA", {
@@ -695,6 +709,11 @@ test("the about page says what is kept and links the source", async ({ page }, t
     fullPage: true,
   });
   await expect(page.getByRole("link", { name: "Code on GitHub" })).toBeVisible();
+  // the short form here points to the full statement, which holds the rights and contact
+  await expect(page.getByRole("link", { name: "full privacy statement" })).toHaveAttribute(
+    "href",
+    /docs\/privacy\.md$/,
+  );
   const missing = await page.goto("/no-such-page");
   expect(missing?.status()).toBe(404);
   await expect(page.locator("h1")).toHaveText("Below the horizon");
@@ -756,6 +775,18 @@ test("security headers and a CSP that the page keeps to", async ({ page, request
   const font = await request.get("/fonts/literata.woff2");
   expect(font.headers()["cache-control"]).toBe("public, max-age=31536000, immutable");
 });
+
+// Each page carries its own script and style hashes, so each is checked against its CSP.
+for (const path of ["/about", "/yesterday", "/no-such-page"]) {
+  test(`${path} keeps to its CSP`, async ({ page }) => {
+    const blocked: string[] = [];
+    page.on("console", (m) => {
+      if (/Content Security Policy/i.test(m.text())) blocked.push(m.text());
+    });
+    await page.goto(path, { waitUntil: "networkidle" });
+    expect(blocked).toEqual([]);
+  });
+}
 
 const PHASES = ["night", "first-light", "dawn", "day", "dusk"];
 for (const path of [...PHASES.map((p) => `/?phase=${p}`), "/about", "/yesterday", "/no-such-page"]) {

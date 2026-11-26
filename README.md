@@ -71,12 +71,14 @@ Install Node 22.23.4 or later (CI uses 26), [pnpm](https://pnpm.io/installation)
 
 ```sh
 pnpm install
+pnpm exec prek install
 just check
 ```
 
 `just check` runs CI's lint, types, unit tests, build, licence check and production dependency audit.
 Checks and builds generate Cloudflare runtime and binding types from `wrangler.jsonc`.
-`just hooks` runs the git hooks over the whole repo.
+`pnpm exec prek install` sets up the git hooks, including the commit-message and sign-off checks;
+`just hooks` runs them over the whole repo.
 
 `just dev` starts the dev server in the background. Use `pnpm exec astro dev status` to check it,
 `pnpm exec astro dev logs` to read its output and `pnpm exec astro dev stop` to end it.

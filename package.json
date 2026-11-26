@@ -21,7 +21,7 @@
     "preview": "wrangler dev",
     "check": "biome check",
     "fix": "biome check --write",
-    "typecheck": "pnpm run types && astro check",
+    "typecheck": "pnpm run types && astro check && svelte-check --fail-on-warnings",
     "test": "vitest run",
     "coverage": "vitest run --coverage --coverage.reporter=text",
     "test:e2e": "playwright test",

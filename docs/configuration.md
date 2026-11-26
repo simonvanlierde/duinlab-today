@@ -134,6 +134,8 @@ The other picture sources work without this key. Never put a key in TOML or comm
 The next retry can add APOD to an incomplete day after you add the key.
 
 For automatic deployment from a fork, configure its own Cloudflare credentials and production environment.
+The `production` job in `.github/workflows/ts.yml` reads `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
+and `NASA_API_KEY` from the `production` environment, which `just repo-settings` creates for `main` only.
 Commit your chosen profile as `site.toml`, or set `SITE_CONFIG` for the workflow’s build step.
 Review the original workflow’s environment URL before enabling it.
 

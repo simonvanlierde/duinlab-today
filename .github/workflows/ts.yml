@@ -173,7 +173,7 @@ jobs:
   # A preview Worker would carry this app's Durable Object, its KV binding, the hourly cron
   # and the custom-domain route from wrangler.jsonc: it would fetch upstream sources every
   # hour per pull request, write to production's KV namespace and contend for today.duinlab.nl.
-  # The job stays so the retire workflow and the README keep one lifecycle.
+  # The job stays so the retire workflow keeps one lifecycle.
   preview:
     name: preview
     if: github.event_name == 'pull_request' && !github.event.pull_request.draft
@@ -216,7 +216,6 @@ jobs:
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "26"
-          cache: pnpm
 
       - if: steps.gate.outputs.run == 'true'
         run: pnpm install --frozen-lockfile

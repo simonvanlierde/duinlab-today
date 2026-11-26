@@ -12,3 +12,7 @@ e2e-apod *args:
 e2e:
     just ts-e2e
     just e2e-apod
+
+# The city-profile e2e checks CI runs, once per example site config.
+city-profiles:
+    for config in examples/*.toml; do SITE_CONFIG="$config" pnpm run test:e2e e2e/city.spec.ts || exit 1; done

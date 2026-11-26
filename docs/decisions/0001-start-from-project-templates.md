@@ -26,6 +26,27 @@ changes in as a reviewable diff.
 The app layer stays this repo's own: Astro, `wrangler.jsonc` with its Durable Object, KV
 namespace and cron trigger, and the Playwright tests in `e2e/`.
 
+### Known divergences
+
+On `copier update`, keep this repo's side of these files:
+
+* Kept whole: `tsconfig.json`, `wrangler.jsonc`, `vitest.config.ts`, `playwright.config.ts`
+  and `public/_headers` (Astro's `security.csp` and the middleware set the page headers).
+* `package.json`: this repo's dependencies and scripts, under the template's script names
+  (`check`, `typecheck`, `test`, `build`, `test:e2e`, `fix`, `coverage`, `licenses`). No
+  `budget`, `knip` or Vite. `typecheck` runs `astro check` and `svelte-check`.
+* `biome.json`: the unused-variable override also covers `.astro` files.
+* `just/ts.just`: no `budget` step and no `ts-shots` recipe. `justfile`: `og-card` renders only
+  the PNG, since `astro.config.mjs` versions its URL.
+* `.github/workflows/ts.yml`: no `budget` step; the APOD e2e run and the `city-profiles` job; the
+  production job builds in the job, deploys without `--domain`, puts `NASA_API_KEY` and checks
+  `/today.json`; the preview job only prints a notice.
+* `scripts/checkLicenses.mjs` allows `LGPL-3.0-or-later` for the Astro build's sharp binary.
+* `.gitignore` adds `.astro/` and the generated `src/lib/worker-configuration.d.ts`.
+* Not taken: `index.html`, `vite.config.ts`, `worker/`, the `src/` starter files,
+  `scripts/checkBundleBudget.mjs` and `tests/`. The template's privacy spec lives on as
+  `e2e/privacy.spec.ts`.
+
 ### Consequences
 
 * Good: the checks, CI and release steps match the template's other projects, and fixes

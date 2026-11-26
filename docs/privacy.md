@@ -18,8 +18,8 @@ duinlab-today and is responsible for it. "We" on this page means Simon van Lierd
 
 ## What duinlab-today stores on your device
 
-duinlab-today saves your work in your browser's local storage. Nothing is saved until you
-start working. It stores:
+duinlab-today saves a few things in your browser's local storage. The sunrise date is saved on
+your first visit; the rest only once you open a game or answer the quiz. It stores:
 
 - The games you opened and the days you opened them. This gives the played marks and streaks.
 - Your quiz answers for today, and the days you finished the quiz.
@@ -43,10 +43,14 @@ IP address. We read them only to trace a fault.
 ## Other sites your browser contacts
 
 duinlab-today loads its scripts, styles and fonts from today.duinlab.nl. The day's pictures load
-straight from the museum or news site that published them: NASA, The Metropolitan Museum of Art,
-Wikimedia, the Art Institute of Chicago or the Rijksmuseum. On days when NASA's picture is a
-video, its preview image comes from the video's host, usually YouTube. Those sites see your IP
-address and browser details, as in any image request.
+straight from the site that serves each one: the museums (The Metropolitan Museum of Art, the
+Art Institute of Chicago, the Rijksmuseum), Wikimedia, or the host NASA links that day, which on
+a video day is a video host such as YouTube. Those sites see your IP address and browser details,
+as in any image request, and that the request came from today.duinlab.nl. Some museums refuse a
+picture request that doesn't say where it came from.
+
+Our server fetches the day's content (weather, tides, pictures, facts) for one fixed place. Nothing
+about you goes with those requests.
 
 The links to games, sources and the week forecast open other sites only when you select them.
 Those sites have their own privacy statements.
