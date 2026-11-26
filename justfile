@@ -145,7 +145,7 @@ repo-settings:
     }
     # The production jobs deploy from main only, unattended, so no reviewer.
     main_only_env production
-    echo "Configured environment 'production'. Add CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID and NASA_API_KEY to the production environment (previews are off): see docs/configuration.md."
+    echo "Configured environment 'production'. Add CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID and NASA_API_KEY to the production environment, and CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to the preview environment: see docs/configuration.md."
     if [ -f .github/first-release.md ]; then echo "First-release checklist: gh issue create --title 'First release' --body-file .github/first-release.md"; fi
 # Set the GitHub About box from your answers: description, homepage and a topic per stack. Adds topics, never removes yours. Safe to rerun.
 repo-about:

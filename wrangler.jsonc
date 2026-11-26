@@ -14,5 +14,21 @@
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DayCoordinator"] }],
   "routes": [{ "pattern": "today.duinlab.nl", "custom_domain": true }],
   // the deploy check reads this URL: the zone's bot challenge answers datacenter IPs with 403
-  "workers_dev": true
+  "workers_dev": true,
+  "env": {
+    // Pull request previews (ts.yml), deployed as duinlab-today-pr-<number> and built with
+    // PREVIEW set, so fixtures answer every source. No cron and no custom domain. The KV
+    // binding has no id: the first deploy creates duinlab-today-pr-<number>-days, and
+    // preview-retire.yml deletes it with the Worker.
+    "preview": {
+      "triggers": { "crons": [] },
+      "routes": [],
+      "workers_dev": true,
+      "kv_namespaces": [{ "binding": "DAYS" }],
+      "durable_objects": {
+        "bindings": [{ "name": "DAY_COORDINATOR", "class_name": "DayCoordinator" }]
+      },
+      "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DayCoordinator"] }]
+    }
+  }
 }

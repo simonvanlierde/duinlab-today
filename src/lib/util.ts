@@ -11,14 +11,23 @@ const fixtureOrigin = import("cloudflare:workers").then(
 );
 
 /** `https://host/path?q` as `${FIXTURE_ORIGIN}/host/path?q` when that var is set, else `url`. */
-export async function upstream(url: string): Promise<string> {
+async function upstream(url: string): Promise<string> {
   const origin = await fixtureOrigin;
   return origin ? `${origin}/${url.replace(/^https:\/\//, "")}` : url;
 }
 
+/** True in a pull request preview build: fixtures answer every upstream request. */
+declare const __PREVIEW__: boolean;
+
+/** `fetch` for a source: the fixture server in e2e, the built-in fixtures in a preview. */
+export async function upstreamFetch(url: string, init: RequestInit): Promise<Response> {
+  if (__PREVIEW__) return (await import("./preview-fixtures")).fixtureResponse(url);
+  return fetch(await upstream(url), init);
+}
+
 /** `post` sends that body as JSON with a POST. */
 export async function getText(url: string, accept = "*/*", post?: unknown): Promise<string> {
-  const res = await fetch(await upstream(url), {
+  const res = await upstreamFetch(url, {
     headers: {
       "user-agent": UA,
       accept,

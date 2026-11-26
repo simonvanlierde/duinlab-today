@@ -92,6 +92,19 @@ a print-layout check. It runs the default suite and a separate APOD suite with a
 offline with repeatable content.
 Read [release preparation](docs/releasing.md) before a deployment or release tag.
 
+### Pull request previews
+
+Each ready pull request deploys `duinlab-today-pr-<number>` to workers.dev and posts its address on the
+pull request. A preview is built with `PREVIEW=pr-<number>`. The same fixtures as the e2e tests
+([`src/lib/fixtures.ts`](src/lib/fixtures.ts)) answer every source, so a preview never calls a live
+API and shows a full paper on any day. `env.preview` in `wrangler.jsonc` has no cron and no custom domain.
+Its first deploy creates its own KV namespace, `duinlab-today-pr-<number>-days`. When the pull request
+closes or turns draft, `.github/workflows/preview-retire.yml` deletes the Worker and the namespace, and
+a daily sweep removes any it missed. Previews need `CLOUDFLARE_API_TOKEN` (Workers Scripts and Workers
+KV Storage, edit) and `CLOUDFLARE_ACCOUNT_ID` in the `preview` environment. Pull requests from forks
+and bots get none. To build one locally, run `PREVIEW=local CLOUDFLARE_ENV=preview pnpm run build`, then
+`pnpm exec wrangler dev`.
+
 The social card `public/og.png` is rendered from `docs/og-card.html`. Keep its text inside the centred 630 px
 column, because some link previews crop to it. After editing, run `just og-card`.
 

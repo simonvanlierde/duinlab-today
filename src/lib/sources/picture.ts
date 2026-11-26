@@ -1,6 +1,6 @@
 import { site } from "../config";
 import type { Picture } from "../types";
-import { decodeEntities, getJson, getText, httpsUrl, safe, seededRandom, stripTags, upstream } from "../util";
+import { decodeEntities, getJson, getText, httpsUrl, safe, seededRandom, stripTags, upstreamFetch } from "../util";
 
 interface Apod {
   title?: string;
@@ -324,7 +324,7 @@ export function imageSize(b: Uint8Array): { width: number; height: number } | nu
 
 /** The first 128 KiB of an image: enough for the header, whether or not the host honours Range. */
 async function imageHead(url: string): Promise<Uint8Array> {
-  const res = await fetch(await upstream(url), {
+  const res = await upstreamFetch(url, {
     headers: { range: "bytes=0-131071" },
     signal: AbortSignal.timeout(5000),
   });

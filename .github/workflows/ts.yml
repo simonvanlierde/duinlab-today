@@ -172,21 +172,116 @@ jobs:
         env:
           SITE_CONFIG: examples/${{ matrix.city }}.toml
 
-  # A preview Worker would carry this app's Durable Object, its KV binding, the hourly cron
-  # and the custom-domain route from wrangler.jsonc: it would fetch upstream sources every
-  # hour per pull request, write to production's KV namespace and contend for today.duinlab.nl.
-  # The job stays so the retire workflow keeps one lifecycle.
+  # A pull request preview: duinlab-today-pr-<number> on workers.dev, built with PREVIEW so
+  # canned fixtures answer every source. wrangler.jsonc's env.preview drops the cron and the
+  # custom domain, and gives each preview its own KV namespace; preview-retire.yml deletes
+  # both when the pull request closes or turns draft.
   preview:
     name: preview
-    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
+    # Bot pull requests (Renovate, Dependabot) get no preview, and a bot's push does not start
+    # one. A person's later ready or reopen deploys the head as it is.
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft && !endsWith(github.event.pull_request.user.login, '[bot]') && !endsWith(github.actor, '[bot]')
+    # Shares the retire job's group, so a retire waits for a deploy in flight.
+    concurrency:
+      group: preview-${{ github.event.pull_request.number }}
+    needs: check
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      url: ${{ steps.upload.outputs.url }}
+    environment:
+      name: preview
+      url: ${{ steps.upload.outputs.url }}
     steps:
-      - run: |-
-          echo "::notice::Preview skipped: this Worker has a cron trigger, a Durable Object and a KV binding that a per-PR copy must not share."
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-  # Production: every push to main builds and deploys. The token lives only in the
-  # production environment; without it, the job skips with a notice.
+      - id: gate
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+        run: '"$GITHUB_WORKSPACE/.github/scripts/cloudflare-gate.sh" Preview'
+
+      - if: steps.gate.outputs.run == 'true'
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - if: steps.gate.outputs.run == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "26"
+
+      - if: steps.gate.outputs.run == 'true'
+        run: pnpm install --frozen-lockfile
+
+      # Search engines should index the production site, not the preview copies. The block is
+      # appended to the build's own _headers, which keeps its security headers.
+      - if: steps.gate.outputs.run == 'true'
+        env:
+          PREVIEW: pr-${{ github.event.pull_request.number }}
+          CLOUDFLARE_ENV: preview
+        run: |
+          pnpm run build
+          printf '\n/*\n  X-Robots-Tag: noindex\n' >> dist/client/_headers
+
+      # This job may have queued behind a close or a draft switch: a retire that ran first must
+      # not be undone by a deploy. This step alone holds GH_TOKEN, so the deploy step, which
+      # holds the Cloudflare token, never gets it.
+      - if: steps.gate.outputs.run == 'true'
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |-
+          state=$(gh api "repos/$REPO/pulls/$PR" --jq '.state + " " + (.draft|tostring)')
+          if [ "$state" != "open false" ]; then
+            echo "::notice::Preview skipped: pull request $PR is no longer open and ready ($state)."
+            echo "open=false" >>"$GITHUB_OUTPUT"
+          else
+            echo "open=true" >>"$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.gate.outputs.run == 'true' && steps.pr.outputs.open == 'true'
+        id: upload
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |-
+          "$GITHUB_WORKSPACE/.github/scripts/deploy-worker.sh" Preview "duinlab-today-pr-$PR"
+
+  # Posts the preview's address as one pull request comment, edited on each push. A job of its
+  # own, so the write token never shares a runner with the deploy's code.
+  preview-comment:
+    name: "preview link"
+    needs: preview
+    if: needs.preview.outputs.url != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+          URL: ${{ needs.preview.outputs.url }}
+        run: '"$GITHUB_WORKSPACE/.github/scripts/preview-comment.sh" "Preview" "$URL"'
+
+  # Production: every push to main builds and deploys. Its token lives in the production
+  # environment, deployable from main only; without it, the job skips with a notice.
   production:
     name: production
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
