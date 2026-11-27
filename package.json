@@ -10,7 +10,7 @@
   },
   "type": "module",
   "private": true,
-  "packageManager": "pnpm@12.21.0",
+  "packageManager": "pnpm@12.22.0",
   "engines": {
     "node": ">=22.23.4"
   },
@@ -29,12 +29,12 @@
     "deploy": "pnpm run build && wrangler deploy"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "14.4.8",
+    "@astrojs/cloudflare": "14.4.9",
     "@astrojs/svelte": "9.1.6",
-    "astro": "7.4.12",
+    "astro": "7.4.13",
     "astronomy-engine": "2.1.19",
     "entities": "9.0.0",
-    "svelte": "5.57.3"
+    "svelte": "5.59.1"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",
