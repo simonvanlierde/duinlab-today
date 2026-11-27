@@ -1,14 +1,13 @@
 import { expect, test } from "@playwright/test";
+import { imageHosts, SLIDES } from "./fixture-pictures";
 
 test.beforeEach(async ({ context }) => {
   await context.route(/^https?:\/\/(?!localhost)/, (route) => route.abort());
-  await context.route(
-    /^https:\/\/(images\.metmuseum\.org|thumb\.wikimedia\.org|www\.artic\.edu\/iiif|iiif\.micr\.io)\//,
-    (route) =>
-      route.fulfill({
-        path: "e2e/fixtures/picture.png",
-        contentType: "image/png",
-      }),
+  await context.route(imageHosts, (route) =>
+    route.fulfill({
+      path: "e2e/fixtures/picture.png",
+      contentType: "image/png",
+    }),
   );
 });
 
@@ -53,7 +52,7 @@ test("the extra sections sit side by side on desktop", async ({ page }, testInfo
 
 test("picture selectors have room for a finger", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator(".dot")).toHaveCount(3);
+  await expect(page.locator(".dot")).toHaveCount(SLIDES);
   for (const box of await page.locator(".dot").evaluateAll((dots) =>
     dots.map((dot) => ({
       width: dot.getBoundingClientRect().width,

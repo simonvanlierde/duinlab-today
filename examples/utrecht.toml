@@ -16,7 +16,7 @@ temperature = "celsius"
 wind = "kmh"
 
 [content]
-pictures = ["apod", "met", "wikipedia", "aic"]
+pictures = ["apod", "met", "wikipedia", "cleveland", "smk", "wellcome"]
 tides = false
 sea = false
 events = false

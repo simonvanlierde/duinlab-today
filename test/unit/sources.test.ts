@@ -9,9 +9,14 @@ import {
   parseAic,
   parseApod,
   parseApodFeed,
+  parseCleveland,
   parseMet,
   parseRijks,
+  parseSmk,
+  parseWellcome,
 } from "../../src/lib/sources/picture";
+import { firstPicture } from "../../src/lib/sources/pictures/kit";
+import { wellcomeTitle } from "../../src/lib/sources/pictures/wellcome";
 import { parseQuote } from "../../src/lib/sources/quote";
 import { parseRecipes } from "../../src/lib/sources/recipes";
 import { parseSea } from "../../src/lib/sources/sea";
@@ -39,12 +44,15 @@ import { getText, safe } from "../../src/lib/util";
 import aic from "./fixtures/aic-search.json";
 import apod from "./fixtures/apod.json";
 import raintext from "./fixtures/buienradar.txt?raw";
+import cleveland from "./fixtures/cleveland-search.json";
 import metObject from "./fixtures/met-object.json";
 import metSearch from "./fixtures/met-search.json";
 import meteo from "./fixtures/open-meteo.json";
 import marine from "./fixtures/open-meteo-marine.json";
 import opentdb from "./fixtures/opentdb.json";
 import rijksObject from "./fixtures/rijks-object.json";
+import smk from "./fixtures/smk-search.json";
+import wellcome from "./fixtures/wellcome-images.json";
 import wikipedia from "./fixtures/wikipedia.json";
 import wiktionary from "./fixtures/wiktionary.atom?raw";
 import zen from "./fixtures/zenquotes.json";
@@ -245,6 +253,62 @@ describe("parsers", () => {
     for (const c of noLicence.subject_of[0]?.digitally_carried_by ?? []) c.referred_to_by = [];
     expect(parseRijks(noLicence)).toBeNull();
     expect(parseRijks({})).toBeNull();
+  });
+
+  it("takes a CC0 Cleveland painting with its sizes and the artist's name alone", () => {
+    const p = parseCleveland(cleveland.data[1]);
+    expect(p).toMatchObject({ kind: "cleveland", by: "Tara 1", width: 586, height: 900 });
+    expect(p?.imageUrl).toMatch(/^https:\/\/openaccess-cdn\.clevelandart\.org\/.+_web\.jpg$/);
+    expect(p?.fullImageUrl).toMatch(/_print\.jpg$/);
+    expect(parseCleveland({ ...cleveland.data[1], share_license_status: "Copyrighted" })).toBeNull();
+    expect(parseCleveland(cleveland.data[0])?.by).toBeNull();
+  });
+
+  it("takes a public-domain SMK painting by its maker, not the engraver it is after", () => {
+    const p = parseSmk(smk.items[1]);
+    expect(p).toMatchObject({
+      kind: "smk",
+      title: "Seascape with a Town in the Background",
+      by: "Willem van Diest",
+      date: "1625-1663",
+    });
+    expect(p?.fullImageUrl).toMatch(/^https:\/\/iip\.smk\.dk\/iiif\/.+\/full\/!2400,\/0\/default\.jpg$/);
+    const after = { ...smk.items[1], production: [{ creator: "Goltzius, Hendrick", creator_role: "after" }] };
+    expect(parseSmk(after)?.by).toBeNull();
+    expect(parseSmk({ ...smk.items[1], production: [{ creator: "Ubekendt", creator_role: null }] })?.by).toBeNull();
+    expect(parseSmk({ ...smk.items[1], public_domain: false })).toBeNull();
+  });
+
+  it("takes an openly licensed Wellcome image and sizes its preview from the aspect ratio", () => {
+    const p = parseWellcome(wellcome.results[0]);
+    expect(p).toMatchObject({ kind: "wellcome", title: "An orchid (Cattleya Schofieldianum): flowering stem" });
+    expect(p?.imageUrl).toMatch(/^https:\/\/iiif\.wellcomecollection\.org\/image\/.+\/full\/960,\/0\/default\.jpg$/);
+    expect(p).toMatchObject({ width: 960, height: Math.round(960 / 0.7325) });
+    expect(p?.credit.name).toBe("Wellcome Collection (Public Domain Mark)");
+    const closed = structuredClone(wellcome.results[0]);
+    closed.locations[0].license.id = "inc";
+    expect(parseWellcome(closed)).toBeNull();
+    expect(wellcomeTitle("A jay (Garrulax perspicillatus). Coloured lithograph by W. E. Smith.")).toBe(
+      "A jay (Garrulax perspicillatus)",
+    );
+    expect(wellcomeTitle("Head of a stag. Drawing, c. 1789.")).toBe("Head of a stag");
+    expect(wellcomeTitle("Hedge mustard pollen")).toBe("Hedge mustard pollen");
+  });
+
+  it("skips a scroll or panorama the strip would show as a sliver", () => {
+    const scroll = {
+      ...cleveland.data[1],
+      images: { web: { url: "https://x.test/a.jpg", width: "900", height: "68" } },
+    };
+    expect(firstPicture([scroll, cleveland.data[1]], parseCleveland)?.by).toBe("Tara 1");
+  });
+
+  it("drops a picture another source already shows", () => {
+    const pic = (kind: string) =>
+      ({ kind, title: kind, imageUrl: "https://same.test/a.jpg" }) as unknown as Parameters<
+        typeof mergePictures
+      >[0][number];
+    expect(mergePictures([pic("met"), pic("aic")]).map((p) => p.kind)).toEqual(["met"]);
   });
 
   it("takes the Wikipedia picture of the day with its file page and licence", () => {
@@ -519,6 +583,9 @@ describe("pictures", () => {
       if (u.host === "api.artic.edu") return json(aic);
       if (u.host === "data.rijksmuseum.nl") return json({ orderedItems: [{ id: "https://id.rijksmuseum.nl/1" }] });
       if (u.host === "id.rijksmuseum.nl") return json(rijksObject);
+      if (u.host === "openaccess-api.clevelandart.org") return json(cleveland);
+      if (u.host === "api.smk.dk") return json(smk);
+      if (u.host === "api.wellcomecollection.org") return json(wellcome);
       if (u.host === "collectionapi.metmuseum.org")
         return u.pathname.includes("/search")
           ? json(
@@ -534,23 +601,28 @@ describe("pictures", () => {
   it("asks every source and returns what answered, one per source", async () => {
     stubFetch();
     const got = await fetchPictures("2026-11-06", "k");
-    expect(got.map((p) => p.kind).sort()).toEqual(["aic", "apod", "met"]);
+    expect(got.map((p) => p.kind).sort()).toEqual(["apod", "cleveland", "met", "smk", "wellcome"]);
   });
 
   it("picks the same artwork for the same date and skips sources already held", async () => {
     const hosts: string[] = [];
     stubFetch(true, hosts);
     const one = await fetchPictures("2026-11-06", undefined);
-    expect(one.map((p) => p.kind)).toEqual(["met", "aic"]);
+    expect(one.map((p) => p.kind)).toEqual(["met", "cleveland", "smk", "wellcome"]);
     expect(await fetchPictures("2026-11-06", undefined)).toEqual(one);
     hosts.length = 0;
-    await fetchPictures("2026-11-06", "k", ["met", "aic"]);
+    await fetchPictures("2026-11-06", "k", ["met", "cleveland", "smk", "wellcome"]);
     expect(hosts.filter((h) => h !== "img")).toEqual(["science.nasa.gov", "api.nasa.gov"]);
   });
 
   it("lets each source fail or hang on its own", async () => {
     stubFetch(false);
-    expect((await fetchPictures("2026-11-06", "k")).map((p) => p.kind)).toEqual(["met", "aic"]);
+    expect((await fetchPictures("2026-11-06", "k")).map((p) => p.kind)).toEqual([
+      "met",
+      "cleveland",
+      "smk",
+      "wellcome",
+    ]);
     vi.stubGlobal("fetch", async () => new Response("", { status: 500 }));
     expect(await fetchPictures("2026-11-06", "k")).toEqual([]);
     // APOD hangs: the others come back once the deadline passes
@@ -565,15 +637,15 @@ describe("pictures", () => {
     const pic = (kind: string, title: string) =>
       ({ kind, title }) as unknown as Parameters<typeof mergePictures>[0][number];
     const merged = mergePictures(
-      [pic("aic", "stored"), pic("met", "stored")],
-      [pic("apod", "new"), pic("aic", "reshuffled"), pic("rijks", "new")],
+      [pic("cleveland", "stored"), pic("met", "stored")],
+      [pic("apod", "new"), pic("cleveland", "reshuffled"), pic("rijks", "new")],
       [pic("wikipedia", "new")],
     );
     expect(merged.map((p) => `${p.kind}:${p.title}`)).toEqual([
       "apod:new",
       "met:stored",
       "wikipedia:new",
-      "aic:stored",
+      "cleveland:stored",
     ]);
   });
 });
@@ -599,7 +671,14 @@ describe("day assembly and cache", () => {
     } as unknown as Parameters<typeof buildDay>[3];
     const day = await buildDay("2026-11-06", new Date(), "k", prev);
     // the sources that no stored picture covers are asked too
-    expect(hosts.sort()).toEqual(["api.artic.edu", "api.wikimedia.org", "collectionapi.metmuseum.org", "www.paard.nl"]);
+    expect(hosts.sort()).toEqual([
+      "api.smk.dk",
+      "api.wellcomecollection.org",
+      "api.wikimedia.org",
+      "collectionapi.metmuseum.org",
+      "openaccess-api.clevelandart.org",
+      "www.paard.nl",
+    ]);
     expect(day.quiz).toBe(prev?.quiz);
     // APOD missing from the stored pictures is asked again
     hosts.length = 0;
@@ -886,7 +965,7 @@ describe("hardening", () => {
     expect(incomplete(merged, true)).toBe(true);
     const complete = {
       ...merged,
-      pictures: ["apod", "met", "wikipedia", "aic"].map((kind) => ({
+      pictures: ["apod", "met", "wikipedia", "cleveland", "smk", "wellcome"].map((kind) => ({
         kind,
       })),
     } as typeof merged;

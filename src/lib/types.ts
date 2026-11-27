@@ -3,6 +3,7 @@
 // tides, events, weather and sea are null. Instants are ISO strings (`generatedAt` and `fetchedAt` in UTC, `sun`
 // with the configured time-zone offset); `rainNext2h` times are bare HH:MM on that local clock.
 
+import type { PictureKind } from "./picture-sources";
 /** Where an item came from, shown as its credit line. */
 export interface Credit {
   name: string;
@@ -10,7 +11,7 @@ export interface Credit {
 }
 
 export interface Picture {
-  kind: "apod" | "met" | "wikipedia" | "aic" | "rijks";
+  kind: PictureKind;
   title: string;
   /** Artist or photographer, when the source names one. */
   by: string | null;

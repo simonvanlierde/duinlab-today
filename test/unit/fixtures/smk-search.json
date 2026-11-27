@@ -1,0 +1,85 @@
+{
+  "found": 4628,
+  "items": [
+    {
+      "titles": [
+        {
+          "title": "Maleren. En kunstner betragter sammen med sin hustru sit værk",
+          "type": "museumstitel",
+          "language": "dansk"
+        }
+      ],
+      "production": [
+        {
+          "creator": "Schou, P.A.",
+          "creator_role": null
+        }
+      ],
+      "production_date": [
+        {
+          "period": "1907"
+        }
+      ],
+      "image_thumbnail": "https://api.smk.dk/api/v1/thumbnail/48983902-6471-47b4-9857-b4260e05141f.jpg",
+      "image_iiif_id": null,
+      "image_width": 1600,
+      "image_height": 1197,
+      "object_number": "KMS2021",
+      "frontend_url": "https://open.smk.dk/artwork/image/KMS2021",
+      "public_domain": true
+    },
+    {
+      "titles": [
+        {
+          "title": "Seascape with a Town in the Background",
+          "language": "engelsk"
+        }
+      ],
+      "production": [
+        {
+          "creator": "Diest, Willem van",
+          "creator_role": null
+        }
+      ],
+      "production_date": [
+        {
+          "period": "1625-1663"
+        }
+      ],
+      "image_thumbnail": "https://iip-thumb.smk.dk/iiif/jp2/x920g1168_KMS969.tif.reconstructed.tif.jp2/full/!1024,/0/default.jpg",
+      "image_iiif_id": "https://iip.smk.dk/iiif/jp2/x920g1168_KMS969.tif.reconstructed.tif.jp2",
+      "image_width": 3868,
+      "image_height": 2411,
+      "object_number": "KMS969",
+      "frontend_url": "https://open.smk.dk/artwork/image/KMS969",
+      "public_domain": true
+    },
+    {
+      "titles": [
+        {
+          "title": "Syende ung pige",
+          "type": "museumstitel",
+          "language": "dansk"
+        }
+      ],
+      "production": [
+        {
+          "creator": "Thomsen, Carl",
+          "creator_role": null
+        }
+      ],
+      "production_date": [
+        {
+          "period": "1896"
+        }
+      ],
+      "image_thumbnail": "https://api.smk.dk/api/v1/thumbnail/62c87393-e1b3-4065-aca2-5ff58f59689e.jpg",
+      "image_iiif_id": null,
+      "image_width": 1241,
+      "image_height": 1600,
+      "object_number": "KMS1550",
+      "frontend_url": "https://open.smk.dk/artwork/image/KMS1550",
+      "public_domain": true
+    }
+  ]
+}

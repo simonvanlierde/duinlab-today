@@ -1,14 +1,13 @@
 import { expect, test } from "@playwright/test";
+import { imageHosts, SLIDES } from "./fixture-pictures";
 
 for (const overlay of ["almanac", "picture-viewer"]) {
   test(`print lays out every picture and caption with ${overlay} open`, async ({ page }, testInfo) => {
-    await page.route(
-      /^https:\/\/(images\.metmuseum\.org|thumb\.wikimedia\.org|www\.artic\.edu\/iiif|iiif\.micr\.io)\//,
-      (r) =>
-        r.fulfill({
-          path: "e2e/fixtures/picture.png",
-          contentType: "image/png",
-        }),
+    await page.route(imageHosts, (r) =>
+      r.fulfill({
+        path: "e2e/fixtures/picture.png",
+        contentType: "image/png",
+      }),
     );
     await page.goto("/");
     await expect(page.locator(".dots")).toBeVisible();
@@ -27,7 +26,7 @@ for (const overlay of ["almanac", "picture-viewer"]) {
         return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
       }),
     );
-    expect(slides).toHaveLength(3);
+    expect(slides).toHaveLength(SLIDES);
     for (const [i, box] of slides.entries()) {
       expect(box.left).toBeGreaterThanOrEqual(0);
       expect(box.right).toBeLessThanOrEqual(794);

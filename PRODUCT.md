@@ -26,7 +26,7 @@ a dozen open tabs.
 
 Hand-picked daily games, a
 quiz scored on the page, and facts and pictures from sourced feeds (Wikipedia, Wiktionary, NASA APOD, The
-Met, the Art Institute of Chicago), never generated text. The same `/today.json` feeds the household's email digests.
+Met, the Cleveland Museum of Art), never generated text. The same `/today.json` feeds the household's email digests.
 
 ## Operating Context
 
@@ -50,8 +50,9 @@ Met, the Art Institute of Chicago), never generated text. The same `/today.json`
   about 2 h past its 15 minutes.
 - Sources: Wikipedia featured feed (On this day, Did you know, the featured article), Wiktionary word of the day,
   Open Trivia DB (three questions per day, CC BY-SA 4.0, credited), NASA APOD (API key), The
-  Met collection API (public-domain highlights), the Art Institute of Chicago (public-domain
-  artworks, no key), the Wikipedia picture of the day (credited with its licence),
+  Met collection API (public-domain highlights), the Cleveland Museum of Art (CC0), SMK (public domain), the Wellcome
+  Collection (open licences, limited to botany, plants, birds and animals), the Wikipedia
+  picture of the day (credited with its licence),
   ZenQuotes (credited).
 - Local Hague, below the paper: high and low water at Scheveningen (Rijkswaterstaat, in the
   moon's popover), and this week's shows and events from Paard, Amare and DenHaag.com. The five-item preview
@@ -95,7 +96,7 @@ Local Hague adapters are disabled for other cities. Configuration and fork deplo
 
 ## Evidence on Hand
 
-No logo, photography or brand assets exist. Daily imagery comes from APOD, The Met, Wikipedia and the Art Institute; credit
+No logo, photography or brand assets exist. Daily imagery comes from APOD, Wikipedia and five museum collections; credit
 lines come with each source. There are no measured usage figures or testimonials to cite.
 
 ## Product Principles
