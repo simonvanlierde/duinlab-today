@@ -60,7 +60,12 @@ const { pictures } = Astro.props;
 	</div>
 	<figure class="viewer-figure">
 		<div class="viewer-stage" role="region" aria-label="Enlarged picture" tabindex="0">
-			{pictures[0] && <img src={pictures[0].imageUrl} alt={pictures[0].alt} loading="lazy" decoding="async" />}
+			{
+				// draggable: a mouse drag pans the zoomed picture, and the browser's own image drag would cancel it
+				pictures[0] && (
+					<img src={pictures[0].imageUrl} alt={pictures[0].alt} loading="lazy" decoding="async" draggable="false" />
+				)
+			}
 			<p class="viewer-error" hidden>This image couldn’t load. Try its source below.</p>
 		</div>
 		<figcaption></figcaption>
@@ -151,8 +156,10 @@ const { pictures } = Astro.props;
 		let mode: "" | "framed" | "zoomed" = "";
 		let framing: { box: Box; ratio: number } | null = null;
 		const labels = { "": "Zoom in", framed: "Whole picture", zoomed: "Fit picture" };
+		// a live region: writing the same text again would announce it again
 		const counted = () => {
-			count.textContent = `${at + 1} of ${slides.length}${mode === "framed" ? ", backdrop cropped" : ""}`;
+			const text = `${at + 1} of ${slides.length}${mode === "framed" ? ", backdrop cropped" : ""}`;
+			if (count.textContent !== text) count.textContent = text;
 		};
 		const set = (next: typeof mode, scale: number, left = 0, top = 0) => {
 			mode = next;
@@ -199,7 +206,8 @@ const { pictures } = Astro.props;
 			const probe = new Image();
 			probe.crossOrigin = "anonymous";
 			probe.addEventListener("load", () => {
-				if (token !== view || !viewer.open || mode !== "") return;
+				// hidden: the preview failed, so there is nothing on screen to frame
+				if (token !== view || !viewer.open || mode !== "" || image.hidden) return;
 				const scale = 64 / Math.max(probe.naturalWidth, probe.naturalHeight);
 				const canvas = document.createElement("canvas");
 				canvas.width = Math.max(1, Math.round(probe.naturalWidth * scale));
@@ -309,6 +317,7 @@ const { pictures } = Astro.props;
 		let drag: { x: number; y: number; moved: boolean } | null = null;
 		let dragged = false;
 		stage.addEventListener("pointerdown", (event) => {
+			dragged = false;
 			if (event.pointerType === "mouse" && event.button === 0 && mode === "zoomed") {
 				drag = { x: event.clientX, y: event.clientY, moved: false };
 				stage.setPointerCapture(event.pointerId);
@@ -322,12 +331,16 @@ const { pictures } = Astro.props;
 			drag.x = event.clientX;
 			drag.y = event.clientY;
 		});
+		// pointerup and then lostpointercapture both end a drag: only the first may set `dragged`
 		const endDrag = () => {
-			dragged = drag?.moved ?? false;
+			if (!drag) return;
+			dragged = drag.moved;
 			drag = null;
 		};
 		stage.addEventListener("pointerup", endDrag);
 		stage.addEventListener("pointercancel", endDrag);
+		// closing the viewer mid-drag releases the capture, and no pointerup follows
+		stage.addEventListener("lostpointercapture", endDrag);
 		stage.addEventListener("click", (event) => {
 			if (dragged || image.hidden) return;
 			if (mode === "zoomed") return fit();
