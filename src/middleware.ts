@@ -1,14 +1,10 @@
 import { defineMiddleware } from "astro:middleware";
+import { responseHeaders } from "./lib/headers";
 
-/** Headers a meta CSP cannot set; the CSP itself comes from `security.csp` in the Astro config. */
-const HEADERS: Record<string, string> = {
-  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-  "X-Content-Type-Options": "nosniff",
-  "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-  "X-Frame-Options": "DENY",
-  "Cross-Origin-Opener-Policy": "same-origin",
-};
+/** True in a pull request preview build (astro.config.mjs). */
+declare const __PREVIEW__: boolean;
+
+const HEADERS = responseHeaders(__PREVIEW__);
 
 export const onRequest = defineMiddleware(async (_, next) => {
   const res = await next();

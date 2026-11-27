@@ -7,6 +7,9 @@ import { defineConfig } from "astro/config";
 import { loadSiteConfig } from "./scripts/site-config.mjs";
 
 const { site, configKey } = loadSiteConfig();
+// A pull request preview build (ts.yml sets PREVIEW=pr-<number>): fixtures answer every
+// source, and the key keeps its days and cache entries apart from production and other PRs.
+const preview = process.env.PREVIEW ?? "";
 
 // Platforms cache a preview by image URL, so the URL carries the PNG's hash. The worker has no
 // file system, hence a build-time constant.
@@ -24,7 +27,8 @@ export default defineConfig({
     define: {
       __OG_VERSION__: JSON.stringify(ogVersion),
       __SITE_CONFIG__: JSON.stringify(site),
-      __SITE_CONFIG_KEY__: JSON.stringify(configKey),
+      __SITE_CONFIG_KEY__: JSON.stringify(preview ? `${configKey}-${preview}` : configKey),
+      __PREVIEW__: JSON.stringify(preview !== ""),
     },
   },
   // Astro hashes its own scripts; Base.astro adds the hash of the inline sky script. Style

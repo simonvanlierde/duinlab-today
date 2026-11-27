@@ -1,7 +1,7 @@
 name: Retire preview
 
-# Deletes the preview Worker of a pull request that closes or turns draft, and sweeps
-# daily for any that were missed. The README's "Pull request previews" has the rest.
+# Deletes the preview Worker and KV namespace of a pull request that closes or turns draft,
+# and sweeps daily for any that were missed. The README's "Pull request previews" has the rest.
 on:
   pull_request:
     types: [closed, converted_to_draft]
@@ -17,7 +17,8 @@ permissions:
   contents: read
 
 # One group per pull request or sweep: the retire job's own group already orders it
-# against that pull request's deploy.
+# against that pull request's deploy. A manual run with prs set gets a group of its own, so
+# it does not wait for a deploy in flight: run it when no preview job is running.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: false
@@ -76,6 +77,19 @@ jobs:
           PRS: ${{ github.event.pull_request.number || inputs.prs }}
           SLUG: ${{ matrix.slug }}
         run: .github/scripts/preview-retire.sh
+
+      # After the Workers: the sweep keeps every namespace whose Worker still exists.
+      # always(): a Worker that failed its takedown check is deleted all the same.
+      - if: always() && steps.gate.outputs.run == 'true'
+        name: Delete the preview KV namespaces
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PRS: ${{ github.event.pull_request.number || inputs.prs }}
+          SLUG: ${{ matrix.slug }}
+        run: .github/scripts/preview-kv-retire.sh
 
   notify:
     # The daily sweep only: a failed pull request run shows on that pull request.
