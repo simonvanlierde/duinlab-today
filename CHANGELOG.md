@@ -22,6 +22,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Removed
 
 - The Hague and Utrecht configurations no longer show a Rijksmuseum picture. The source stays available as `rijks` in `content.pictures`.
+- The Hague configuration no longer shows an Art Institute of Chicago picture, because its API blocks requests from Cloudflare's network. The source stays available as `aic` in `content.pictures`, and the Utrecht example now lists `cleveland`, `smk` and `wellcome` instead.
 - A deployment older than 0.1.0 no longer keeps its published day on upgrade. Upgrade through 0.2.0 to keep it.
 
 ### Security

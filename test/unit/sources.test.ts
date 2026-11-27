@@ -601,17 +601,17 @@ describe("pictures", () => {
   it("asks every source and returns what answered, one per source", async () => {
     stubFetch();
     const got = await fetchPictures("2026-11-06", "k");
-    expect(got.map((p) => p.kind).sort()).toEqual(["aic", "apod", "cleveland", "met", "smk", "wellcome"]);
+    expect(got.map((p) => p.kind).sort()).toEqual(["apod", "cleveland", "met", "smk", "wellcome"]);
   });
 
   it("picks the same artwork for the same date and skips sources already held", async () => {
     const hosts: string[] = [];
     stubFetch(true, hosts);
     const one = await fetchPictures("2026-11-06", undefined);
-    expect(one.map((p) => p.kind)).toEqual(["met", "aic", "cleveland", "smk", "wellcome"]);
+    expect(one.map((p) => p.kind)).toEqual(["met", "cleveland", "smk", "wellcome"]);
     expect(await fetchPictures("2026-11-06", undefined)).toEqual(one);
     hosts.length = 0;
-    await fetchPictures("2026-11-06", "k", ["met", "aic", "cleveland", "smk", "wellcome"]);
+    await fetchPictures("2026-11-06", "k", ["met", "cleveland", "smk", "wellcome"]);
     expect(hosts.filter((h) => h !== "img")).toEqual(["science.nasa.gov", "api.nasa.gov"]);
   });
 
@@ -619,7 +619,6 @@ describe("pictures", () => {
     stubFetch(false);
     expect((await fetchPictures("2026-11-06", "k")).map((p) => p.kind)).toEqual([
       "met",
-      "aic",
       "cleveland",
       "smk",
       "wellcome",
@@ -638,15 +637,15 @@ describe("pictures", () => {
     const pic = (kind: string, title: string) =>
       ({ kind, title }) as unknown as Parameters<typeof mergePictures>[0][number];
     const merged = mergePictures(
-      [pic("aic", "stored"), pic("met", "stored")],
-      [pic("apod", "new"), pic("aic", "reshuffled"), pic("rijks", "new")],
+      [pic("cleveland", "stored"), pic("met", "stored")],
+      [pic("apod", "new"), pic("cleveland", "reshuffled"), pic("rijks", "new")],
       [pic("wikipedia", "new")],
     );
     expect(merged.map((p) => `${p.kind}:${p.title}`)).toEqual([
       "apod:new",
       "met:stored",
       "wikipedia:new",
-      "aic:stored",
+      "cleveland:stored",
     ]);
   });
 });
@@ -673,7 +672,6 @@ describe("day assembly and cache", () => {
     const day = await buildDay("2026-11-06", new Date(), "k", prev);
     // the sources that no stored picture covers are asked too
     expect(hosts.sort()).toEqual([
-      "api.artic.edu",
       "api.smk.dk",
       "api.wellcomecollection.org",
       "api.wikimedia.org",
@@ -967,7 +965,7 @@ describe("hardening", () => {
     expect(incomplete(merged, true)).toBe(true);
     const complete = {
       ...merged,
-      pictures: ["apod", "met", "wikipedia", "aic", "cleveland", "smk", "wellcome"].map((kind) => ({
+      pictures: ["apod", "met", "wikipedia", "cleveland", "smk", "wellcome"].map((kind) => ({
         kind,
       })),
     } as typeof merged;

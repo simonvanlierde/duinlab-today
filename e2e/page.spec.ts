@@ -19,7 +19,7 @@ test.beforeEach(async ({ context }) => {
   await context.route(/^https?:\/\/(?!localhost)/, (r) =>
     r.request().resourceType() === "document" ? r.fulfill({ body: "ok" }) : r.abort(),
   );
-  // the day's pictures (Met, Wikipedia, Art Institute fixtures) are the fixture PNG
+  // the day's pictures (Met, Wikipedia, Cleveland fixtures) are the fixture PNG
   await context.route(imageHosts, (r) => r.fulfill({ path: "e2e/fixtures/picture.png", contentType: "image/png" }));
 });
 
@@ -44,7 +44,7 @@ test("renders the sky, every section from the fixtures, and the eight games", as
     "href",
     /^https:\/\/commons\.wikimedia\.org\/wiki\/File:/,
   );
-  await expect(slides.nth(2).locator("figcaption")).toContainText("Art Institute of Chicago");
+  await expect(slides.nth(2).locator("figcaption")).toContainText("Cleveland Museum of Art");
   const section = (id: string) => page.locator(`section[aria-labelledby="${id}"]`);
   await expect(section("h-dyk")).toContainText("that Cinema '76 adopted three cats");
   await expect(section("h-word").locator(".word")).toHaveText("sax");

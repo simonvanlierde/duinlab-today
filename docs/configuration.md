@@ -60,7 +60,7 @@ Set `content.pictures` to any subset of these sources, in your preferred order:
 | `apod` | NASA's Astronomy Picture of the Day |
 | `met` | Public-domain highlights from The Metropolitan Museum of Art |
 | `wikipedia` | Wikipedia's picture of the day |
-| `aic` | Public-domain works from the Art Institute of Chicago |
+| `aic` | Public-domain works from the Art Institute of Chicago (its API blocks Cloudflare's network, so it fails on the live site) |
 | `rijks` | Public-domain paintings from the Rijksmuseum |
 | `cleveland` | CC0 paintings from the Cleveland Museum of Art |
 | `smk` | Public-domain paintings from SMK, the National Gallery of Denmark |
