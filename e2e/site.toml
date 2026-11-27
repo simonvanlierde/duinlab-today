@@ -1,0 +1,56 @@
+# The e2e suite's configuration: The Hague with every section on, so the tests cover each one.
+# The deployed page's own settings are in /site.toml.
+[site]
+title = "today.duinlab.nl"
+url = "https://today.duinlab.nl"
+description = "A daily page from The Hague: the weather, pictures, sourced facts, a word, a quiz and daily games."
+
+[location]
+name = "The Hague"
+latitude = 52.08
+longitude = 4.31
+timezone = "Europe/Amsterdam"
+country = "NL"
+
+[units]
+temperature = "celsius"
+wind = "kmh"
+
+[content]
+pictures = ["apod", "met", "wikipedia", "cleveland", "smk", "wellcome"]
+tides = true
+sea = true
+events = true
+radar = "knmi"
+holidays = "nl"
+featured = true
+didYouKnow = true
+onThisDay = true
+
+# Wellcome is mostly medical: keep its pictures to these subjects.
+[content.wellcome]
+subjects = ["Botany", "Plants", "Plants, Ornamental", "Birds", "Animals"]
+
+[[games]]
+id = "factmap"
+
+[[games]]
+id = "timeguessr"
+
+[[games]]
+id = "shikaku"
+
+[[games]]
+id = "krillion"
+
+[[games]]
+id = "catfishing"
+
+[[games]]
+id = "connections"
+
+[[games]]
+id = "wordle"
+
+[[games]]
+id = "metazooa"

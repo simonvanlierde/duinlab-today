@@ -22,21 +22,15 @@ sea = false
 events = false
 radar = "none"
 holidays = "none"
+featured = true
+didYouKnow = true
+onThisDay = true
 
 [[games]]
 id = "timeguessr"
-name = "TimeGuessr"
-url = "https://timeguessr.com/"
-blurb = "Guess where and when a photo was taken."
 
 [[games]]
 id = "connections"
-name = "Connections"
-url = "https://www.nytimes.com/games/connections"
-blurb = "Sort sixteen words into four groups."
 
 [[games]]
 id = "wordle"
-name = "Wordle"
-url = "https://www.nytimes.com/games/wordle/index.html"
-blurb = "Five letters, six tries."

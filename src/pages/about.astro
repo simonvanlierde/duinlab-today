@@ -8,6 +8,14 @@ const hosts = [
   ...site.content.pictures.map((kind) => PICTURE_SOURCES[kind].host),
   ...(site.content.pictures.includes("apod") ? ["YouTube"] : []),
 ];
+const wikipedia = [
+  site.content.didYouKnow && "Did you know",
+  site.content.featured && "the featured article",
+  site.content.onThisDay && "On this day",
+]
+  .filter(Boolean)
+  .join(", ")
+  .replace(/^./, (c) => c.toUpperCase());
 const hostList = hosts.length > 1 ? `${hosts.slice(0, -1).join(", ")} or ${hosts.at(-1)}` : (hosts[0] ?? "");
 ---
 
@@ -38,7 +46,8 @@ const hostList = hosts.length > 1 ? `${hosts.slice(0, -1).join(", ")} or ${hosts
 	<h2>Sources</h2>
 	<p>Each item on the page links to where it came from.</p>
 	<ul>
-		<li>Facts, the featured article and on this day: Wikipedia. The word: Wiktionary.</li>
+		{wikipedia && <li>{wikipedia}: Wikipedia.</li>}
+		<li>The word: Wiktionary.</li>
 		{site.content.pictures.length > 0 && <li>Pictures: {site.content.pictures.map((kind) => PICTURE_SOURCES[kind].name).join(", ")}.</li>}
 		<li>The quiz: Open Trivia DB (CC BY-SA 4.0). The quote: ZenQuotes.</li>
 		<li>
@@ -77,8 +86,20 @@ const hostList = hosts.length > 1 ? `${hosts.slice(0, -1).join(", ")} or ${hosts
 		they see your IP address too.
 	</p>
 	<p>
-		The <a href="https://github.com/simonvanlierde/duinlab-today/blob/main/docs/privacy.md">full privacy statement</a>
+		The <a href="https://github.com/simonvanlierde/duinlab-today/blob/main/docs/privacy.md">full privacy statement</a>{" "}
 		says what you can ask and how to reach me.
+	</p>
+
+	<h2>Make your own</h2>
+	<p>
+		The page runs from one settings file: the place, the picture sources and the games. Copy it, set
+		your own city and put it on your own Cloudflare account.{" "}
+		<a href="https://github.com/simonvanlierde/duinlab-today#make-your-own-version">How to make your own</a>.
+	</p>
+	<p>
+		Know a museum collection or a daily game that belongs here? A new source is a small pull request:{" "}
+		<a href="https://github.com/simonvanlierde/duinlab-today/blob/main/docs/adding-a-source.md">adding a source</a>{" "}
+		says how.
 	</p>
 
 	<h2>Code</h2>

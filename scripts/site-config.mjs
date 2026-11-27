@@ -7,7 +7,7 @@ const fields = {
   site: ["title", "url", "description"],
   location: ["name", "latitude", "longitude", "timezone", "country"],
   units: ["temperature", "wind"],
-  content: ["pictures", "tides", "sea", "events", "radar", "holidays"],
+  content: ["pictures", "tides", "sea", "events", "radar", "holidays", "featured", "didYouKnow", "onThisDay"],
 };
 
 function fail(path, message) {
@@ -43,6 +43,31 @@ function https(value, path) {
   }
   if (url.protocol !== "https:" || url.username || url.password) fail(path, "must be an HTTPS URL without credentials");
   return url;
+}
+
+function checkGame(game, path) {
+  keys(game, ["id", "name", "url", "blurb"], path);
+  for (const key of ["id", "name", "blurb"]) text(game[key], `${path}.${key}`);
+  if (!/^[a-z][a-z0-9-]*$/.test(game.id)) fail(`${path}.id`, "must be a unique lowercase identifier");
+  if (Object.hasOwn(Object.prototype, game.id)) fail(`${path}.id`, "is reserved; choose a different identifier");
+  https(game.url, `${path}.url`);
+}
+
+/** Games any configuration can list by id; read from the working directory, like site.toml. */
+export const GAMES_FILE = "src/data/games.toml";
+let games;
+function knownGames() {
+  if (!games) {
+    const list = parse(readFileSync(GAMES_FILE, "utf8")).games;
+    if (!Array.isArray(list)) fail(GAMES_FILE, "must hold [[games]] tables");
+    games = new Map();
+    for (const [i, game] of list.entries()) {
+      checkGame(game, `${GAMES_FILE} games[${i}]`);
+      if (games.has(game.id)) fail(`${GAMES_FILE} games[${i}].id`, "must be unique");
+      games.set(game.id, game);
+    }
+  }
+  return games;
 }
 
 /** Validate public settings before they enter the browser or Worker bundle. */
@@ -100,6 +125,8 @@ export function validateSiteConfig(config) {
     if (config.content[source] && !hague)
       fail(`content.${source}`, "is only supported for The Hague (52.08, 4.31, NL, Europe/Amsterdam)");
   }
+  for (const section of ["featured", "didYouKnow", "onThisDay"])
+    if (typeof config.content[section] !== "boolean") fail(`content.${section}`, "must be true or false");
   choice(config.content.radar, ["knmi", "buienradar", "none"], "content.radar");
   // Inside the KNMI radar grid (49.4-56 N, 0-10.9 E) with room to spare.
   const dutch = country === "NL" && latitude >= 50.7 && latitude <= 53.6 && longitude >= 3.3 && longitude <= 7.3;
@@ -109,16 +136,17 @@ export function validateSiteConfig(config) {
   if (config.content.holidays === "nl" && country !== "NL") fail("content.holidays", "nl requires country NL");
   if (!Array.isArray(config.games)) fail("games", "must be a list of game tables");
   const ids = new Set();
-  for (const [i, game] of config.games.entries()) {
+  config.games = config.games.map((entry, i) => {
     const path = `games[${i}]`;
-    keys(game, ["id", "name", "url", "blurb"], path);
-    for (const key of ["id", "name", "blurb"]) text(game[key], `${path}.${key}`);
-    if (!/^[a-z][a-z0-9-]*$/.test(game.id) || ids.has(game.id))
-      fail(`${path}.id`, "must be a unique lowercase identifier");
-    if (Object.hasOwn(Object.prototype, game.id)) fail(`${path}.id`, "is reserved; choose a different identifier");
+    // a table with only an id names a game from the shared list
+    const known = entry && typeof entry === "object" && Object.keys(entry).join() === "id";
+    const game = known ? knownGames().get(entry.id) : entry;
+    if (!game) fail(`${path}.id`, `is not in ${GAMES_FILE}; give its name, url and blurb too`);
+    checkGame(game, path);
+    if (ids.has(game.id)) fail(`${path}.id`, "must be a unique lowercase identifier");
     ids.add(game.id);
-    https(game.url, `${path}.url`);
-  }
+    return { ...game };
+  });
   return /** @type {import("../src/lib/config").SiteConfig} */ (config);
 }
 

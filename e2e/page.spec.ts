@@ -266,6 +266,19 @@ test("desktop reading keeps the complete article directly under the pictures", a
   expect(gap).toBeLessThanOrEqual(9);
 });
 
+test("without the featured article and On this day, the quote follows the pictures", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/");
+  // as a configuration with content.featured and content.onThisDay off renders it
+  await page.locator(".feat, .otd").evaluateAll((sections) => {
+    for (const section of sections) section.remove();
+  });
+  const box = async (selector: string) => (await page.locator(selector).boundingBox()) ?? { x: 0, y: 0, height: 0 };
+  const [pic, quote] = [await box(".pic"), await box(".quote")];
+  expect(Math.abs(quote.x - pic.x)).toBeLessThan(1);
+  expect(quote.y - (pic.y + pic.height)).toBeLessThanOrEqual(9);
+});
+
 test("primary reading fills the first column when picture and article sources are missing", async ({ page }) => {
   for (const height of [600, 900]) {
     await page.setViewportSize({ width: 1280, height });
@@ -291,16 +304,23 @@ test("the picture strip moves with arrows, dots and the keyboard", async ({ page
   if (picture && controls) expect(controls.y).toBeGreaterThanOrEqual(picture.y + picture.height);
   await expect(dots).toHaveCount(SLIDES);
   await expect(dots.first()).toHaveAttribute("aria-current", "true");
-  await page.getByRole("button", { name: "Next picture" }).click();
+  const next = page.getByRole("button", { name: "Next picture" });
+  const previous = page.getByRole("button", { name: "Previous picture" });
+  // below 480 px the dots take the whole line, so the arrows step aside
+  const arrows = (page.viewportSize()?.width ?? 0) >= 480;
+  await expect(next).toBeVisible({ visible: arrows });
+  if (arrows) await next.click();
+  else await dots.nth(1).click();
   await expect(dots.nth(1)).toHaveAttribute("aria-current", "true");
   await expect(dots.first()).not.toHaveAttribute("aria-current");
   await dots.nth(SLIDES - 1).click();
   await expect(dots.nth(SLIDES - 1)).toHaveAttribute("aria-current", "true");
-  await expect(page.getByRole("button", { name: "Next picture" })).toBeDisabled();
+  if (arrows) await expect(next).toBeDisabled();
   await strip.focus();
   await page.keyboard.press("ArrowLeft");
   await expect(dots.nth(SLIDES - 2)).toHaveAttribute("aria-current", "true");
-  await page.getByRole("button", { name: "Previous picture" }).click();
+  if (arrows) await previous.click();
+  else await page.keyboard.press("ArrowLeft");
   await expect(dots.nth(SLIDES - 3)).toHaveAttribute("aria-current", "true");
 });
 

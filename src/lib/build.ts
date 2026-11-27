@@ -24,22 +24,23 @@ export async function buildDay(
   prev: Day | null = null,
 ): Promise<Day> {
   const keep = <T>(have: T | null | undefined, fetch: () => Promise<T>) => (have ? Promise.resolve(have) : fetch());
-  const wikiDone =
-    prev &&
-    prev.didYouKnow.length > 0 &&
-    prev.onThisDay &&
-    prev.featured &&
-    (!PICTURE_ORDER.includes("wikipedia") || prev.pictures.some((p) => p.kind === "wikipedia"));
+  const { didYouKnow, onThisDay, featured } = site.content;
+  // one feed holds all four, so it is asked only while one the page shows is missing
+  const wikiNeeded =
+    (didYouKnow && !prev?.didYouKnow.length) ||
+    (onThisDay && !prev?.onThisDay) ||
+    (featured && !prev?.featured) ||
+    (PICTURE_ORDER.includes("wikipedia") && !prev?.pictures.some((p) => p.kind === "wikipedia"));
   const have = prev?.pictures ?? [];
   const [wiki, pictures, word, quote, quiz, tides, events] = await Promise.all([
-    wikiDone
-      ? Promise.resolve({
-          didYouKnow: prev.didYouKnow,
-          onThisDay: prev.onThisDay,
-          featured: prev.featured,
+    wikiNeeded
+      ? fetchWikipedia(date)
+      : Promise.resolve({
+          didYouKnow: prev?.didYouKnow ?? [],
+          onThisDay: prev?.onThisDay ?? null,
+          featured: prev?.featured ?? null,
           image: null,
-        })
-      : fetchWikipedia(date),
+        }),
     fetchPictures(
       date,
       apiKey,
@@ -51,7 +52,7 @@ export async function buildDay(
     site.content.tides ? keep(prev?.tides, () => fetchTides(date)) : Promise.resolve(null),
     site.content.events ? keep(prev?.events, () => fetchEvents(date)) : Promise.resolve(null),
   ]);
-  return {
+  return configured({
     date,
     generatedAt: now.toISOString(),
     sun: sunTimes(date),
@@ -65,6 +66,16 @@ export async function buildDay(
     quiz,
     tides,
     events,
+  });
+}
+
+/** The day without the Wikipedia sections this configuration leaves out, as a stored day from before a config change has them. */
+export function configured(d: Day): Day {
+  return {
+    ...d,
+    didYouKnow: site.content.didYouKnow ? d.didYouKnow : [],
+    onThisDay: site.content.onThisDay ? d.onThisDay : null,
+    featured: site.content.featured ? d.featured : null,
   };
 }
 
@@ -73,14 +84,14 @@ export async function buildDay(
  * day stored before it existed is undefined: missing, so the next run fills it in.
  */
 const sections = (d: Day) => [
-  d.onThisDay,
-  d.featured,
+  ...(site.content.onThisDay ? [d.onThisDay] : []),
+  ...(site.content.featured ? [d.featured] : []),
   d.word,
   d.quote,
   d.quiz,
   ...(site.content.tides ? [d.tides] : []),
   ...(site.content.events ? [d.events] : []),
-  d.didYouKnow.length > 0 ? d.didYouKnow : null,
+  ...(site.content.didYouKnow ? [d.didYouKnow.length > 0 ? d.didYouKnow : null] : []),
 ];
 
 const missingSections = (d: Day) => sections(d).filter((s) => !s).length;
@@ -101,7 +112,7 @@ export function incomplete(d: Day, hasApodKey: boolean): boolean {
  */
 export function mergeDay(prev: Day | null, fresh: Day): Day {
   if (!prev || prev.date !== fresh.date) return fresh;
-  return {
+  return configured({
     ...fresh,
     pictures: mergePictures(prev.pictures ?? [], fresh.pictures),
     didYouKnow: prev.didYouKnow.length > 0 ? prev.didYouKnow : fresh.didYouKnow,
@@ -112,5 +123,5 @@ export function mergeDay(prev: Day | null, fresh: Day): Day {
     quiz: prev.quiz ?? fresh.quiz,
     tides: site.content.tides ? (prev.tides ?? fresh.tides) : null,
     events: site.content.events ? (prev.events ?? fresh.events) : null,
-  };
+  });
 }

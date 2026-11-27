@@ -10,7 +10,7 @@ type InvalidConfig = {
   location: Record<string, unknown>;
   units: Record<string, unknown>;
   content: Record<string, unknown>;
-  games: { id: string; url: string }[];
+  games: { id: string; url?: string; name?: string; blurb?: string }[];
 };
 const raw = () => parse(readFileSync("site.toml", "utf8")) as unknown as InvalidConfig;
 
@@ -90,7 +90,7 @@ describe("site configuration", () => {
     [
       "unsafe game URL",
       (c: ReturnType<typeof raw>) => {
-        c.games[0].url = "javascript:alert(1)";
+        c.games[0] = { id: "custom", name: "Custom", blurb: "A game of its own.", url: "javascript:alert(1)" };
       },
       "games[0].url",
     ],
@@ -107,6 +107,20 @@ describe("site configuration", () => {
         c.content.pictures = ["fake"];
       },
       "content.pictures",
+    ],
+    [
+      "game id missing from the shared list",
+      (c: ReturnType<typeof raw>) => {
+        c.games[0] = { id: "no-such-game" };
+      },
+      "games[0].id",
+    ],
+    [
+      "game with only some fields",
+      (c: ReturnType<typeof raw>) => {
+        c.games[0] = { id: "wordle", url: "https://example.org/" };
+      },
+      "games[0].name",
     ],
     [
       "unknown Wellcome setting",
@@ -215,5 +229,16 @@ describe("site configuration", () => {
     delete config.content.wellcome;
     config.games = [];
     expect(validateSiteConfig(config).games).toEqual([]);
+  });
+});
+
+describe("shared games", () => {
+  it("fills a game named by id from src/data/games.toml and keeps a game of its own", () => {
+    const config = raw();
+    const own = { id: "own", name: "Own", url: "https://own.example.org/", blurb: "A game of its own." };
+    config.games = [{ id: "wordle" }, own];
+    const games = validateSiteConfig(config).games;
+    expect(games[0]).toMatchObject({ id: "wordle", name: "Wordle", url: expect.stringMatching(/^https:\/\//) });
+    expect(games[1]).toEqual(own);
   });
 });

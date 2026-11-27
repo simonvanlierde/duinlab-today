@@ -43,6 +43,8 @@ Met, the Cleveland Museum of Art), never generated text. The same `/today.json` 
   or a pollen count is high.
 - Recipes: the three newest recipes from the Guardian, BBC Good Food and Love and Lemons, title
   and link only. One per source is visible; More recipes expands the rest. NYT Cooking is left out: it has no public feed.
+- The Hague's page shows Did you know and leaves out the featured article and On this day; other
+  configurations can show any of the three. Without the article, the quote follows the pictures.
 - On a desktop screen shorter than 760 px, On this day and the quote follow the main reading and
   games. Compact spacing targets a 600 px-high screen; longer daily content can still scroll.
 - Live feeds (weather, recipes) use cached responses while refreshing usable stale entries in

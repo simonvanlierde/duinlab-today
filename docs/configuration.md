@@ -41,8 +41,8 @@ The examples contain every required section. Keep those sections when editing a 
 | `[site]` | `title`, `url`, `description`. `url` must be an HTTPS origin without a path, query or fragment; a trailing slash is removed. |
 | `[location]` | `name`, `latitude`, `longitude`, `timezone`, `country`. Use an IANA time zone such as `Europe/Amsterdam`, and a two-letter uppercase country code. |
 | `[units]` | `temperature`: `celsius` or `fahrenheit`; `wind`: `kmh` or `mph`. |
-| `[content]` | `pictures`, `tides`, `sea`, `events`, `radar`, `holidays`; see the source limits below. |
-| `[[games]]` | One table per game, with `id`, `name`, `url` and `blurb`. Game URLs must use HTTPS. |
+| `[content]` | `pictures`, `tides`, `sea`, `events`, `radar`, `holidays`; see the source limits below. `featured`, `didYouKnow` and `onThisDay` show or hide Wikipedia's featured article, Did you know and On this day: each `true` or `false`. |
+| `[[games]]` | One table per game: `id` alone for a game from the [shared list](../src/data/games.toml), or `id`, `name`, `url` and `blurb` for one of your own. Game URLs must use HTTPS. |
 
 Latitude must fall between −55° and 55°. The sky calculations require daily dawn and dusk throughout the year.
 Longitude must fall between −180° and 180°. The page and its sourced facts remain in English.
@@ -129,13 +129,20 @@ Keep a game's `id` when changing its display name, description or URL. Browser p
 Use unique lowercase IDs containing letters, digits or hyphens, starting with a letter. Reserved object names such as `constructor` are rejected.
 Games appear alphabetically by name. To omit games, remove all `[[games]]` tables and put `games = []` before the first section.
 
+A game from the [shared list](../src/data/games.toml) needs only its `id`. Give any other game all four fields:
+
 ```toml
 [[games]]
 id = "wordle"
-name = "Wordle"
-url = "https://www.nytimes.com/games/wordle/index.html"
-blurb = "Five letters, six tries."
+
+[[games]]
+id = "my-puzzle"
+name = "My puzzle"
+url = "https://puzzle.example.org/"
+blurb = "One new grid a day."
 ```
+
+A game others would enjoy too belongs in the shared list: [adding a source](adding-a-source.md#a-game) says how.
 
 ## Deploy a fork
 

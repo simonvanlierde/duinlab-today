@@ -37,7 +37,12 @@ from a Cloudflare Worker: some museums block Cloudflare's network.
 ## A game
 
 Games are links to daily puzzles on other sites. Add a `[[games]]` table with `id`, `name`,
-`url` and `blurb` to your `site.toml` ([configuration](configuration.md#settings)).
+`url` and `blurb` to [`src/data/games.toml`](../src/data/games.toml), in alphabetical order by `id`.
+Any configuration can then list it by `id` alone. The game must be free to play in a browser,
+with a new puzzle each day. Keep the blurb to one short sentence that says what you do.
+
+For a game only your own page shows, put the same four fields in your `site.toml` instead
+([configuration](configuration.md#games)).
 
 ## Other sources
 

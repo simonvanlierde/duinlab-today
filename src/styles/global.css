@@ -168,7 +168,7 @@ a:hover {
 }
 
 /* labels and figures */
-.bar,
+.home,
 .cue,
 .count,
 .next,
@@ -177,7 +177,7 @@ summary,
 .src {
   font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
 }
-.bar,
+.home,
 .cue,
 .verdict {
   text-transform: uppercase;
@@ -200,23 +200,12 @@ summary,
   white-space: normal;
 }
 
-/* The top bar on the About and archive pages. */
-.bar {
-  --bar: var(--K0);
-  position: relative;
-  z-index: 2;
-  background: var(--bar);
-  /* white on a dark sky, ink on a light one */
-  --bar-ink: oklch(from var(--bar) clamp(0.2, (0.6 - l) * 1000, 0.97) 0.02 280);
-  color: var(--bar-ink);
-}
-.bar-in {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  min-height: 40px;
-  font-variant-numeric: tabular-nums;
+/* The About, yesterday and missing pages name the site above their title, back to today's paper. */
+.home {
+  display: inline-block;
+  /* a 44px target without a taller line */
+  padding-block: 14px;
+  margin-block: -14px;
 }
 /* masthead */
 .sky {
@@ -594,6 +583,15 @@ h1 {
   .front:not(:has(.pic, .feat)) {
     grid-template-areas: "read otd games" "read quote games";
   }
+  /* a configuration without the featured article: what is left follows the pictures */
+  .front:has(.pic):not(:has(.feat)) {
+    grid-template-areas: "pic read games" "otd read games" "quote read games";
+    grid-template-rows: auto auto 1fr;
+  }
+  .front:has(.pic):not(:has(.feat, .otd)) {
+    grid-template-areas: "pic read games" "quote read games";
+    grid-template-rows: auto 1fr;
+  }
 }
 /* On short desktop screens, history and the quote follow the games.
    The complete article can extend below the fold. */
@@ -880,6 +878,8 @@ html:has(.picture-viewer[open]) {
 }
 .arrow {
   display: none;
+  flex: none;
+  white-space: nowrap;
   min-width: 44px;
   min-height: 44px;
   padding: 0 4px;
@@ -892,7 +892,8 @@ html:has(.picture-viewer[open]) {
   opacity: 0.4;
   cursor: default;
 }
-@media (min-width: 360px) and (hover: hover) and (pointer: fine) {
+/* only where the dots and both words fit on one line */
+@media (min-width: 480px) and (hover: hover) and (pointer: fine) {
   .arrow {
     display: block;
   }
@@ -1181,11 +1182,17 @@ summary {
 
 /* about and 404 */
 .sky-slim .mast {
+  /* one column at every width: the site's name sits above the title */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
   padding-top: 16px;
 }
+/* the text starts under the title, at a reading measure */
 .prose {
-  max-width: calc(62ch + 64px);
   padding-block: 16px 32px;
+}
+.prose > * {
+  max-width: 70ch;
 }
 .prose h2 {
   margin: 1.4em 0 0.3em;
@@ -1211,7 +1218,7 @@ code {
     --ground: #fff;
     color-scheme: light;
   }
-  .bar,
+  .home,
   .skip,
   .arrow,
   .dots,

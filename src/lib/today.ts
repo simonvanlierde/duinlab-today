@@ -1,5 +1,5 @@
 import { env, waitUntil } from "cloudflare:workers";
-import { type Day, incomplete } from "./build";
+import { configured, type Day, incomplete } from "./build";
 import { cached } from "./cache";
 import { configKey, site } from "./config";
 import { localDay, shift } from "./day";
@@ -28,8 +28,9 @@ export function refreshDay(now: Date): Promise<Day> {
   return env.DAY_COORDINATOR.getByName(coordinatorName(localDay(now))).refresh(now.toISOString());
 }
 
-function readDay(date: string): Promise<Day | null> {
-  return env.DAY_COORDINATOR.getByName(coordinatorName(date)).read(date);
+async function readDay(date: string): Promise<Day | null> {
+  const day = await env.DAY_COORDINATOR.getByName(coordinatorName(date)).read(date);
+  return day && configured(day);
 }
 
 /** Yesterday's stored day, or null after its two-day retention. */
@@ -88,19 +89,25 @@ export async function todayOrUnavailable(now: Date): Promise<Today | Response> {
   }
 }
 
+/** The day's weather, cached for every page: the other pages grey their sky by its cloud cover too. */
+export function readWeather(now: Date) {
+  const cache = (caches as unknown as { default: Cache }).default;
+  return cached(
+    cache,
+    `weather/${localDay(now)}`,
+    () => fetchWeather(now),
+    (w) => (w ? WEATHER_LIFE : FAILED),
+    waitUntil,
+  );
+}
+
 export async function getToday(now: Date = new Date()): Promise<Today> {
   const cache = (caches as unknown as { default: Cache }).default;
   const [day, agenda, knmiRain, weather, sea, recipes] = await Promise.all([
     getDay(now),
     site.content.events ? readAgenda() : Promise.resolve(null),
     site.content.radar === "knmi" ? readKnmiRain() : Promise.resolve(null),
-    cached(
-      cache,
-      `weather/${localDay(now)}`,
-      () => fetchWeather(now),
-      (w) => (w ? WEATHER_LIFE : FAILED),
-      waitUntil,
-    ),
+    readWeather(now),
     site.content.sea
       ? cached(
           cache,
