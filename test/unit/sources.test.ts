@@ -272,7 +272,7 @@ describe("parsers", () => {
       by: "Willem van Diest",
       date: "1625-1663",
     });
-    expect(p?.fullImageUrl).toMatch(/^https:\/\/iip\.smk\.dk\/iiif\/.+\/full\/max\/0\/default\.jpg$/);
+    expect(p?.fullImageUrl).toMatch(/^https:\/\/iip\.smk\.dk\/iiif\/.+\/full\/!2400,\/0\/default\.jpg$/);
     const after = { ...smk.items[1], production: [{ creator: "Goltzius, Hendrick", creator_role: "after" }] };
     expect(parseSmk(after)?.by).toBeNull();
     expect(parseSmk({ ...smk.items[1], production: [{ creator: "Ubekendt", creator_role: null }] })?.by).toBeNull();

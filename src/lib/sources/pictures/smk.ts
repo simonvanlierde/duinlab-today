@@ -31,7 +31,8 @@ export function parseSmk(o: Smk): Picture | null {
     by,
     date: o.production_date?.[0]?.period?.trim() || null,
     imageUrl,
-    fullImageUrl: iiif && `${iiif}/full/max/0/default.jpg`,
+    // the original scan can be 11 MB: the viewer needs about 2400 px
+    fullImageUrl: iiif && `${iiif}/full/!2400,/0/default.jpg`,
     width: o.image_width,
     height: o.image_height,
     pageUrl,
