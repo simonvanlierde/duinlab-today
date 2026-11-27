@@ -94,7 +94,7 @@ const SITE_NAMES: Record<string, string> = {
   "denhaag.com": "DenHaag.com",
 };
 
-/** One item of `agenda/v1` in KV, which a weekly homelab job writes from Amare and denhaag.com. */
+/** One item of `agenda/v1` in KV, which a weekly job writes from Amare and denhaag.com. */
 interface AgendaItem {
   venue: string;
   name: string;

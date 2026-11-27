@@ -101,13 +101,10 @@ export function validateSiteConfig(config) {
       fail(`content.${source}`, "is only supported for The Hague (52.08, 4.31, NL, Europe/Amsterdam)");
   }
   choice(config.content.radar, ["knmi", "buienradar", "none"], "content.radar");
-  if (config.content.radar === "knmi" && !hague)
-    fail("content.radar", "knmi requires The Hague's configured nowcast feed");
-  if (
-    config.content.radar === "buienradar" &&
-    !(country === "NL" && latitude >= 50.7 && latitude <= 53.6 && longitude >= 3.3 && longitude <= 7.3)
-  )
-    fail("content.radar", "buienradar requires coordinates in the Netherlands");
+  // Inside the KNMI radar grid (49.4-56 N, 0-10.9 E) with room to spare.
+  const dutch = country === "NL" && latitude >= 50.7 && latitude <= 53.6 && longitude >= 3.3 && longitude <= 7.3;
+  if (config.content.radar !== "none" && !dutch)
+    fail("content.radar", `${config.content.radar} requires coordinates in the Netherlands`);
   choice(config.content.holidays, ["nl", "none"], "content.holidays");
   if (config.content.holidays === "nl" && country !== "NL") fail("content.holidays", "nl requires country NL");
   if (!Array.isArray(config.games)) fail("games", "must be a list of game tables");

@@ -59,6 +59,8 @@ import zen from "./fixtures/zenquotes.json";
 
 afterEach(() => vi.unstubAllGlobals());
 
+const HAGUE = { lat: 52.08, lon: 4.31 };
+
 describe("parsers", () => {
   it.each([null, undefined, Number.NaN])("rejects invalid current weather number %s", (temperature) => {
     const invalid = structuredClone(meteo);
@@ -443,6 +445,7 @@ describe("parsers", () => {
     const now = new Date("2026-11-13T22:44:00Z");
     const fresh = {
       issuedAt: "2026-11-13T22:40:00Z",
+      ...HAGUE,
       steps: [
         { time: "23:40", mm: 0 },
         { time: "23:45", mm: 0.24 },
@@ -461,12 +464,17 @@ describe("parsers", () => {
     // Missing cell (null) must not become 0
     const withNull = {
       issuedAt: "2026-11-13T22:40:00Z",
+      ...HAGUE,
       steps: [
         { time: "23:40", mm: 0 },
         { time: "23:45", mm: null },
       ],
     };
     expect(parseKnmiRain(withNull, now)).toBeNull();
+
+    // A feed for another city, or one without a location, is ignored
+    expect(parseKnmiRain({ ...fresh, lat: 52.37, lon: 4.9 }, now)).toBeNull();
+    expect(parseKnmiRain({ issuedAt: fresh.issuedAt, steps: fresh.steps }, now)).toBeNull();
   });
 
   it("maps weather to plain words, Beaufort and compass points", () => {
@@ -822,8 +830,8 @@ describe("hardening", () => {
       { time: "23:55", mm: 1 },
       { time: "00:00", mm: 0 },
     ];
-    expect(parseKnmiRain({ issuedAt, steps }, new Date("2026-11-13T23:01:00Z"))).toEqual([steps[1]]);
-    expect(parseKnmiRain({ issuedAt, steps }, new Date("2026-11-13T23:05:00Z"))).toBeNull();
+    expect(parseKnmiRain({ issuedAt, steps, ...HAGUE }, new Date("2026-11-13T23:01:00Z"))).toEqual([steps[1]]);
+    expect(parseKnmiRain({ issuedAt, steps, ...HAGUE }, new Date("2026-11-13T23:05:00Z"))).toBeNull();
   });
 
   it("does not call an accepted half-hour-old wet interval current rain", () => {
@@ -833,7 +841,7 @@ describe("hardening", () => {
     }));
     steps[12] = { time: "12:00", mm: 0 };
     const now = new Date("2026-11-13T10:30:00Z");
-    const remaining = parseKnmiRain({ issuedAt: "2026-11-13T10:00:00Z", steps }, now);
+    const remaining = parseKnmiRain({ issuedAt: "2026-11-13T10:00:00Z", steps, ...HAGUE }, now);
     expect(remaining?.[0]).toEqual({ time: "11:30", mm: 0 });
     expect(rainLine(remaining ?? [], now)).toBe("No rain expected through 12:05");
   });
@@ -857,7 +865,7 @@ describe("hardening", () => {
   it("rejects invalid clocks and ambiguous repeated-hour rain", () => {
     const now = new Date("2026-10-25T00:30:00Z");
     for (const time of ["24:00", "12:60", "02:30"]) {
-      expect(parseKnmiRain({ issuedAt: now.toISOString(), steps: [{ time, mm: 1 }] }, now)).toBeNull();
+      expect(parseKnmiRain({ issuedAt: now.toISOString(), ...HAGUE, steps: [{ time, mm: 1 }] }, now)).toBeNull();
     }
     expect(parseRaintext("109|24:00\n109|12:60\n999|12:30")).toEqual([]);
     expect(() =>
@@ -877,7 +885,7 @@ describe("hardening", () => {
       { time: "01:55", mm: 1 },
       { time: "03:00", mm: 0 },
     ];
-    expect(parseKnmiRain({ issuedAt, steps }, new Date("2026-03-29T01:01:00Z"))).toEqual([steps[1]]);
+    expect(parseKnmiRain({ issuedAt, steps, ...HAGUE }, new Date("2026-03-29T01:01:00Z"))).toEqual([steps[1]]);
   });
   it("drops every Wikipedia section on a malformed feed instead of throwing", async () => {
     vi.stubGlobal("fetch", async () => new Response('{"dyk":5}'));

@@ -235,6 +235,8 @@ describe("canonical day publication", () => {
       "rain/v1",
       JSON.stringify({
         issuedAt: "2026-11-10T07:55:00Z",
+        lat: 52.08,
+        lon: 4.31,
         steps: [{ time: "09:00", mm: 0.36 }],
       }),
     );

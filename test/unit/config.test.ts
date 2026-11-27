@@ -138,6 +138,17 @@ describe("site configuration", () => {
       "content.tides",
     ],
     [
+      "KNMI radar outside the Netherlands",
+      (c: ReturnType<typeof raw>) => {
+        c.location.country = "US";
+        c.location.latitude = 42.05;
+        c.location.longitude = -87.68;
+        c.content.tides = c.content.sea = c.content.events = false;
+        c.content.holidays = "none";
+      },
+      "knmi requires coordinates in the Netherlands",
+    ],
+    [
       "Dutch holidays abroad",
       (c: ReturnType<typeof raw>) => {
         c.location.country = "US";
@@ -148,6 +159,13 @@ describe("site configuration", () => {
     const config = raw();
     mutate(config);
     expect(() => validateSiteConfig(config)).toThrow(field);
+  });
+
+  it("accepts KNMI radar for another Dutch city", () => {
+    const config = raw();
+    Object.assign(config.location, { name: "Utrecht", latitude: 52.09, longitude: 5.12 });
+    config.content.tides = config.content.sea = config.content.events = false;
+    expect(validateSiteConfig(config).content.radar).toBe("knmi");
   });
 
   it("keeps daily data through display edits and isolates source or location changes", () => {
