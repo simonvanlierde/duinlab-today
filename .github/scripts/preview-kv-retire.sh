@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# Delete the KV namespaces of retired pull request previews. A preview's first deploy
-# creates $SLUG-pr-<number>-days for its DAYS binding (wrangler.jsonc, env.preview), and
-# preview-retire.sh deletes only the Worker.
+# Delete the KV namespaces of pull request previews that have no Worker. A preview's first
+# deploy creates $SLUG-pr-<number>-days for its DAYS binding (wrangler.jsonc, env.preview),
+# and preview-retire.sh deletes only the Worker. A namespace whose Worker $SLUG-pr-<number>
+# still exists is kept.
 # Usage: SLUG=app PRS="12 13" preview-kv-retire.sh
-# PRS empty runs the sweep: every $SLUG-pr-<number>-days namespace whose Worker
-# $SLUG-pr-<number> no longer exists. Run it after preview-retire.sh.
+# PRS empty runs the sweep over every $SLUG-pr-<number>-days namespace. Run it after
+# preview-retire.sh, and before a preview's deploy: wrangler reuses only a namespace its
+# Worker is bound to, and fails creating one whose title already exists.
 # Needs CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID. API overrides the Cloudflare API base
 # (tests). Exits 1 when any step failed.
 set -euo pipefail
@@ -30,25 +32,28 @@ while :; do
   page=$((page + 1))
 done
 
-wanted=""
+candidates=""
 if [ -n "${PRS:-}" ]; then
   for pr in $PRS; do
     if [[ $pr = *[!0-9]* ]]; then
       echo "::error::Not a PR number: $pr"
       exit 1
     fi
-    wanted+="$SLUG-pr-$pr-days "
+    candidates+="$SLUG-pr-$pr-days "
   done
 else
-  if ! workers=$(curl -fsS --max-time 30 -H @"$auth" "$api/workers/scripts" | jq -r '.result[].id'); then
-    echo "::error::Could not list the account's Workers."
-    exit 1
-  fi
-  for title in $(awk '{print $2}' <<<"$namespaces" | grep -E "^$SLUG-pr-[0-9]+-days\$" || true); do
-    # a namespace whose Worker still serves belongs to an open preview
-    grep -qxF "${title%-days}" <<<"$workers" || wanted+="$title "
-  done
+  candidates=$(awk '{print $2}' <<<"$namespaces" | grep -E "^$SLUG-pr-[0-9]+-days\$" || true)
 fi
+
+if ! workers=$(curl -fsS --max-time 30 -H @"$auth" "$api/workers/scripts" | jq -r '.result[].id'); then
+  echo "::error::Could not list the account's Workers."
+  exit 1
+fi
+wanted=""
+for title in $candidates; do
+  # a namespace whose Worker still serves belongs to a live preview
+  grep -qxF "${title%-days}" <<<"$workers" || wanted+="$title "
+done
 
 for title in $wanted; do
   id=$(awk -v t="$title" '$2 == t {print $1}' <<<"$namespaces")

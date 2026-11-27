@@ -246,6 +246,17 @@ jobs:
             echo "open=true" >>"$GITHUB_OUTPUT"
           fi
 
+      # A namespace without its Worker (a first deploy cancelled after wrangler created it, or a
+      # reopened pull request whose Worker was retired) would make wrangler fail creating the
+      # same title again.
+      - if: steps.gate.outputs.run == 'true' && steps.pr.outputs.open == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PRS: ${{ github.event.pull_request.number }}
+          SLUG: duinlab-today
+        run: '"$GITHUB_WORKSPACE/.github/scripts/preview-kv-retire.sh"'
+
       - if: steps.gate.outputs.run == 'true' && steps.pr.outputs.open == 'true'
         id: upload
         env:
