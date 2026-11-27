@@ -14,8 +14,6 @@ gets in the way. Shipped changes are in the [changelog](../CHANGELOG.md).
 
 ## Next
 
-- **Rain for any Dutch city.** The KNMI two-hour forecast works for The Hague. Make it work for any
-  configured Dutch city, without a Hague-only extractor.
 - **TypeScript 7.** Lift the hold in `renovate.json5` once Astro's type checker supports it.
 
 ## Later, or only if asked

@@ -213,6 +213,7 @@ export async function fetchWeather(now: Date): Promise<Weather | null> {
   return radar ? { ...weather, rainNext2h: radar, rainCredit: BUIENRADAR, air } : { ...weather, air };
 }
 
+const sameSpot = (a: unknown, b: number) => typeof a === "number" && Math.abs(a - b) < 0.005;
 const KNMI_MAX_AGE_MS = 45 * 60_000;
 const KNMI_FUTURE_SKEW_MS = 5 * 60_000;
 
@@ -222,7 +223,9 @@ const KNMI_FUTURE_SKEW_MS = 5 * 60_000;
  */
 export function parseKnmiRain(raw: unknown, now: Date): Weather["rainNext2h"] | null {
   if (!raw || typeof raw !== "object") return null;
-  const { issuedAt, steps } = raw as { issuedAt?: unknown; steps?: unknown };
+  const { issuedAt, steps, lat, lon } = raw as { issuedAt?: unknown; steps?: unknown; lat?: unknown; lon?: unknown };
+  // The job publishes one location; a feed for another city must not show here.
+  if (!sameSpot(lat, site.location.latitude) || !sameSpot(lon, site.location.longitude)) return null;
   if (typeof issuedAt !== "string" || !Array.isArray(steps) || steps.length === 0) {
     return null;
   }

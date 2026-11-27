@@ -90,7 +90,7 @@ There is no generic local agenda or tide-station setting.
 
 `radar` accepts:
 
-- `knmi`: the Hague-only KV nowcast feed, with Buienradar and Open-Meteo as fallbacks. It requires a separate job that writes `rain/v1`.
+- `knmi`: the KV nowcast feed, with Buienradar and Open-Meteo as fallbacks. It needs coordinates in the Netherlands and a separate job that writes `rain/v1` for those coordinates.
 - `buienradar`: rain radar for coordinates in the Netherlands, with Open-Meteo as a fallback.
 - `none`: Open-Meteo rain forecasts, without a separate radar feed.
 
@@ -105,11 +105,12 @@ Two outside jobs write JSON to the `DAYS` KV namespace. The Worker checks each o
 `rain/v1` is the KNMI nowcast, read when `radar = "knmi"`:
 
 ```json
-{ "issuedAt": "2026-11-26T09:40:00Z", "steps": [{ "time": "09:45", "mm": 0.2 }] }
+{ "issuedAt": "2026-11-26T09:40:00Z", "lat": 52.08, "lon": 4.31, "steps": [{ "time": "09:45", "mm": 0.2 }] }
 ```
 
+- `lat` and `lon` must match the configured coordinates to within 0.005 degrees, so a feed for another city is ignored.
 - `issuedAt` is an ISO 8601 time. A feed more than 45 minutes old, or more than 5 minutes in the future, is ignored.
-- Each `time` is `HH:MM` on the configured city's clock and marks the start of a 5-minute step.
+- Each `time` is `HH:MM` on the configured city's clock and marks the start of a 5-minute step. KNMI stamps each image with the end of its interval, so the job subtracts 5 minutes.
 - Each `mm` is a number of 0 or more. A single missing or malformed step drops the whole feed, so missing radar never shows as dry.
 
 A dropped feed falls back to Buienradar, then Open-Meteo, without a log line.
