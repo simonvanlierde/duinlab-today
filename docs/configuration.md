@@ -116,7 +116,9 @@ blurb = "Five letters, six tries."
 Use your own Cloudflare account, Worker and storage. Before any deployment or secret command, edit `wrangler.jsonc`:
 
 1. Replace `name` with a unique Worker name, such as `utrecht-daily-page`.
+
 2. Remove the original `routes` entry. Keep `workers_dev: true` for the first deployment.
+
 3. Create a KV namespace in your account:
 
    ```sh
@@ -124,6 +126,7 @@ Use your own Cloudflare account, Worker and storage. Before any deployment or se
    ```
 
    Replace the `DAYS` namespace `id` in `wrangler.jsonc` with the returned ID.
+
 4. Keep the `DAY_COORDINATOR` binding and `v1` SQLite migration. The first deployment creates that Worker’s Durable Objects.
 
 Do not reuse the original Worker name, KV namespace or domain route.
