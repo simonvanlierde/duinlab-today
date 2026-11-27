@@ -19,8 +19,10 @@
     // Pull request previews (ts.yml), deployed as duinlab-today-pr-<number> and built with
     // PREVIEW set, so fixtures answer every source. No cron and no custom domain. The KV
     // binding has no id: the first deploy creates duinlab-today-pr-<number>-days, and
-    // preview-retire.yml deletes it with the Worker.
+    // preview-retire.yml deletes it with the Worker. The NASA key is a stand-in: the api.nasa.gov
+    // fixture answers any key, and without one the NASA picture is never asked for.
     "preview": {
+      "vars": { "NASA_API_KEY": "fixture" },
       "triggers": { "crons": [] },
       "routes": [],
       "workers_dev": true,

@@ -4,7 +4,8 @@
 # and preview-retire.sh deletes only the Worker. A namespace whose Worker $SLUG-pr-<number>
 # still exists is kept.
 # Usage: SLUG=app PRS="12 13" preview-kv-retire.sh
-# PRS empty runs the sweep over every $SLUG-pr-<number>-days namespace. Run it after
+# PRS empty runs the sweep over every $SLUG-pr-<number>-days namespace whose PR is not open
+# and ready; it needs REPO and GH_TOKEN. Run it after
 # preview-retire.sh, and before a preview's deploy: wrangler reuses only a namespace its
 # Worker is bound to, and fails creating one whose title already exists.
 # Needs CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID. API overrides the Cloudflare API base
@@ -42,7 +43,18 @@ if [ -n "${PRS:-}" ]; then
     candidates+="$SLUG-pr-$pr-days "
   done
 else
-  candidates=$(awk '{print $2}' <<<"$namespaces" | grep -E "^$SLUG-pr-[0-9]+-days\$" || true)
+  for title in $(awk '{print $2}' <<<"$namespaces" | grep -E "^$SLUG-pr-[0-9]+-days\$" || true); do
+    n=${title#"$SLUG"-pr-}
+    n=${n%-days}
+    # An open, ready PR may be in its first deploy: wrangler creates the namespace before it
+    # uploads the Worker, so a missing Worker does not yet mean an orphan. A failed read keeps it.
+    if ! state=$(gh api "repos/$REPO/pulls/$n" --jq '.state + " " + (.draft|tostring)'); then
+      echo "::warning::Could not read PR $n, so its namespace stays for now."
+      failed=1
+      continue
+    fi
+    [ "$state" = "open false" ] || candidates+="$title "
+  done
 fi
 
 if ! workers=$(curl -fsS --max-time 30 -H @"$auth" "$api/workers/scripts" | jq -r '.result[].id'); then

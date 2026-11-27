@@ -21,8 +21,8 @@ warn() {
   exit 0
 }
 
-# The address comes from the deploy's output: post only a workers.dev one, never a link the
-# deploy's code could have chosen.
+# The address comes from the deploy's output: post only a workers.dev address, never a link
+# to another site.
 [[ $url =~ ^https://[a-z0-9-]+(\.[a-z0-9-]+)*\.workers\.dev/?$ ]] || warn "unexpected address $url"
 
 ids=$(gh api --paginate "repos/$REPO/issues/$PR/comments" \

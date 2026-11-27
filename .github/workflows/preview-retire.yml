@@ -17,7 +17,8 @@ permissions:
   contents: read
 
 # One group per pull request or sweep: the retire job's own group already orders it
-# against that pull request's deploy.
+# against that pull request's deploy. A manual run with prs set gets a group of its own, so
+# it does not wait for a deploy in flight: run it when no preview job is running.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: false
@@ -84,6 +85,8 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
           PRS: ${{ github.event.pull_request.number || inputs.prs }}
           SLUG: ${{ matrix.slug }}
         run: .github/scripts/preview-kv-retire.sh

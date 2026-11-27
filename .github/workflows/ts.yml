@@ -218,8 +218,9 @@ jobs:
       - if: steps.gate.outputs.run == 'true'
         run: pnpm install --frozen-lockfile
 
-      # Search engines should index the production site, not the preview copies. The block is
-      # appended to the build's own _headers, which keeps its security headers.
+      # Search engines should index the production site, not the preview copies. The Worker's
+      # pages get the header from src/lib/headers.ts; static files skip the Worker, so the
+      # block is appended to the build's own _headers, which keeps its security headers.
       - if: steps.gate.outputs.run == 'true'
         env:
           PREVIEW: pr-${{ github.event.pull_request.number }}
