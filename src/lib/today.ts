@@ -48,7 +48,7 @@ async function getDay(now: Date): Promise<Day> {
   return refreshDay(now);
 }
 
-/** The homelab agenda job's events; it refreshes weekly, so KV's edge copy may be an hour old. */
+/** The agenda job's events; it refreshes weekly, so KV's edge copy may be an hour old. */
 async function readAgenda() {
   try {
     return await env.DAYS.get<Parameters<typeof withAgenda>[1]>("agenda/v1", {
@@ -60,7 +60,7 @@ async function readAgenda() {
   }
 }
 
-/** The homelab KNMI nowcast job's 2-hour rain steps; refreshes every few minutes. */
+/** The KNMI nowcast job's 2-hour rain steps; refreshes every few minutes. */
 async function readKnmiRain() {
   try {
     return await env.DAYS.get("rain/v1", {
