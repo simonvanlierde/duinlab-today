@@ -157,6 +157,148 @@ test("touch swipes change pictures while fitted and preserve zoomed panning", as
   await expect(viewer.locator("figcaption")).toContainText("Wikimedia");
 });
 
+const openFirst = async (page: import("@playwright/test").Page) => {
+  await page.getByRole("link", { name: "Look closer: Wheat Field with Cypresses" }).click();
+  return page.getByRole("dialog", { name: "Picture viewer" });
+};
+
+test("a click zooms in at that point and a second click fits the picture again", async ({ page }) => {
+  await page.goto("/");
+  const viewer = await openFirst(page);
+  const image = viewer.locator(".viewer-stage img");
+  await image.click();
+  await expect(viewer.getByRole("button", { name: "Fit picture" })).toBeVisible();
+  // a mouse press on the zoomed picture captures the pointer for panning; the click must still fit
+  await image.click();
+  await expect(viewer.getByRole("button", { name: "Zoom in" })).toBeVisible();
+});
+
+test("a mouse drag pans the zoomed picture and does not fit it again", async ({ page }) => {
+  await page.goto("/");
+  const viewer = await openFirst(page);
+  const stage = viewer.locator(".viewer-stage");
+  await viewer.locator(".viewer-stage img").click();
+  await expect(viewer.getByRole("button", { name: "Fit picture" })).toBeVisible();
+  const box = await stage.boundingBox();
+  if (!box) throw new Error("no stage");
+  const before = await stage.evaluate((el) => el.scrollLeft);
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 - 120, box.y + box.height / 2, { steps: 6 });
+  await page.mouse.up();
+  expect(await stage.evaluate((el) => el.scrollLeft)).toBeGreaterThan(before + 60);
+  await expect(viewer.getByRole("button", { name: "Fit picture" })).toBeVisible();
+  // after a drag, a plain click still fits the picture, and the next one zooms in again
+  await viewer.locator(".viewer-stage img").click();
+  await expect(viewer.getByRole("button", { name: "Zoom in" })).toBeVisible();
+  await viewer.locator(".viewer-stage img").click();
+  await expect(viewer.getByRole("button", { name: "Fit picture" })).toBeVisible();
+});
+
+test("a late original of a picture already left behind does not replace the next one", async ({ page }) => {
+  await page.goto("/");
+  const links = page.locator(".picture-open");
+  const [first, second] = await Promise.all([links.nth(0).getAttribute("href"), links.nth(1).getAttribute("href")]);
+  if (!first || !second) throw new Error("fewer than two pictures");
+  // hold the first picture's original until the viewer has moved on to the second
+  let release = () => {};
+  const held = new Promise<void>((done) => {
+    release = done;
+  });
+  await page.route(first, async (route) => {
+    await held;
+    await route.fallback();
+  });
+  const viewer = await openFirst(page);
+  const image = viewer.locator(".viewer-stage img");
+  await page.keyboard.press("ArrowRight");
+  await expect(image).toHaveAttribute("src", second);
+  const late = page.waitForResponse(first);
+  release();
+  await late;
+  // two frames: the late image's load event has run by then
+  await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+  await expect(image).toHaveAttribute("src", second);
+  await expect(viewer.locator(".viewer-count")).toHaveText(/^2 of \d+$/);
+});
+
+test("a diagonal touch swipe neither closes the viewer nor changes the picture", async ({ page }) => {
+  await page.goto("/");
+  const viewer = await openFirst(page);
+  const stage = viewer.locator(".viewer-stage");
+  await stage.dispatchEvent("pointerdown", { pointerId: 1, pointerType: "touch", clientX: 200, clientY: 100 });
+  await stage.dispatchEvent("pointerup", { pointerId: 1, pointerType: "touch", clientX: 290, clientY: 200 });
+  await expect(viewer).toBeVisible();
+  await expect(viewer.locator(".viewer-count")).toHaveText(/^1 of \d+$/);
+});
+
+test("a touch swipe down closes the viewer", async ({ page }) => {
+  await page.goto("/");
+  const viewer = await openFirst(page);
+  const stage = viewer.locator(".viewer-stage");
+  await stage.dispatchEvent("pointerdown", { pointerId: 1, pointerType: "touch", clientX: 200, clientY: 100 });
+  await stage.dispatchEvent("pointerup", { pointerId: 1, pointerType: "touch", clientX: 210, clientY: 300 });
+  await expect(viewer).toBeHidden();
+  await expect(page.getByRole("link", { name: "Look closer: Wheat Field with Cypresses" })).toBeFocused();
+});
+
+test("an arrow press past the last picture leaves it as it is", async ({ page }) => {
+  await page.goto("/");
+  const viewer = await openFirst(page);
+  const n = await page.locator(".pic .slide").count();
+  for (let i = 1; i < n; i++) await page.keyboard.press("ArrowRight");
+  await expect(viewer.locator(".viewer-count")).toHaveText(`${n} of ${n}`);
+  const image = viewer.locator(".viewer-stage img");
+  const original = await page
+    .locator(".picture-open")
+    .nth(n - 1)
+    .getAttribute("href");
+  await expect(image).toHaveAttribute("src", original ?? "");
+  // read in the same task as the key press: a reload of the preview would show here at once
+  const after = await viewer.evaluate((dialog) => {
+    dialog.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+    return dialog.querySelector(".viewer-stage img")?.getAttribute("src");
+  });
+  expect(after).toBe(original);
+});
+
+test("a small object on a plain backdrop opens framed, and Whole picture shows all of it", async ({ page }) => {
+  await page.route(hosts, (route) =>
+    route.fulfill({
+      path: "e2e/fixtures/object.png",
+      contentType: "image/png",
+      headers: { "access-control-allow-origin": "*" },
+    }),
+  );
+  await page.goto("/");
+  const viewer = await openFirst(page);
+  await expect(viewer.getByRole("button", { name: "Whole picture" })).toBeVisible();
+  await expect(viewer.locator(".viewer-count")).toHaveText(/^1 of \d+, backdrop cropped$/);
+  await viewer.getByRole("button", { name: "Whole picture" }).click();
+  await expect(viewer.getByRole("button", { name: "Zoom in" })).toBeVisible();
+  await expect(viewer.locator(".viewer-count")).toHaveText(/^1 of \d+$/);
+});
+
+test("an original that loads after a failed preview replaces the error", async ({ page }) => {
+  await page.route("**/web-large/DP-42549-001.jpg", (route) => route.abort());
+  // the original is held until the preview has failed and the error shows
+  let release = () => {};
+  const held = new Promise<void>((done) => {
+    release = done;
+  });
+  await page.route("**/original/DP-42549-001.jpg", async (route) => {
+    await held;
+    await route.fallback();
+  });
+  await page.goto("/");
+  const viewer = await openFirst(page);
+  await expect(viewer.locator(".viewer-error")).toBeVisible();
+  release();
+  await expect(viewer.locator(".viewer-stage img")).toHaveAttribute("src", /\/original\/DP-42549-001.jpg$/);
+  await expect(viewer.locator(".viewer-stage img")).toBeVisible();
+  await expect(viewer.locator(".viewer-error")).toBeHidden();
+});
+
 test("yesterday's single picture opens without active navigation", async ({ page }) => {
   await page.goto("/yesterday");
   await page.getByRole("link", { name: "Look closer: Wheat Field with Cypresses" }).click();

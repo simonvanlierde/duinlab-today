@@ -5,8 +5,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- The picture viewer frames a small object on a plain museum backdrop so it fills the screen; "Whole picture" shows all of it. A click or tap zooms in where you point, a mouse drag pans, and a swipe down closes the viewer.
+
 ### Changed
 
+- On wide screens the featured article follows the pictures in their column, so no empty band waits below the caption.
+- The masthead leaves room above the date.
+- The viewer grows out of the picture you open and shows the preview at once while the original loads.
 - The default Hague configuration names its daily store like every other configuration. The day in progress carries over through the KV mirror on upgrade, so don't deploy across midnight in the configured time zone.
 
 ### Removed
