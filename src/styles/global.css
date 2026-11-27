@@ -892,7 +892,7 @@ html:has(.picture-viewer[open]) {
   opacity: 0.4;
   cursor: default;
 }
-/* only where seven dots and both words fit on one line */
+/* only where the dots and both words fit on one line */
 @media (min-width: 480px) and (hover: hover) and (pointer: fine) {
   .arrow {
     display: block;
